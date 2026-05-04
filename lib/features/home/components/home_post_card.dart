@@ -8,16 +8,9 @@ import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class HomePostCard extends StatelessWidget {
-  const HomePostCard({
-    super.key,
-    required this.post,
-    this.onVideoTap,
-    this.onReadMore,
-  });
+  const HomePostCard({super.key, required this.post});
 
   final HomePostItem post;
-  final VoidCallback? onVideoTap;
-  final VoidCallback? onReadMore;
 
   static const Color _muted = Color(0xff8F8F8F);
 
@@ -62,10 +55,10 @@ class HomePostCard extends StatelessWidget {
         // Gap.h8,
         if (post.description.isNotEmpty) ...[
           Gap.h12,
-          HomePostDescription(text: post.description, onReadMore: onReadMore),
+          HomePostDescription(text: post.description),
         ],
         Gap.h12,
-        HomePostMedia(post: post, onVideoTap: onVideoTap),
+        HomePostMedia(post: post),
         Gap.h12,
         Row(
           children: [

@@ -183,26 +183,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                           top: index == 0 ? 12 : 0,
                                           bottom: isLast ? 0 : 28,
                                         ),
-                                        child: HomePostCard(
-                                          post: post,
-                                          onVideoTap: () {
-                                            final thumb =
-                                                post.video?.thumbnailUrl;
-                                            if (thumb == null ||
-                                                thumb.isEmpty) {
-                                              return;
-                                            }
-                                            MobileNavigationService.instance
-                                                .navigateTo(
-                                                  StoriesView.path,
-                                                  extra: {
-                                                    RoutingArgumentKey.imageUrl:
-                                                        thumb,
-                                                  },
-                                                );
-                                          },
-                                          onReadMore: () {},
-                                        ),
+                                        child: HomePostCard(post: post),
                                       );
                                     }, childCount: vm.posts.length),
                                   ),

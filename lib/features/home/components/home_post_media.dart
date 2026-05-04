@@ -7,10 +7,9 @@ import "package:flutter/material.dart";
 import "package:flutter_svg/svg.dart";
 
 class HomePostMedia extends StatelessWidget {
-  const HomePostMedia({super.key, required this.post, this.onVideoTap});
+  const HomePostMedia({super.key, required this.post});
 
   final HomePostItem post;
-  final VoidCallback? onVideoTap;
 
   static const double _mediaHeight = 160;
   static const double _radius = 12;
@@ -22,7 +21,6 @@ class HomePostMedia extends StatelessWidget {
         thumbnailUrl: post.video!.thumbnailUrl,
         height: _mediaHeight,
         radius: _radius,
-        onTap: onVideoTap,
       );
     }
     final urls = post.imageUrls;
@@ -42,13 +40,11 @@ class _VideoBlock extends StatelessWidget {
     required this.thumbnailUrl,
     required this.height,
     required this.radius,
-    this.onTap,
   });
 
   final String thumbnailUrl;
   final double height;
   final double radius;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +53,6 @@ class _VideoBlock extends StatelessWidget {
       child: Material(
         color: Colors.black,
         child: InkWell(
-          onTap: onTap,
           child: SizedBox(
             width: double.infinity,
             height: height,
