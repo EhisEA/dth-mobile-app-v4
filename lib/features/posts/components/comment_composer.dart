@@ -1,4 +1,5 @@
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/widgets/app_text_field.dart";
 import "package:dth_v4/widgets/text/text.dart";
 import "package:flutter/material.dart";
 import "package:flutter_svg/svg.dart";
@@ -40,7 +41,8 @@ class _CommentComposerState extends State<CommentComposer> {
   @override
   void didUpdateWidget(covariant CommentComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.replyToName != null && widget.replyToName != oldWidget.replyToName) {
+    if (widget.replyToName != null &&
+        widget.replyToName != oldWidget.replyToName) {
       _focus.requestFocus();
     }
   }
@@ -68,9 +70,7 @@ class _CommentComposerState extends State<CommentComposer> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: AppColors.tint5, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: AppColors.tint5, width: 0.5)),
       ),
       padding: EdgeInsets.fromLTRB(
         16,
@@ -108,37 +108,36 @@ class _CommentComposerState extends State<CommentComposer> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: TextField(
+                child: AppTextField(
                   controller: _controller,
                   focusNode: _focus,
                   enabled: !widget.submitting,
                   minLines: 1,
                   maxLines: 4,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: replyTo == null
-                        ? "Drop a banger..."
-                        : "Write your reply...",
-                    hintStyle: AppTextStyle.regular.copyWith(
-                      fontSize: 13,
-                      color: AppColors.blackTint20,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(color: AppColors.tint10),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(color: AppColors.tint10),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(color: AppColors.black),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
+                  // textInputAction: TextInputAction.newline,
+                  hint: replyTo == null
+                      ? "Drop a banger..."
+                      : "Write your reply...",
+                  hintStyle: AppTextStyle.regular.copyWith(
+                    fontSize: 13,
+                    color: AppColors.blackTint20,
+
+                    // border: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(24),
+                    //   borderSide: BorderSide(color: AppColors.tint10),
+                    // ),
+                    // enabledBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(24),
+                    //   borderSide: BorderSide(color: AppColors.tint10),
+                    // ),
+                    // focusedBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(24),
+                    //   borderSide: BorderSide(color: AppColors.black),
+                    // ),
+                    // contentPadding: const EdgeInsets.symmetric(
+                    //   horizontal: 16,
+                    //   vertical: 10,
+                    // ),
                   ),
                 ),
               ),

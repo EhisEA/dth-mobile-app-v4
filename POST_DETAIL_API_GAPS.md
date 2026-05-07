@@ -75,28 +75,70 @@ Comments already have a clean `user` block — please add the same to posts:
 post header.) Once present, `title` can stay as a free-form caption or be
 removed if redundant.
 
-## 5. Pagination params + envelope (still blocking)
+## 7. Comment `user.username` (still blocking comment thread design)
 
-The Postman doc describes `comments` and `replies` as "paginated" but does
-not document query params or the response envelope. Mobile needs:
-
-- **Query params** — confirm one of:
-  - `?page=N&per_page=M` (page-based)
-  - `?cursor=...&limit=M` (cursor-based, preferred for feeds)
-- **Response envelope** — confirm where `next` / `has_more` / total count live.
-  Current responses only show `data.comments[]` with no `meta` block.
-
-Suggested:
+The comment thread screen design (DTH-Mobile-10) shows an `@handle` under the
+author name (e.g. "Banger Designer / @banger_designer"). The comment `user`
+block currently exposes only `full_name` and `avatar`. Add:
 
 ```json
-"data": {
-  "comments": [...],
-  "meta": { "next_cursor": "...", "has_more": true }
+"user": {
+  "full_name": "Banger Designer",
+  "username": "banger_designer",
+  "avatar": "https://..."
 }
 ```
 
-Same applies to **`GET /api/timeline-posts`** (post list) — currently no
-pagination params shown there either, which will hurt as the timeline grows.
+The Flutter client parses `user.username` already and hides the line when
+absent — backend just needs to populate it.
+
+## 8. Comment `counts.views` (still blocking comment thread design)
+
+The comment thread screen shows "Posted 4h ago · 345k views" on the parent
+comment. The comment `counts` block exposes `comments`, `reactions`, `shares`
+but not `views`. Add:
+
+```json
+"counts": { "comments": 54, "reactions": 16000, "shares": 24, "views": 345000 }
+```
+
+The Flutter client parses `counts.views` already and hides the views segment
+when zero.
+
+---
+
+## ✅ 5. Pagination — RESOLVED for posts, reels, comments, and replies
+
+`GET /api/timeline-posts`, `GET /api/timeline-reels`, and
+`GET /api/timeline-posts/:uid/comments` all return the same
+cursor-paginated envelope:
+
+```json
+"data": {
+  "<key>": {
+    "data": [...],
+    "path": "https://.../api/...",
+    "per_page": 10,
+    "next_cursor": "...",       // null when no more pages
+    "next_page_url": "...",
+    "prev_cursor": "...",
+    "prev_page_url": "..."
+  }
+}
+```
+
+Wired up via `PaginatedResult<T>` in `data/models/paginated_result.dart`,
+consumed by `TimelineRepo.fetchTimeline({String? cursor})`,
+`TimelineRepo.fetchTimelineReels({String? cursor})`, and
+`CommentRepo.listComments(uid, {String? cursor})`. The home VM exposes
+`loadMoreTimeline()`; `PostDetailViewModel` exposes `loadMoreComments()`.
+Both views trigger on scroll-near-bottom (~400px before `maxScrollExtent`)
+with a footer spinner while fetching.
+
+Replies (`GET /api/timeline-posts/comments/:uid/replies`) are wired the
+same way; the client assumes the same envelope shape and parses
+defensively — empty result if the envelope is missing. Confirm the
+backend response when it's available.
 
 ## ✅ 6. Comment sort param — RESOLVED
 

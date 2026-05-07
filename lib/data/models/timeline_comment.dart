@@ -23,14 +23,20 @@ String? _commentString(dynamic v) {
 
 @immutable
 class TimelineCommentUser {
-  const TimelineCommentUser({required this.fullName, this.avatar});
+  const TimelineCommentUser({
+    required this.fullName,
+    this.username,
+    this.avatar,
+  });
 
   final String fullName;
+  final String? username;
   final String? avatar;
 
   factory TimelineCommentUser.fromJson(Map<String, dynamic> json) {
     return TimelineCommentUser(
       fullName: _commentString(json["full_name"]) ?? "",
+      username: _commentString(json["username"]),
       avatar: _commentString(json["avatar"]),
     );
   }
@@ -42,17 +48,23 @@ class TimelineCommentCounts {
     required this.comments,
     required this.reactions,
     required this.shares,
+    this.views = 0,
   });
 
   final int comments;
   final int reactions;
   final int shares;
 
+  /// Backend doesn't include `views` on comment payloads yet — defaults to 0
+  /// until the API adds it.
+  final int views;
+
   factory TimelineCommentCounts.fromJson(Map<String, dynamic> json) {
     return TimelineCommentCounts(
       comments: _commentAsInt(json["comments"]),
       reactions: _commentAsInt(json["reactions"]),
       shares: _commentAsInt(json["shares"]),
+      views: _commentAsInt(json["views"]),
     );
   }
 }

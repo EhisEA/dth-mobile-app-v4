@@ -9,6 +9,9 @@ class RoutingArgumentKey {
   /// [PostDetailView] — uid of the timeline post to load.
   static const String postUid = "postUid";
 
+  /// [CommentThreadView] — uid of the parent comment to load.
+  static const String commentUid = "commentUid";
+
   /// `"login"` or `"register"` for [VerifyOtpView] / [VerifyOtpViewModel].
   static const String otpFlow = "otpFlow";
 

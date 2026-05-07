@@ -1,13 +1,11 @@
-import "dart:async";
-
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/posts/models/comment.dart";
 import "package:dth_v4/features/posts/models/comment_mapper.dart";
 import "package:dth_v4/features/posts/models/post.dart";
 import "package:dth_v4/features/posts/models/post_mapper.dart";
+import "package:dth_v4/features/posts/view_model/comments_cache.dart";
 import "package:dth_v4/features/posts/view_model/posts_cache.dart";
 import "package:dth_v4/widgets/widgets.dart";
-import "package:flutter/foundation.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
@@ -17,6 +15,7 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
     this._postRepo,
     this._commentRepo,
     this._postsCache,
+    this._commentsCache,
   ) {
     _refresh();
   }
@@ -25,11 +24,16 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
   final PostRepo _postRepo;
   final CommentRepo _commentRepo;
   final PostsCache _postsCache;
+  final CommentsCache _commentsCache;
 
   Post? get post => _postsCache.get(uid);
 
-  List<Comment> _comments = const [];
-  List<Comment> get comments => _comments;
+  /// Order-only. The actual `Comment` objects live in [CommentsCache] — the
+  /// view derives the list by mapping these uids through `cache.get(uid)`.
+  /// Keeps the cache as single source of truth so a like toggle on the
+  /// thread screen reflects here automatically.
+  List<String> _commentUids = const [];
+  List<String> get commentUids => _commentUids;
 
   bool _commentsLoading = false;
   bool get commentsLoading => _commentsLoading;
@@ -37,26 +41,17 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
   Failure? _commentsError;
   Failure? get commentsError => _commentsError;
 
-  Comment? _replyTo;
-  Comment? get replyTo => _replyTo;
+  String? _nextCommentCursor;
+  bool get hasMoreComments => _nextCommentCursor != null;
+
+  bool _loadingMoreComments = false;
+  bool get loadingMoreComments => _loadingMoreComments;
+
+  CommentSort _sort = CommentSort.latest;
+  CommentSort get sort => _sort;
 
   bool _submitting = false;
   bool get submitting => _submitting;
-
-  void setReplyTo(Comment? comment) {
-    _replyTo = comment;
-    notifyListeners();
-  }
-
-  // commentUid -> {expanded, loading, replies}
-  final Map<String, _RepliesState> _replies = {};
-
-  bool isRepliesExpanded(String commentUid) =>
-      _replies[commentUid]?.expanded ?? false;
-  bool isRepliesLoading(String commentUid) =>
-      _replies[commentUid]?.loading ?? false;
-  List<Comment> repliesFor(String commentUid) =>
-      _replies[commentUid]?.replies ?? const [];
 
   Future<void> refresh() async {
     await Future.wait([_refresh(), _loadComments()]);
@@ -71,8 +66,8 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
       _postsCache.upsert(postFromTimelinePost(raw));
       changeBaseState(const ViewModelState.idle());
       // Kick off comments after we have the post (idempotent if already loaded).
-      if (_comments.isEmpty && !_commentsLoading) {
-        unawaited(_loadComments());
+      if (_commentUids.isEmpty && !_commentsLoading) {
+        await _loadComments();
       }
     } on ApiFailure catch (e) {
       if (post == null) {
@@ -88,8 +83,11 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
     _commentsError = null;
     notifyListeners();
     try {
-      final raw = await _commentRepo.listComments(uid);
-      _comments = raw.map(commentFromTimelineComment).toList();
+      final result = await _commentRepo.listComments(uid, sort: _sort);
+      final comments = result.items.map(commentFromTimelineComment).toList();
+      _commentsCache.upsertAll(comments);
+      _commentUids = comments.map((c) => c.uid).toList();
+      _nextCommentCursor = result.nextCursor;
     } on ApiFailure catch (e) {
       _commentsError = e;
     } finally {
@@ -100,37 +98,50 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
 
   Future<void> retryLoadComments() => _loadComments();
 
-  /// Returns true if submission was accepted (clears the composer).
-  /// Posts a top-level comment when [replyTo] is null, otherwise a reply.
+  Future<void> loadMoreComments() async {
+    if (!hasMoreComments || _loadingMoreComments || _commentsLoading) return;
+    _loadingMoreComments = true;
+    notifyListeners();
+    try {
+      final result = await _commentRepo.listComments(
+        uid,
+        cursor: _nextCommentCursor,
+        sort: _sort,
+      );
+      final comments = result.items.map(commentFromTimelineComment).toList();
+      _commentsCache.upsertAll(comments);
+      _commentUids = [..._commentUids, ...comments.map((c) => c.uid)];
+      _nextCommentCursor = result.nextCursor;
+    } on ApiFailure catch (e) {
+      DthFlushBar.instance.showError(message: e.message, title: "Load more");
+    } finally {
+      _loadingMoreComments = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> setSort(CommentSort sort) async {
+    if (sort == _sort) return;
+    _sort = sort;
+    _commentUids = const [];
+    _nextCommentCursor = null;
+    notifyListeners();
+    await _loadComments();
+  }
+
+  /// Posts a top-level comment. Returns true on success so the composer can
+  /// clear its field.
   Future<bool> submit(String text) async {
     final body = text.trim();
     if (body.isEmpty || _submitting) return false;
     _submitting = true;
     notifyListeners();
     try {
-      if (_replyTo == null) {
-        final raw = await _commentRepo.createComment(uid, body);
-        final comment = commentFromTimelineComment(raw);
-        _comments = [comment, ..._comments];
-        _bumpPostCommentCount(1);
-      } else {
-        final parentUid = _replyTo!.uid;
-        final raw = await _commentRepo.createReply(parentUid, body);
-        final reply = commentFromTimelineComment(raw);
-        final state = _replies[parentUid] ?? const _RepliesState();
-        _replies[parentUid] = state.copyWith(
-          expanded: true,
-          replies: [...state.replies, reply],
-        );
-        _comments = _comments
-            .map(
-              (c) => c.uid == parentUid
-                  ? c.copyWith(replyCount: c.replyCount + 1)
-                  : c,
-            )
-            .toList();
-        _replyTo = null;
-      }
+      final raw = await _commentRepo.createComment(uid, body);
+      final comment = commentFromTimelineComment(raw);
+      _commentsCache.upsert(comment);
+      _commentUids = [comment.uid, ..._commentUids];
+      _bumpPostCommentCount(1);
       return true;
     } on ApiFailure catch (e) {
       DthFlushBar.instance.showError(message: e.message, title: "Failed");
@@ -177,24 +188,24 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
 
   bool _postLikePending = false;
 
-  /// Optimistic comment/reply like. Locates the row via [comment.isReply] +
-  /// [comment.parentUid] so top-level and reply lists both update correctly.
+  /// Optimistic comment like. Updates pass through [CommentsCache] so any
+  /// other surface watching the same comment (e.g. the thread screen) reacts
+  /// automatically.
   Future<void> toggleCommentLike(Comment comment) async {
     if (_commentLikesPending.contains(comment.uid)) return;
     _commentLikesPending.add(comment.uid);
     final wasReacted = comment.viewerReacted;
-    final optimistic = comment.copyWith(
-      viewerReacted: !wasReacted,
-      likeCount: comment.likeCount + (wasReacted ? -1 : 1),
+    _commentsCache.upsert(
+      comment.copyWith(
+        viewerReacted: !wasReacted,
+        likeCount: comment.likeCount + (wasReacted ? -1 : 1),
+      ),
     );
-    _replaceComment(optimistic);
     notifyListeners();
     try {
       final raw = await _commentRepo.toggleReaction(comment.uid);
       final fresh = commentFromTimelineComment(raw);
-      // Preserve the original comment's parent linkage; the server only sends
-      // back counts + viewer_reacted, and parent_id can be absent.
-      _replaceComment(
+      _commentsCache.upsert(
         comment.copyWith(
           viewerReacted: fresh.viewerReacted,
           likeCount: fresh.likeCount,
@@ -202,7 +213,7 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
         ),
       );
     } on ApiFailure catch (e) {
-      _replaceComment(comment);
+      _commentsCache.upsert(comment);
       DthFlushBar.instance.showError(message: e.message, title: "Like");
     } finally {
       _commentLikesPending.remove(comment.uid);
@@ -211,80 +222,6 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
   }
 
   final Set<String> _commentLikesPending = {};
-
-  void _replaceComment(Comment updated) {
-    if (updated.isReply && updated.parentUid != null) {
-      final parentUid = updated.parentUid!;
-      final state = _replies[parentUid];
-      if (state == null) return;
-      _replies[parentUid] = state.copyWith(
-        replies: state.replies
-            .map((r) => r.uid == updated.uid ? updated : r)
-            .toList(),
-      );
-    } else {
-      _comments = _comments
-          .map((c) => c.uid == updated.uid ? updated : c)
-          .toList();
-    }
-  }
-
-  Future<void> toggleReplies(String commentUid) async {
-    final current = _replies[commentUid];
-    if (current?.expanded ?? false) {
-      _replies[commentUid] = current!.copyWith(expanded: false);
-      notifyListeners();
-      return;
-    }
-
-    final hadReplies = current?.replies.isNotEmpty ?? false;
-    _replies[commentUid] = (current ?? const _RepliesState())
-        .copyWith(expanded: true, loading: !hadReplies);
-    notifyListeners();
-
-    if (hadReplies) return;
-
-    try {
-      final raw = await _commentRepo.listReplies(commentUid);
-      _replies[commentUid] = _RepliesState(
-        expanded: true,
-        loading: false,
-        replies: raw.map(commentFromTimelineComment).toList(),
-      );
-    } on ApiFailure {
-      _replies[commentUid] =
-          (_replies[commentUid] ?? const _RepliesState()).copyWith(
-            loading: false,
-          );
-    } finally {
-      notifyListeners();
-    }
-  }
-}
-
-@immutable
-class _RepliesState {
-  const _RepliesState({
-    this.expanded = false,
-    this.loading = false,
-    this.replies = const [],
-  });
-
-  final bool expanded;
-  final bool loading;
-  final List<Comment> replies;
-
-  _RepliesState copyWith({
-    bool? expanded,
-    bool? loading,
-    List<Comment>? replies,
-  }) {
-    return _RepliesState(
-      expanded: expanded ?? this.expanded,
-      loading: loading ?? this.loading,
-      replies: replies ?? this.replies,
-    );
-  }
 }
 
 final postDetailViewModelProvider = ChangeNotifierProvider.autoDispose
@@ -294,5 +231,6 @@ final postDetailViewModelProvider = ChangeNotifierProvider.autoDispose
         ref.read(postRepositoryProvider),
         ref.read(commentRepositoryProvider),
         ref.read(postsCacheProvider),
+        ref.read(commentsCacheProvider),
       );
     });

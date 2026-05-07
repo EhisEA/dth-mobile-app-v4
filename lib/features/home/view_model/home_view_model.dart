@@ -27,18 +27,25 @@ class HomeViewModel extends BaseChangeNotifierViewModel {
   List<Story> _stories = const [];
   List<Story> get stories => _stories;
 
+  String? _nextCursor;
+  bool get hasMore => _nextCursor != null;
+
+  bool _loadingMore = false;
+  bool get loadingMore => _loadingMore;
+
   Future<void> loadTimeline() async {
     try {
       changeBaseState(const ViewModelState.busy());
 
-      final raw = await _timelineRepo.fetchTimeline();
-      final posts = raw.map(postFromTimelinePost).toList();
+      final result = await _timelineRepo.fetchTimeline();
+      final posts = result.items.map(postFromTimelinePost).toList();
       _postsCache.upsertAll(posts);
       _postUids = posts.map((p) => p.uid).toList();
+      _nextCursor = result.nextCursor;
 
       try {
-        final reels = await _timelineRepo.fetchTimelineReels();
-        _stories = reels.map(_reelToStory).toList();
+        final reelsResult = await _timelineRepo.fetchTimelineReels();
+        _stories = reelsResult.items.map(_reelToStory).toList();
       } on ApiFailure {
         _stories = const [];
       }
@@ -51,10 +58,11 @@ class HomeViewModel extends BaseChangeNotifierViewModel {
 
   Future<void> refreshTimeline() async {
     try {
-      final raw = await _timelineRepo.fetchTimeline();
-      final posts = raw.map(postFromTimelinePost).toList();
+      final result = await _timelineRepo.fetchTimeline();
+      final posts = result.items.map(postFromTimelinePost).toList();
       _postsCache.upsertAll(posts);
       _postUids = posts.map((p) => p.uid).toList();
+      _nextCursor = result.nextCursor;
     } on ApiFailure catch (e) {
       DthFlushBar.instance.showError(message: e.message, title: "Failed");
       notifyListeners();
@@ -62,13 +70,31 @@ class HomeViewModel extends BaseChangeNotifierViewModel {
     }
 
     try {
-      final reels = await _timelineRepo.fetchTimelineReels();
-      _stories = reels.map(_reelToStory).toList();
+      final reelsResult = await _timelineRepo.fetchTimelineReels();
+      _stories = reelsResult.items.map(_reelToStory).toList();
     } on ApiFailure catch (e) {
       DthFlushBar.instance.showError(message: e.message, title: "Reels");
     }
 
     notifyListeners();
+  }
+
+  Future<void> loadMoreTimeline() async {
+    if (!hasMore || _loadingMore) return;
+    _loadingMore = true;
+    notifyListeners();
+    try {
+      final result = await _timelineRepo.fetchTimeline(cursor: _nextCursor);
+      final posts = result.items.map(postFromTimelinePost).toList();
+      _postsCache.upsertAll(posts);
+      _postUids = [..._postUids, ...posts.map((p) => p.uid)];
+      _nextCursor = result.nextCursor;
+    } on ApiFailure catch (e) {
+      DthFlushBar.instance.showError(message: e.message, title: "Load more");
+    } finally {
+      _loadingMore = false;
+      notifyListeners();
+    }
   }
 }
 

@@ -10,23 +10,26 @@ class CommentTile extends StatelessWidget {
   const CommentTile({
     super.key,
     required this.comment,
+    this.onTap,
     this.onLike,
-    this.onReply,
-    this.onToggleReplies,
-    this.repliesExpanded = false,
-    this.repliesLoading = false,
+    this.showReplyChip = false,
   });
 
   final Comment comment;
+
+  /// Tapping anywhere on the tile. In the post-detail comments list this
+  /// navigates to the thread screen; in the thread screen replies pass null.
+  final VoidCallback? onTap;
+
   final VoidCallback? onLike;
-  final VoidCallback? onReply;
-  final VoidCallback? onToggleReplies;
-  final bool repliesExpanded;
-  final bool repliesLoading;
+
+  /// Render the reply-count chip alongside the heart. False on replies inside
+  /// the thread screen (replies don't have nested replies in this design).
+  final bool showReplyChip;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final tile = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Avatar(name: comment.authorName, url: comment.avatarUrl),
@@ -73,28 +76,12 @@ class CommentTile extends StatelessWidget {
                         : null,
                     onTap: onLike,
                   ),
-                  Gap.w16,
-                  _Chip(
-                    icon: SvgAssets.messagesBorder,
-                    count: comment.replyCount,
-                    onTap: onToggleReplies,
-                  ),
-                  Gap.w16,
-                  GestureDetector(
-                    onTap: onReply,
-                    behavior: HitTestBehavior.opaque,
-                    child: AppText.medium(
-                      "Reply",
-                      fontSize: 11,
-                      color: AppColors.blackTint20,
-                    ),
-                  ),
-                  if (repliesLoading) ...[
-                    Gap.w12,
-                    const SizedBox(
-                      height: 10,
-                      width: 10,
-                      child: CircularProgressIndicator(strokeWidth: 1.2),
+                  if (showReplyChip) ...[
+                    Gap.w16,
+                    _Chip(
+                      icon: SvgAssets.messagesBorder,
+                      count: comment.replyCount,
+                      onTap: onTap,
                     ),
                   ],
                 ],
@@ -103,6 +90,12 @@ class CommentTile extends StatelessWidget {
           ),
         ),
       ],
+    );
+    if (onTap == null) return tile;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: tile,
     );
   }
 }

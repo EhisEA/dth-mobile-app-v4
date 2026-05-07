@@ -92,9 +92,21 @@ class _HomeViewState extends ConsumerState<HomeView> {
                         ),
                         idle: () => RefreshIndicator(
                           onRefresh: () => vm.refreshTimeline(),
-                          child: CustomScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            slivers: [
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: (n) {
+                              // Trigger loadMore ~400px before the end.
+                              // Guards inside loadMoreTimeline (hasMore +
+                              // _loadingMore flag) make the firing here
+                              // idempotent.
+                              if (n.metrics.pixels >=
+                                  n.metrics.maxScrollExtent - 400) {
+                                unawaited(vm.loadMoreTimeline());
+                              }
+                              return false;
+                            },
+                            child: CustomScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              slivers: [
                               SliverToBoxAdapter(
                                 child: vm.stories.isEmpty
                                     ? const SizedBox.shrink()
@@ -183,6 +195,24 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                       context,
                                       index,
                                     ) {
+                                      // Footer slot: loading spinner while
+                                      // fetching the next page; nothing once
+                                      // we've reached the end.
+                                      if (index >= posts.length) {
+                                        if (vm.loadingMore) {
+                                          return const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 24,
+                                            ),
+                                            child: Center(
+                                              child:
+                                                  CircularProgressIndicator
+                                                      .adaptive(),
+                                            ),
+                                          );
+                                        }
+                                        return const SizedBox.shrink();
+                                      }
                                       final post = posts[index];
                                       final isLast = index == posts.length - 1;
                                       return Padding(
@@ -203,10 +233,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                               ),
                                         ),
                                       );
-                                    }, childCount: posts.length),
+                                    }, childCount: posts.length + 1),
                                   ),
                                 ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

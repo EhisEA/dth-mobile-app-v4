@@ -10,51 +10,68 @@ class TimelineRepoImpl implements TimelineRepo {
   final NetworkService _networkService;
 
   @override
-  Future<List<TimelinePost>> fetchTimeline() async {
-    final response = await _networkService.get(ApiRoute.timeline);
-    final root = response.data;
-    if (root is! Map<String, dynamic>) {
-      return const [];
-    }
-    final data = root["data"];
-    if (data is! Map<String, dynamic>) {
-      return const [];
-    }
-    final posts = data["posts"];
-    if (posts is! List<dynamic>) {
-      return const [];
-    }
-    return posts
-        .map((e) {
-          if (e is! Map) return null;
-          return TimelinePost.fromJson(Map<String, dynamic>.from(e));
-        })
-        .whereType<TimelinePost>()
-        .toList();
+  Future<PaginatedResult<TimelinePost>> fetchTimeline({String? cursor}) async {
+    final response = await _networkService.get(
+      ApiRoute.timeline,
+      queryParams: _cursorParams(cursor),
+    );
+    return _parsePaginated(
+      response.data,
+      listKey: "posts",
+      fromJson: TimelinePost.fromJson,
+    );
   }
 
   @override
-  Future<List<TimelineReel>> fetchTimelineReels() async {
-    final response = await _networkService.get(ApiRoute.timelineReels);
-    final root = response.data;
-    if (root is! Map<String, dynamic>) {
-      return const [];
-    }
+  Future<PaginatedResult<TimelineReel>> fetchTimelineReels({
+    String? cursor,
+  }) async {
+    final response = await _networkService.get(
+      ApiRoute.timelineReels,
+      queryParams: _cursorParams(cursor),
+    );
+    return _parsePaginated(
+      response.data,
+      listKey: "reels",
+      fromJson: TimelineReel.fromJson,
+    );
+  }
+
+  Map<String, dynamic>? _cursorParams(String? cursor) {
+    if (cursor == null || cursor.isEmpty) return null;
+    return {"cursor": cursor};
+  }
+
+  /// Parses the cursor-paginated envelope:
+  /// `{ data: { <listKey>: { data: [...], next_cursor: "...", ... } } }`
+  PaginatedResult<T> _parsePaginated<T>(
+    dynamic root, {
+    required String listKey,
+    required T Function(Map<String, dynamic>) fromJson,
+  }) {
+    final empty = PaginatedResult<T>(items: const [], nextCursor: null);
+    if (root is! Map<String, dynamic>) return empty;
     final data = root["data"];
-    if (data is! Map<String, dynamic>) {
-      return const [];
-    }
-    final reels = data["reels"];
-    if (reels is! List<dynamic>) {
-      return const [];
-    }
-    return reels
+    if (data is! Map<String, dynamic>) return empty;
+    final outer = data[listKey];
+    if (outer is! Map<String, dynamic>) return empty;
+    final list = outer["data"];
+    if (list is! List<dynamic>) return empty;
+
+    final cursorRaw = outer["next_cursor"];
+    final nextCursor = cursorRaw is String && cursorRaw.isNotEmpty
+        ? cursorRaw
+        : null;
+
+    final items = list
         .map((e) {
           if (e is! Map) return null;
-          return TimelineReel.fromJson(Map<String, dynamic>.from(e));
+          return fromJson(Map<String, dynamic>.from(e));
         })
-        .whereType<TimelineReel>()
+        .whereType<T>()
         .toList();
+
+    return PaginatedResult<T>(items: items, nextCursor: nextCursor);
   }
 }
 

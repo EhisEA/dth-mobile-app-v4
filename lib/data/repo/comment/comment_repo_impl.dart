@@ -10,19 +10,29 @@ class CommentRepoImpl implements CommentRepo {
   final NetworkService _networkService;
 
   @override
-  Future<List<TimelineComment>> listComments(String postUid) async {
+  Future<PaginatedResult<TimelineComment>> listComments(
+    String postUid, {
+    String? cursor,
+    CommentSort sort = CommentSort.latest,
+  }) async {
     final response = await _networkService.get(
       ApiRoute.timelinePostComments(postUid),
+      queryParams: _listParams(cursor: cursor, sort: sort),
     );
-    return _parseList(response.data, "comments");
+    return _parsePaginated(response.data, listKey: "comments");
   }
 
   @override
-  Future<List<TimelineComment>> listReplies(String commentUid) async {
+  Future<PaginatedResult<TimelineComment>> listReplies(
+    String commentUid, {
+    String? cursor,
+    CommentSort sort = CommentSort.latest,
+  }) async {
     final response = await _networkService.get(
       ApiRoute.timelineCommentReplies(commentUid),
+      queryParams: _listParams(cursor: cursor, sort: sort),
     );
-    return _parseList(response.data, "replies");
+    return _parsePaginated(response.data, listKey: "replies");
   }
 
   @override
@@ -53,19 +63,52 @@ class CommentRepoImpl implements CommentRepo {
     return _parseSingle(response.data, ["comment"]);
   }
 
-  List<TimelineComment> _parseList(dynamic root, String listKey) {
-    if (root is! Map<String, dynamic>) return const [];
+  Map<String, dynamic>? _listParams({String? cursor, CommentSort? sort}) {
+    final params = <String, dynamic>{};
+    if (cursor != null && cursor.isNotEmpty) params["cursor"] = cursor;
+    if (sort != null) params["sort"] = sort.apiValue;
+    return params.isEmpty ? null : params;
+  }
+
+  /// Parses the cursor-paginated envelope:
+  /// `{ data: { <listKey>: { data: [...], next_cursor: "...", ... } } }`
+  ///
+  /// Falls back to an empty result if the envelope is missing — defensive
+  /// against partial backend rollouts where one list endpoint hasn't been
+  /// migrated to the new shape yet.
+  PaginatedResult<TimelineComment> _parsePaginated(
+    dynamic root, {
+    required String listKey,
+  }) {
+    const empty = PaginatedResult<TimelineComment>(
+      items: [],
+      nextCursor: null,
+    );
+    if (root is! Map<String, dynamic>) return empty;
     final data = root["data"];
-    if (data is! Map<String, dynamic>) return const [];
-    final items = data[listKey];
-    if (items is! List<dynamic>) return const [];
-    return items
+    if (data is! Map<String, dynamic>) return empty;
+    final outer = data[listKey];
+    if (outer is! Map<String, dynamic>) return empty;
+    final list = outer["data"];
+    if (list is! List<dynamic>) return empty;
+
+    final cursorRaw = outer["next_cursor"];
+    final nextCursor = cursorRaw is String && cursorRaw.isNotEmpty
+        ? cursorRaw
+        : null;
+
+    final items = list
         .map((e) {
           if (e is! Map) return null;
           return TimelineComment.fromJson(Map<String, dynamic>.from(e));
         })
         .whereType<TimelineComment>()
         .toList();
+
+    return PaginatedResult<TimelineComment>(
+      items: items,
+      nextCursor: nextCursor,
+    );
   }
 
   TimelineComment _parseSingle(dynamic root, List<String> candidateKeys) {

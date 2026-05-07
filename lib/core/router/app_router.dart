@@ -10,6 +10,7 @@ import 'package:dth_v4/features/authentication/views/login_view.dart';
 import 'package:dth_v4/features/authentication/views/verify_otp_view.dart';
 import 'package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart';
 import 'package:dth_v4/features/home/views/home_view.dart';
+import 'package:dth_v4/features/posts/views/comment_thread_view.dart';
 import 'package:dth_v4/features/posts/views/post_detail_view.dart';
 import 'package:dth_v4/features/profile/personal_information/views/personal_infomation_view.dart';
 import 'package:dth_v4/features/profile/personal_information/views/profile_phone_verify_otp_view.dart';
@@ -92,6 +93,13 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: PostDetailView(uid: uid),
+        );
+      case CommentThreadView.path:
+        final commentUid =
+            routeArgs[RoutingArgumentKey.commentUid] as String? ?? "";
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: CommentThreadView(commentUid: commentUid),
         );
       ////////////////SEARCH VIEW////////////////////
       case SearchView.path:

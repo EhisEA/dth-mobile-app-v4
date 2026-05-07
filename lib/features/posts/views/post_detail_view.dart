@@ -1,5 +1,8 @@
+import "dart:async";
+
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/components/comment_composer.dart";
+import "package:dth_v4/features/posts/components/comment_sort_header.dart";
 import "package:dth_v4/features/posts/components/comment_tile.dart";
 import "package:dth_v4/features/posts/components/post_actions.dart";
 import "package:dth_v4/features/posts/components/post_detail_skeleton.dart";
@@ -8,7 +11,9 @@ import "package:dth_v4/features/posts/components/post_media.dart";
 import "package:dth_v4/features/posts/components/youtube_player_embed.dart";
 import "package:dth_v4/features/posts/models/comment.dart";
 import "package:dth_v4/features/posts/models/post.dart";
+import "package:dth_v4/features/posts/view_model/comments_cache.dart";
 import "package:dth_v4/features/posts/view_model/post_detail_view_model.dart";
+import "package:dth_v4/features/posts/views/comment_thread_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -28,10 +33,24 @@ class PostDetailView extends ConsumerWidget {
     );
   }
 
+  void _openThread(String commentUid) {
+    MobileNavigationService.instance.push(
+      CommentThreadView.path,
+      extra: {RoutingArgumentKey.commentUid: commentUid},
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final vm = ref.watch(postDetailViewModelProvider(uid));
     final post = vm.post;
+    // Cache owns Comment state; watch it so a like-toggle in the thread
+    // screen rebuilds the comments list here automatically.
+    final commentsCache = ref.watch(commentsCacheProvider);
+    final comments = vm.commentUids
+        .map(commentsCache.get)
+        .whereType<Comment>()
+        .toList(growable: false);
 
     return Scaffold(
       appBar: DthAppBar(backgroundColor: Colors.white),
@@ -49,24 +68,35 @@ class PostDetailView extends ConsumerWidget {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () => vm.refresh(),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    children: [
-                      _PostBlock(
-                        post: post,
-                        onLike: vm.togglePostLike,
-                        onShare: () => _showComingSoon("Share"),
-                      ),
-                      Gap.h24,
-                      _CommentsSection(vm: vm),
-                    ],
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (n) {
+                      if (n.metrics.pixels >=
+                          n.metrics.maxScrollExtent - 400) {
+                        unawaited(vm.loadMoreComments());
+                      }
+                      return false;
+                    },
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      children: [
+                        _PostBlock(
+                          post: post,
+                          onLike: vm.togglePostLike,
+                          onShare: () => _showComingSoon("Share"),
+                        ),
+                        Gap.h24,
+                        _CommentsSection(
+                          vm: vm,
+                          comments: comments,
+                          onOpenThread: _openThread,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
               CommentComposer(
-                replyToName: vm.replyTo?.authorName,
-                onCancelReply: () => vm.setReplyTo(null),
                 submitting: vm.submitting,
                 onSubmit: vm.submit,
               ),
@@ -144,14 +174,6 @@ class _PostBlockState extends State<_PostBlock> {
             color: Color(0xff202020),
           ),
         ],
-        // if (post.viewCount > 0) ...[
-        //   Gap.h8,
-        //   AppText.regular(
-        //     "${post.viewCount} views",
-        //     fontSize: 11,
-        //     color: AppColors.blackTint20,
-        //   ),
-        // ],
         Gap.h18,
         PostActions(
           post: post,
@@ -165,44 +187,41 @@ class _PostBlockState extends State<_PostBlock> {
 }
 
 class _CommentsSection extends StatelessWidget {
-  const _CommentsSection({required this.vm});
+  const _CommentsSection({
+    required this.vm,
+    required this.comments,
+    required this.onOpenThread,
+  });
 
   final PostDetailViewModel vm;
+  final List<Comment> comments;
+  final void Function(String commentUid) onOpenThread;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            AppText.semiBold(
-              "Top Comments",
-              fontSize: 14,
-              color: AppColors.mainBlack,
-            ),
-            AppText.regular(
-              "${vm.post?.commentCount ?? vm.comments.length}",
-              fontSize: 12,
-              color: AppColors.blackTint20,
-            ),
-          ],
+        CommentSortHeader(
+          title: "Comments",
+          count: vm.post?.commentCount ?? comments.length,
+          sort: vm.sort,
+          onSortChanged: vm.setSort,
         ),
         Gap.h16,
-        if (vm.commentsLoading && vm.comments.isEmpty)
+        if (vm.commentsLoading && comments.isEmpty)
           const Center(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: CircularProgressIndicator.adaptive(),
             ),
           )
-        else if (vm.commentsError != null && vm.comments.isEmpty)
+        else if (vm.commentsError != null && comments.isEmpty)
           _CommentsErrorState(
             message: vm.commentsError!.message,
             onRetry: () => vm.retryLoadComments(),
           )
-        else if (vm.comments.isEmpty)
+        else if (comments.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: AppText.regular(
@@ -212,60 +231,24 @@ class _CommentsSection extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           )
-        else
-          ...vm.comments.map(
+        else ...[
+          ...comments.map(
             (c) => Padding(
               padding: const EdgeInsets.only(bottom: 20),
-              child: _CommentBlock(comment: c, vm: vm),
+              child: CommentTile(
+                comment: c,
+                onTap: () => onOpenThread(c.uid),
+                onLike: () => vm.toggleCommentLike(c),
+                showReplyChip: true,
+              ),
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _CommentBlock extends StatelessWidget {
-  const _CommentBlock({required this.comment, required this.vm});
-
-  final Comment comment;
-  final PostDetailViewModel vm;
-
-  @override
-  Widget build(BuildContext context) {
-    final expanded = vm.isRepliesExpanded(comment.uid);
-    final loading = vm.isRepliesLoading(comment.uid);
-    final replies = vm.repliesFor(comment.uid);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        CommentTile(
-          comment: comment,
-          repliesExpanded: expanded,
-          repliesLoading: loading,
-          onLike: () => vm.toggleCommentLike(comment),
-          onToggleReplies: comment.replyCount > 0
-              ? () => vm.toggleReplies(comment.uid)
-              : null,
-          onReply: () => vm.setReplyTo(comment),
-        ),
-        if (expanded && replies.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 16, left: 42),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: replies
-                  .map(
-                    (r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: CommentTile(
-                        comment: r,
-                        onLike: () => vm.toggleCommentLike(r),
-                      ),
-                    ),
-                  )
-                  .toList(),
+          if (vm.loadingMoreComments)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator.adaptive()),
             ),
-          ),
+        ],
       ],
     );
   }
