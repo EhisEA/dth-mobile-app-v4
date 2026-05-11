@@ -10,7 +10,6 @@ import "package:dth_v4/features/posts/components/post_detail_skeleton.dart";
 import "package:dth_v4/features/posts/components/post_header.dart";
 import "package:dth_v4/features/posts/components/post_hero_image.dart";
 import "package:dth_v4/features/posts/components/post_media.dart";
-import "package:dth_v4/features/posts/components/youtube_player_embed.dart";
 import "package:dth_v4/features/posts/models/comment.dart";
 import "package:dth_v4/features/posts/models/post.dart";
 import "package:dth_v4/features/posts/view_model/comments_cache.dart";
@@ -21,13 +20,61 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
+import "package:youtube_player_flutter/youtube_player_flutter.dart";
 
-class PostDetailView extends ConsumerWidget {
+class PostDetailView extends ConsumerStatefulWidget {
   const PostDetailView({super.key, required this.uid});
 
   static const String path = NavigatorRoutes.postDetail;
 
   final String uid;
+
+  @override
+  ConsumerState<PostDetailView> createState() => _PostDetailViewState();
+}
+
+class _PostDetailViewState extends ConsumerState<PostDetailView> {
+  // The YouTube player controller is owned here (not inside the embed widget)
+  // so we can wrap the whole Scaffold in YoutubePlayerBuilder — which is the
+  // only place fullscreen rotation/expansion can actually take over the
+  // entire screen.
+  YoutubePlayerController? _ytController;
+  String? _ytVideoId;
+  // Until the IFrame player calls back as "ready", we overlay a black mask
+  // with our own spinner — otherwise YouTube's own iframe loading chrome
+  // (logo + branding) flashes for a beat before our control bar takes over.
+  bool _ytReady = false;
+
+  @override
+  void dispose() {
+    _ytController?.dispose();
+    super.dispose();
+  }
+
+  /// Keep [_ytController] in sync with [post]'s video URL. Called inline from
+  /// build — only mutates fields, no setState, so the current build reads the
+  /// updated controller immediately.
+  void _syncController(Post post) {
+    final url = post.isVideo && (post.video?.isYoutube ?? false)
+        ? post.video?.videoUrl
+        : null;
+    final newId = url == null ? null : YoutubePlayer.convertUrlToId(url);
+    if (newId == _ytVideoId) return;
+    _ytController?.dispose();
+    _ytVideoId = newId;
+    _ytReady = false;
+    _ytController = newId == null
+        ? null
+        : YoutubePlayerController(
+            initialVideoId: newId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: true,
+              mute: true,
+              enableCaption: false,
+              forceHD: false,
+            ),
+          );
+  }
 
   void _showComingSoon(String label) {
     DthFlushBar.instance.showGeneric(
@@ -44,9 +91,11 @@ class PostDetailView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final vm = ref.watch(postDetailViewModelProvider(uid));
+  Widget build(BuildContext context) {
+    final vm = ref.watch(postDetailViewModelProvider(widget.uid));
     final post = vm.post;
+    if (post != null) _syncController(post);
+
     // Cache owns Comment state; watch it so a like-toggle in the thread
     // screen rebuilds the comments list here automatically.
     final commentsCache = ref.watch(commentsCacheProvider);
@@ -57,7 +106,7 @@ class PostDetailView extends ConsumerWidget {
 
     final isHero = post != null && !post.isVideo && post.imageUrls.isNotEmpty;
 
-    return Scaffold(
+    Widget buildScaffold(Widget? mediaSlot) => Scaffold(
       extendBodyBehindAppBar: isHero,
       appBar: isHero
           ? const _TransparentBackAppBar()
@@ -98,6 +147,7 @@ class PostDetailView extends ConsumerWidget {
                           child: _PostBlock(
                             post: post,
                             renderMedia: !isHero,
+                            mediaSlot: mediaSlot,
                             onLike: vm.togglePostLike,
                             onShare: () => _showComingSoon("Share"),
                           ),
@@ -121,6 +171,49 @@ class PostDetailView extends ConsumerWidget {
         },
       ),
     );
+
+    final controller = _ytController;
+    if (controller != null) {
+      return YoutubePlayerBuilder(
+        player: YoutubePlayer(
+          controller: controller,
+          showVideoProgressIndicator: true,
+          aspectRatio: 16 / 9,
+          onReady: () {
+            if (mounted) setState(() => _ytReady = true);
+          },
+        ),
+        builder: (context, player) => buildScaffold(
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  player,
+                  if (!_ytReady)
+                    const ColoredBox(
+                      color: Colors.black,
+                      child: Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return buildScaffold(null);
   }
 }
 
@@ -168,64 +261,32 @@ class _TransparentBackAppBar extends StatelessWidget
   }
 }
 
-class _PostBlock extends StatefulWidget {
+class _PostBlock extends StatelessWidget {
   const _PostBlock({
     required this.post,
     required this.onLike,
     required this.onShare,
     this.renderMedia = true,
+    this.mediaSlot,
   });
 
   final Post post;
   final VoidCallback onLike;
   final VoidCallback onShare;
   final bool renderMedia;
-
-  @override
-  State<_PostBlock> createState() => _PostBlockState();
-}
-
-class _PostBlockState extends State<_PostBlock> {
-  late bool _playing;
-
-  @override
-  void initState() {
-    super.initState();
-    _playing = _canPlayInline(widget.post);
-  }
-
-  @override
-  void didUpdateWidget(covariant _PostBlock oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.post.uid != widget.post.uid) {
-      _playing = _canPlayInline(widget.post);
-    }
-  }
-
-  bool _canPlayInline(Post p) {
-    final v = p.video;
-    return p.isVideo && v != null && v.isYoutube && v.isPlayable;
-  }
+  // When provided (e.g. a YouTube player wired into YoutubePlayerBuilder
+  // at the Scaffold level), this widget renders in place of the inline
+  // media. Lets the parent own playback state without `_PostBlock` knowing
+  // anything about it.
+  final Widget? mediaSlot;
 
   @override
   Widget build(BuildContext context) {
-    final post = widget.post;
-    final video = post.video;
-    final canPlayInline = _canPlayInline(post);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.renderMedia) ...[
-          if (_playing && canPlayInline)
-            YoutubePlayerEmbed(embedUrl: video!.videoUrl!)
-          else
-            PostMedia(
-              post: post,
-              onPlayVideo: canPlayInline
-                  ? () => setState(() => _playing = true)
-                  : null,
-            ),
+        if (renderMedia) ...[
+          if (mediaSlot != null) mediaSlot! else PostMedia(post: post),
           Gap.h16,
         ],
         PostDetailsHeader(post: post),
@@ -235,15 +296,15 @@ class _PostBlockState extends State<_PostBlock> {
             post.description,
             fontSize: 12,
             height: 1.45,
-            color: Color(0xff202020),
+            color: const Color(0xff202020),
           ),
         ],
         Gap.h18,
         PostActions(
           post: post,
-          onLike: widget.onLike,
+          onLike: onLike,
           onComment: () {},
-          onShare: widget.onShare,
+          onShare: onShare,
         ),
       ],
     );
