@@ -1,5 +1,6 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/stories/components/reel_player_controller.dart";
 import "package:flutter/material.dart";
 import "package:video_player/video_player.dart";
 import "package:youtube_player_flutter/youtube_player_flutter.dart";
@@ -30,17 +31,24 @@ Widget _youtubeCoverLayout(double viewportW, double viewportH, Widget player) {
 
 /// Full-bleed reel background: optional network [VideoPlayer] or YouTube embed,
 /// with [posterUrl] underneath until ready / for image-only reels.
+///
+/// When a [controller] is provided, the active player drives its
+/// `isPlaying` / `progress` state and registers a `togglePlayPause` handler
+/// so the parent overlay (tap-to-pause, progress bar) stays in sync without
+/// reaching into the underlying player package.
 class ReelBackdropMedia extends StatefulWidget {
   const ReelBackdropMedia({
     super.key,
     required this.posterUrl,
     this.videoUrl,
     this.videoType,
+    this.controller,
   });
 
   final String posterUrl;
   final String? videoUrl;
   final String? videoType;
+  final ReelPlayerController? controller;
 
   @override
   State<ReelBackdropMedia> createState() => _ReelBackdropMediaState();
@@ -49,6 +57,8 @@ class ReelBackdropMedia extends StatefulWidget {
 class _ReelBackdropMediaState extends State<ReelBackdropMedia> {
   VideoPlayerController? _video;
   YoutubePlayerController? _youtube;
+  VoidCallback? _videoListener;
+  void Function()? _youtubeListener;
 
   @override
   void initState() {
@@ -62,15 +72,25 @@ class _ReelBackdropMediaState extends State<ReelBackdropMedia> {
     if (oldWidget.videoUrl != widget.videoUrl ||
         oldWidget.videoType != widget.videoType) {
       _disposePlayers();
+      widget.controller?.reset();
       _initPlayback();
     }
   }
 
   void _disposePlayers() {
-    _video?.dispose();
+    if (_video != null) {
+      if (_videoListener != null) _video!.removeListener(_videoListener!);
+      _video!.dispose();
+    }
     _video = null;
-    _youtube?.dispose();
+    _videoListener = null;
+    if (_youtube != null) {
+      if (_youtubeListener != null) _youtube!.removeListener(_youtubeListener!);
+      _youtube!.dispose();
+    }
     _youtube = null;
+    _youtubeListener = null;
+    widget.controller?.clearToggleHandler();
   }
 
   @override
@@ -98,15 +118,20 @@ class _ReelBackdropMediaState extends State<ReelBackdropMedia> {
       final id =
           YoutubePlayer.convertUrlToId(url) ?? _youtubeIdFromUrlFallback(url);
       if (id == null || !mounted) return;
-      _youtube = YoutubePlayerController(
+      final yt = YoutubePlayerController(
         initialVideoId: id,
         flags: const YoutubePlayerFlags(
           autoPlay: true,
+
+          // hideControls: true,
           mute: true,
           loop: true,
           enableCaption: false,
         ),
       );
+      _youtube = yt;
+      _attachYoutubeListener(yt);
+      widget.controller?.registerToggleHandler(_toggleYoutube);
       if (mounted) setState(() {});
       return;
     }
@@ -121,12 +146,72 @@ class _ReelBackdropMediaState extends State<ReelBackdropMedia> {
       }
       await c.setLooping(true);
       await c.play();
+      _attachVideoListener(c);
+      widget.controller?.registerToggleHandler(_toggleVideo);
+      widget.controller?.updateReady(true);
+      widget.controller?.updatePlaying(true);
       setState(() {});
     } catch (_) {
       await c.dispose();
       if (mounted) {
         setState(() => _video = null);
       }
+    }
+  }
+
+  void _attachVideoListener(VideoPlayerController c) {
+    void listener() {
+      if (!mounted) return;
+      final ctrl = widget.controller;
+      if (ctrl == null) return;
+      ctrl.updatePlaying(c.value.isPlaying);
+      final total = c.value.duration.inMilliseconds;
+      final pos = c.value.position.inMilliseconds;
+      if (total > 0) {
+        ctrl.updateProgress(pos / total);
+      }
+    }
+
+    _videoListener = listener;
+    c.addListener(listener);
+  }
+
+  void _attachYoutubeListener(YoutubePlayerController c) {
+    void listener() {
+      if (!mounted) return;
+      final ctrl = widget.controller;
+      if (ctrl == null) return;
+      final value = c.value;
+      ctrl.updateReady(value.isReady);
+      ctrl.updatePlaying(value.isPlaying);
+      final total = value.metaData.duration.inMilliseconds;
+      final pos = value.position.inMilliseconds;
+      if (total > 0) {
+        ctrl.updateProgress(pos / total);
+      }
+    }
+
+    _youtubeListener = listener;
+    c.addListener(listener);
+  }
+
+  void _toggleVideo() {
+    final c = _video;
+    if (c == null || !c.value.isInitialized) return;
+    if (c.value.isPlaying) {
+      c.pause();
+    } else {
+      c.play();
+    }
+  }
+
+  void _toggleYoutube() {
+    final c = _youtube;
+    if (c == null) return;
+    if (c.value.isPlaying) {
+      c.pause();
+    } else {
+      c.play();
     }
   }
 

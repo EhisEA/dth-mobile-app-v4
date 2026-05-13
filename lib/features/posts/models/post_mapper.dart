@@ -25,11 +25,12 @@ import "package:youtube_player_flutter/youtube_player_flutter.dart";
 }
 
 String formatTimeAgo(String createdAt) {
-  if (createdAt.trim().isEmpty) {
+  final trimmed = createdAt.trim();
+  if (trimmed.isEmpty) {
     return "";
   }
   try {
-    final dt = DateTime.parse(createdAt).toLocal();
+    final dt = DateTime.parse(trimmed).toLocal();
     final now = DateTime.now();
     final diff = now.difference(dt);
     if (diff.isNegative) {
@@ -49,7 +50,10 @@ String formatTimeAgo(String createdAt) {
     }
     return DateFormat.yMMMd().format(dt);
   } on FormatException {
-    return "";
+    // Some list endpoints (e.g. `/timeline-reels`) return `created_at` as a
+    // pre-formatted phrase like `"2 hours ago"` instead of an ISO timestamp.
+    // Pass that through so we don't drop perfectly good data on the floor.
+    return trimmed;
   }
 }
 

@@ -1,10 +1,9 @@
 import "dart:ui";
 
-import "package:dth_v4/features/stories/components/reel_backdrop_media.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/stories/components/chat_panel.dart";
+import "package:dth_v4/features/stories/components/reel_player_controller.dart";
 import "package:dth_v4/features/tickets/tickets.dart";
-import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter_svg/flutter_svg.dart";
 
@@ -15,28 +14,27 @@ import "package:flutter_svg/flutter_svg.dart";
 class ChatSplitBody extends StatefulWidget {
   const ChatSplitBody({
     super.key,
-    required this.imageUrl,
-    this.videoUrl,
-    this.videoType,
+    required this.reelUid,
+    required this.backdrop,
     required this.topPad,
     required this.bottomPad,
     required this.composerController,
     required this.onBack,
     required this.onCloseChat,
-    required this.readMoreTap,
-    required this.liked,
-    required this.likeCount,
-    required this.onLikeTap,
-    this.initialSheetFraction = 0.4,
+    this.playerController,
+    this.initialSheetFraction = 0.3,
     this.maxSheetFraction = 0.5,
-
-    /// When true, skip [ReelBackdropMedia] in the reel strip — parent already paints it.
-    this.excludeBackdrop = false,
   });
 
-  final String imageUrl;
-  final String? videoUrl;
-  final String? videoType;
+  final String reelUid;
+
+  /// Pre-built reel backdrop from the parent. Passed in (rather than built
+  /// internally) so the same widget instance — and its `State` / underlying
+  /// players — survives the chat open/close flip via [StoriesView]'s
+  /// [GlobalKey]. Building a fresh [ReelBackdropMedia] here would restart
+  /// playback every time the sheet appears.
+  final Widget backdrop;
+
   final double topPad;
   final double bottomPad;
   final TextEditingController composerController;
@@ -44,13 +42,9 @@ class ChatSplitBody extends StatefulWidget {
 
   /// Called after a deliberate swipe-down dismiss (animated sheet off-screen).
   final VoidCallback onCloseChat;
-  final TapGestureRecognizer readMoreTap;
+  final ReelPlayerController? playerController;
   final double initialSheetFraction;
   final double maxSheetFraction;
-  final bool excludeBackdrop;
-  final bool liked;
-  final int likeCount;
-  final VoidCallback onLikeTap;
 
   @override
   State<ChatSplitBody> createState() => _ChatSplitBodyState();
@@ -62,36 +56,36 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
   final ScrollController _listScroll = ScrollController();
   _LinkedSheetScrollPhysics? _linkedPhysics;
   double? _physicsViewportH;
-  double _closePullAccum = 0;
-  late final AnimationController _dismissCtrl;
-  VoidCallback? _dismissTick;
+  late final AnimationController _settleCtrl;
+  VoidCallback? _settleTick;
 
-  /// Pull past min in one gesture before release commits dismiss (~12% screen).
-  static const double _closeDistanceFraction = 0.12;
+  /// Pulls below min shrink the sheet at this fraction of the drag distance,
+  /// so the sheet visibly resists — gives the user a "rubber-band" feel
+  /// instead of pinning at min while their finger keeps moving.
+  static const double _pullDamping = 0.5;
 
-  /// Downward fling at min commits dismiss (logical px/s).
-  static const double _closeVelocityThreshold = 700;
+  /// When the user releases below min × this ratio, commit dismiss.
+  /// Above it, spring back to min.
+  static const double _dismissExtentRatio = 0.6;
+
+  /// Downward fling threshold (logical px/s) that commits dismiss even when
+  /// the user hasn't pulled far enough — feels natural for a quick flick.
+  static const double _dismissVelocity = 900;
 
   @override
   void initState() {
     super.initState();
     final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
     _extentN = ValueNotifier(minS);
-    _dismissCtrl = AnimationController(
+    _settleCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 340),
+      duration: const Duration(milliseconds: 240),
     );
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _ensureLinkedPhysics();
-  }
-
   void _ensureLinkedPhysics() {
-    final h = MediaQuery.sizeOf(context).height;
-    if (_physicsViewportH == h && _linkedPhysics != null) return;
+    if (_linkedPhysics != null) return;
+    final h = _physicsViewportH ?? MediaQuery.sizeOf(context).height;
     _physicsViewportH = h;
     final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
     final maxS = widget.maxSheetFraction.clamp(minS + 0.01, 0.95);
@@ -102,24 +96,22 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
       viewportHeight: h,
       minSheet: minS,
       maxSheet: maxS,
+      // Physics sees the clamped value so its "at min?" check stays correct
+      // while we let `_extentN` itself wander below min for the rubber-band.
       extent: () {
         final a = widget.initialSheetFraction.clamp(0.05, 0.95);
         final b = widget.maxSheetFraction.clamp(a + 0.01, 0.95);
         return _extentN.value.clamp(a, b);
       },
       onExtentDeltaFromScrollPixels: (signedPixels) {
-        if (_dismissCtrl.isAnimating) return;
+        if (_settleCtrl.isAnimating) return;
         final a = widget.initialSheetFraction.clamp(0.05, 0.95);
         final b = widget.maxSheetFraction.clamp(a + 0.01, 0.95);
         final hh = _physicsViewportH ?? h;
         final next = (_extentN.value + signedPixels / hh).clamp(a, b);
         if (next != _extentN.value) _extentN.value = next;
-        if (next > a + 0.02) _closePullAccum = 0;
       },
-      onDragPastMinAtTop: (px) {
-        if (_dismissCtrl.isAnimating) return;
-        _nudgeClosePullFromScroll(px);
-      },
+      onDragPastMinAtTop: (px) => _applyOverpullPx(px, _physicsViewportH ?? h),
     );
   }
 
@@ -135,117 +127,133 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
 
   @override
   void dispose() {
-    if (_dismissTick != null) {
-      _dismissCtrl.removeListener(_dismissTick!);
+    if (_settleTick != null) {
+      _settleCtrl.removeListener(_settleTick!);
     }
-    _dismissCtrl.dispose();
+    _settleCtrl.dispose();
     _extentN.dispose();
     _listScroll.dispose();
     super.dispose();
   }
 
-  void _resetClosePull() {
-    _closePullAccum = 0;
-  }
-
-  void _nudgeClosePullFromScroll(double downwardPixels) {
-    if (downwardPixels <= 0 || !mounted || _dismissCtrl.isAnimating) return;
-    final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
-    if (_extentN.value > minS + 0.02) {
-      _closePullAccum = 0;
-      return;
-    }
-    _closePullAccum += downwardPixels;
-  }
-
-  double _closeDistancePx(double viewportH) {
-    return (viewportH * _closeDistanceFraction).clamp(100.0, 220.0);
-  }
-
-  void _tryCommitDismiss({double? primaryVelocity, required double viewportH}) {
-    if (!mounted || _dismissCtrl.isAnimating) return;
-    final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
-    if (_extentN.value > minS + 0.02) {
-      _resetClosePull();
-      return;
-    }
-    final distOk = _closePullAccum >= _closeDistancePx(viewportH);
-    // Positive velocity = finger moving down when released.
-    final velOk =
-        primaryVelocity != null && primaryVelocity > _closeVelocityThreshold;
-    if (!distOk && !velOk) {
-      _resetClosePull();
-      return;
-    }
-    _resetClosePull();
-    _runDismissAnimation();
-  }
-
-  void _runDismissAnimation() {
-    if (!mounted || _dismissCtrl.isAnimating) return;
-    final start = _extentN.value;
-    if (start <= 0.001) {
-      widget.onCloseChat();
-      return;
-    }
-    _dismissCtrl.duration = const Duration(milliseconds: 340);
-    _dismissCtrl.reset();
-    final curved = CurvedAnimation(
-      parent: _dismissCtrl,
-      curve: Curves.easeInCubic,
-    );
-    void tick() {
-      if (!mounted) return;
-      _extentN.value = start * (1 - curved.value);
-    }
-
-    _dismissTick = tick;
-    _dismissCtrl.addListener(tick);
-    _dismissCtrl.forward().whenComplete(() {
-      if (_dismissTick != null) {
-        _dismissCtrl.removeListener(_dismissTick!);
-        _dismissTick = null;
-      }
-      curved.dispose();
-      if (mounted) widget.onCloseChat();
-    });
-  }
-
+  /// Drag handler for the reel area + grab strip. Rubber-bands the sheet
+  /// below min when the user keeps pulling past it.
   void _applyVerticalDragDy(double dy, double viewportH) {
-    if (_dismissCtrl.isAnimating) return;
+    if (_settleCtrl.isAnimating) return;
     final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
     final maxS = widget.maxSheetFraction.clamp(minS + 0.01, 0.95);
     final before = _extentN.value;
     final d = -dy / viewportH;
-    final next = (before + d).clamp(minS, maxS);
-    if (next != before) {
-      _closePullAccum = 0;
-      _extentN.value = next;
-    } else if (before <= minS + 0.002 && dy > 0) {
-      _nudgeClosePullFromScroll(dy);
+    final candidate = before + d;
+
+    if (candidate >= minS) {
+      // Inside the regular [min..max] range — direct, 1:1 tracking.
+      _extentN.value = candidate.clamp(minS, maxS);
+    } else {
+      // Below min: damp the further shrink so the sheet visibly resists.
+      final overpullFromMin = (minS - candidate) * _pullDamping;
+      _extentN.value = (minS - overpullFromMin).clamp(0.0, minS);
     }
   }
 
+  /// Same idea as [_applyVerticalDragDy] but for the scroll-physics
+  /// pull-past-min path — the list reports `downwardPixels` instead of a
+  /// signed dy.
+  void _applyOverpullPx(double downwardPixels, double viewportH) {
+    if (downwardPixels <= 0 || _settleCtrl.isAnimating) return;
+    final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
+    final from = _extentN.value <= minS ? _extentN.value : minS;
+    final next = from - (downwardPixels * _pullDamping) / viewportH;
+    _extentN.value = next.clamp(0.0, minS);
+  }
+
   void _onVerticalDragEnd(DragEndDetails details, double viewportH) {
-    _tryCommitDismiss(
-      primaryVelocity: details.primaryVelocity,
-      viewportH: viewportH,
+    _settle(primaryVelocity: details.primaryVelocity);
+  }
+
+  /// Called from the gesture detector's drag-end AND from the chat list's
+  /// scroll-end notification. Decides whether to spring back to min or to
+  /// commit dismiss.
+  void _settle({double? primaryVelocity}) {
+    if (!mounted || _settleCtrl.isAnimating) return;
+    final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
+    final extent = _extentN.value;
+    if (extent >= minS) return; // Above min: ScrollPhysics handles it.
+
+    final dismissByPosition = extent < minS * _dismissExtentRatio;
+    final v = primaryVelocity ?? 0;
+    final dismissByVelocity = v > _dismissVelocity;
+
+    if (dismissByPosition || dismissByVelocity) {
+      _animateExtentTo(0, dismiss: true);
+    } else {
+      _animateExtentTo(minS, dismiss: false);
+    }
+  }
+
+  /// Drives `_extentN` from its current value to [target] over a short
+  /// curve. When [dismiss] is true, calls [ChatSplitBody.onCloseChat] on
+  /// completion; otherwise just lands at [target] (used for spring-back).
+  void _animateExtentTo(double target, {required bool dismiss}) {
+    if (!mounted || _settleCtrl.isAnimating) return;
+    final start = _extentN.value;
+    if ((start - target).abs() < 0.001) {
+      if (dismiss) widget.onCloseChat();
+      return;
+    }
+    _settleCtrl.reset();
+    _settleCtrl.duration = Duration(milliseconds: dismiss ? 280 : 220);
+    final curved = CurvedAnimation(
+      parent: _settleCtrl,
+      curve: dismiss ? Curves.easeInCubic : Curves.easeOutCubic,
     );
-    _resetClosePull();
+    void tick() {
+      if (!mounted) return;
+      _extentN.value = start + (target - start) * curved.value;
+    }
+
+    _settleTick = tick;
+    _settleCtrl.addListener(tick);
+    _settleCtrl.forward().whenComplete(() {
+      if (_settleTick != null) {
+        _settleCtrl.removeListener(_settleTick!);
+        _settleTick = null;
+      }
+      curved.dispose();
+      if (mounted && dismiss) widget.onCloseChat();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    _ensureLinkedPhysics();
-    final h = MediaQuery.sizeOf(context).height;
-    final physics = _linkedPhysics!;
+    // Use the constraint height (LayoutBuilder) instead of screen height so
+    // the split tracks Scaffold's keyboard-resize. Without this, opening the
+    // keyboard while the chat sheet is up leaves the composer behind the
+    // keyboard — the split math is computed against full screen but the
+    // available body has already been shrunk.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxHeight;
+        if (_physicsViewportH != h) {
+          _physicsViewportH = h;
+          _linkedPhysics = null;
+        }
+        _ensureLinkedPhysics();
+        final physics = _linkedPhysics!;
+        return _buildSplit(context, h, physics);
+      },
+    );
+  }
 
+  Widget _buildSplit(BuildContext context, double h, ScrollPhysics physics) {
     return ListenableBuilder(
       listenable: _extentN,
       builder: (context, _) {
         final minS = widget.initialSheetFraction.clamp(0.05, 0.95);
         final maxS = widget.maxSheetFraction.clamp(minS + 0.01, 0.95);
-        final extent = _extentN.value.clamp(minS, maxS);
+        // Allow extent to dip below `minS` for the rubber-band pull — the
+        // sheet shrinks visually as the user keeps dragging past min.
+        final extent = _extentN.value.clamp(0.0, maxS);
         final reelH = h * (1 - extent);
         final sheetH = h * extent;
 
@@ -263,16 +271,11 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                   onVerticalDragUpdate: (d) =>
                       _applyVerticalDragDy(d.primaryDelta ?? 0, h),
                   onVerticalDragEnd: (d) => _onVerticalDragEnd(d, h),
-                  onVerticalDragCancel: _resetClosePull,
+                  onVerticalDragCancel: () => _settle(),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (!widget.excludeBackdrop)
-                        ReelBackdropMedia(
-                          posterUrl: widget.imageUrl,
-                          videoUrl: widget.videoUrl,
-                          videoType: widget.videoType,
-                        ),
+                      widget.backdrop,
                       const ColoredBox(color: Color(0x22000000)),
                     ],
                   ),
@@ -297,20 +300,15 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                         onVerticalDragUpdate: (d) =>
                             _applyVerticalDragDy(d.primaryDelta ?? 0, h),
                         onVerticalDragEnd: (d) => _onVerticalDragEnd(d, h),
-                        onVerticalDragCancel: _resetClosePull,
+                        onVerticalDragCancel: () => _settle(),
                         child: SizedBox(
                           height: 28,
                           child: Align(
                             alignment: Alignment.topCenter,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(2),
-                              child: LinearProgressIndicator(
-                                value: 0.4,
-                                minHeight: 4,
-                                backgroundColor: AppColors.white,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  AppColors.primary,
-                                ),
+                              child: _SheetProgressBar(
+                                controller: widget.playerController,
                               ),
                             ),
                           ),
@@ -320,23 +318,19 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                         child: NotificationListener<ScrollNotification>(
                           onNotification: (n) {
                             if (n is ScrollEndNotification) {
-                              _tryCommitDismiss(
-                                primaryVelocity: n.dragDetails?.primaryVelocity,
-                                viewportH: h,
+                              _settle(
+                                primaryVelocity:
+                                    n.dragDetails?.primaryVelocity,
                               );
-                              _resetClosePull();
                             }
                             return false;
                           },
                           child: ChatPanel(
+                            reelUid: widget.reelUid,
                             scrollController: _listScroll,
                             scrollPhysics: physics,
                             bottomPad: widget.bottomPad,
                             composerController: widget.composerController,
-                            readMoreTap: widget.readMoreTap,
-                            liked: widget.liked,
-                            likeCount: widget.likeCount,
-                            onLikeTap: widget.onLikeTap,
                           ),
                         ),
                       ),
@@ -485,5 +479,36 @@ class _LinkedSheetScrollPhysics extends ScrollPhysics {
     }
 
     return parent!.applyPhysicsToUserOffset(position, offset);
+  }
+}
+
+/// Mini playback progress strip shown above the chat sheet's grab handle.
+/// Listens to the same [ReelPlayerController] that the reel backdrop drives,
+/// so it ticks in lockstep with the video. Falls back to an empty bar when no
+/// controller is attached (image-only reels).
+class _SheetProgressBar extends StatelessWidget {
+  const _SheetProgressBar({required this.controller});
+
+  final ReelPlayerController? controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = controller;
+    if (c == null) {
+      return _bar(0);
+    }
+    return AnimatedBuilder(
+      animation: c,
+      builder: (_, _) => _bar(c.progress),
+    );
+  }
+
+  Widget _bar(double progress) {
+    return LinearProgressIndicator(
+      value: progress.clamp(0.0, 1.0),
+      minHeight: 4,
+      backgroundColor: AppColors.white,
+      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+    );
   }
 }

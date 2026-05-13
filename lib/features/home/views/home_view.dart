@@ -129,14 +129,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                                     StoriesView.path,
                                                     extra: {
                                                       RoutingArgumentKey
-                                                              .imageUrl:
-                                                          story.imageUrl,
-                                                      RoutingArgumentKey
-                                                              .reelVideoUrl:
-                                                          story.videoUrl,
-                                                      RoutingArgumentKey
-                                                              .reelVideoType:
-                                                          story.videoType,
+                                                              .reelUid:
+                                                          story.uid,
                                                     },
                                                   );
                                             },

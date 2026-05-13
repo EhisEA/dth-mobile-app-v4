@@ -209,12 +209,14 @@ class _LikeChipState extends State<LikeChip> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            Gap.w4,
-            AppText.medium(
-              widget.countLabel ?? formatCount(widget.count),
-              fontSize: widget.fontSize,
-              color: widget.countColor ?? AppColors.tint25,
-            ),
+            if (widget.count > 0) ...[
+              Gap.w4,
+              AppText.medium(
+                widget.countLabel ?? formatCount(widget.count),
+                fontSize: widget.fontSize,
+                color: widget.countColor ?? AppColors.tint25,
+              ),
+            ],
           ],
         ),
       ),

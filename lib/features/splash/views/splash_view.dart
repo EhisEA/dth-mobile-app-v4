@@ -33,6 +33,8 @@ class _SplashViewState extends ConsumerState<SplashView>
 
   late final AnimationController _animationController;
   late final Animation<double> _opacityAnimation;
+  /// Last slide stays opaque (no fade-out) until navigation.
+  late final Animation<double> _lastSlideOpacityAnimation;
   late final Animation<double> _translateYAnimation;
   int _currentIndex = 0;
   bool _hasNavigated = false;
@@ -63,6 +65,17 @@ class _SplashViewState extends ConsumerState<SplashView>
       ),
     ]).animate(_animationController);
 
+    _lastSlideOpacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 35,
+      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1), weight: 65),
+    ]).animate(_animationController);
+
     _translateYAnimation = Tween<double>(begin: 28, end: 0).animate(
       CurvedAnimation(
         parent: _animationController,
@@ -85,6 +98,7 @@ class _SplashViewState extends ConsumerState<SplashView>
       setState(() {
         _currentIndex += 1;
       });
+
       _animationController.forward(from: 0);
       return;
     }
@@ -109,8 +123,12 @@ class _SplashViewState extends ConsumerState<SplashView>
         child: AnimatedBuilder(
           animation: _animationController,
           builder: (context, child) {
+            final isLast = _currentIndex == _splashImages.length - 1;
+            final opacity = isLast
+                ? _lastSlideOpacityAnimation.value
+                : _opacityAnimation.value;
             return Opacity(
-              opacity: _opacityAnimation.value,
+              opacity: opacity,
               child: Transform.translate(
                 offset: Offset(0, _translateYAnimation.value),
                 child: child,

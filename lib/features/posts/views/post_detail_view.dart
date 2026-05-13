@@ -40,13 +40,40 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
   YoutubePlayerController? _ytController;
   String? _ytVideoId;
 
+  /// Latches true on the first `isReady` event for the current controller.
+  /// `youtube_player_flutter` momentarily drops `isReady` back to false when
+  /// the video ends and its replay overlay appears — without this latch our
+  /// loading mask would reappear on top of the replay/retry button.
+  bool _hasBeenReady = false;
+  VoidCallback? _ytListener;
+
   @override
   void dispose() {
+    _detachYtListener();
     _ytController?.dispose();
     // [_TransparentBackAppBar] uses SystemUiOverlayStyle.light; without a
     // reset, that style outlives this route because home uses no AppBar.
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     super.dispose();
+  }
+
+  void _attachYtListener(YoutubePlayerController c) {
+    void listener() {
+      if (_hasBeenReady) return;
+      if (c.value.isReady && mounted) {
+        setState(() => _hasBeenReady = true);
+      }
+    }
+
+    _ytListener = listener;
+    c.addListener(listener);
+  }
+
+  void _detachYtListener() {
+    if (_ytListener != null && _ytController != null) {
+      _ytController!.removeListener(_ytListener!);
+    }
+    _ytListener = null;
   }
 
   /// Keep [_ytController] in sync with [post]'s video URL. Called inline from
@@ -58,8 +85,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
         : null;
     final newId = url == null ? null : YoutubePlayer.convertUrlToId(url);
     if (newId == _ytVideoId) return;
+    _detachYtListener();
     _ytController?.dispose();
     _ytVideoId = newId;
+    _hasBeenReady = false;
     _ytController = newId == null
         ? null
         : YoutubePlayerController(
@@ -80,6 +109,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
               // loop: true,
             ),
           );
+    final c = _ytController;
+    if (c != null) {
+      _attachYtListener(c);
+    }
   }
 
   void _showComingSoon(String label) {
@@ -204,9 +237,11 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
           listenable: controller,
           builder: (context, _) {
             final v = controller.value;
-            // Drop the mask when the iframe errors — otherwise it sits above
-            // the player forever and blocks play/pause and WebView touches.
-            final showLoadingMask = !v.isReady && !v.hasError;
+            // Latched: once the player has been ready, never show the mask
+            // again. The package briefly flips `isReady` back to false during
+            // end-of-video transitions, and we don't want our spinner to
+            // come back on top of YT's retry / replay overlay.
+            final showLoadingMask = !_hasBeenReady && !v.hasError;
             return buildScaffold(
               Container(
                 color: Colors.black,

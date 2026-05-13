@@ -11,10 +11,12 @@ class PostActions extends StatelessWidget {
     super.key,
     required this.post,
     this.onLike,
+    this.showContainer = true,
     this.onComment,
     this.onShare,
   });
 
+  final bool showContainer;
   final Post post;
   final VoidCallback? onLike;
   final VoidCallback? onComment;
@@ -25,20 +27,28 @@ class PostActions extends StatelessWidget {
     return Row(
       children: [
         Container(
-          // padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          // padding: showContainer
+          //     ? const EdgeInsets.symmetric(vertical: 10, horizontal: 12)
+          //     : null,
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F7F7),
+            color: showContainer ? const Color(0xFFF7F7F7) : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             children: [
               LikeChip(
-                padding: EdgeInsets.fromLTRB(12, 10, 10, 10),
+                padding: EdgeInsets.fromLTRB(
+                  showContainer ? 12 : 0,
+                  10,
+                  10,
+                  10,
+                ),
                 liked: post.viewerReacted,
                 count: post.likeCount,
                 onTap: onLike,
               ),
-              Container(width: 1, height: 14, color: const Color(0xffEBEBEB)),
+              if (showContainer)
+                Container(width: 1, height: 14, color: const Color(0xffEBEBEB)),
               _ActionChip(
                 icon: SvgAssets.messagesBorder,
                 count: post.commentCount,
@@ -48,14 +58,16 @@ class PostActions extends StatelessWidget {
             ],
           ),
         ),
-        Gap.w10,
+        if (showContainer) Gap.w10,
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F7F7),
+            color: showContainer ? const Color(0xFFF7F7F7) : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: _ActionChip(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            padding: showContainer
+                ? const EdgeInsets.symmetric(vertical: 10, horizontal: 16)
+                : const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
             icon: SvgAssets.share,
             count: post.shareCount,
             tint: const Color(0xff454545),

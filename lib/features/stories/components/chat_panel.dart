@@ -1,41 +1,33 @@
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/features/posts/components/like_chip.dart";
 import "package:dth_v4/features/stories/components/comment_tile.dart";
-import "package:dth_v4/features/stories/components/stats_pill.dart";
-import "package:dth_v4/features/stories/models/stories_mock_data.dart";
+import "package:dth_v4/features/stories/view_model/reel_chat_view_model.dart";
 import "package:dth_v4/widgets/dth_send_button.dart";
-import "package:dth_v4/widgets/text/text.dart";
 import "package:dth_v4/widgets/widgets.dart";
-import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_svg/flutter_svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
-class ChatPanel extends StatelessWidget {
+class ChatPanel extends ConsumerWidget {
   const ChatPanel({
     super.key,
+    required this.reelUid,
     required this.scrollController,
     required this.scrollPhysics,
     required this.bottomPad,
     required this.composerController,
-    required this.readMoreTap,
-    required this.liked,
-    required this.likeCount,
-    required this.onLikeTap,
   });
 
+  final String reelUid;
   final ScrollController scrollController;
   final ScrollPhysics scrollPhysics;
 
   final double bottomPad;
   final TextEditingController composerController;
-  final TapGestureRecognizer readMoreTap;
-  final bool liked;
-  final int likeCount;
-  final VoidCallback onLikeTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vm = ref.watch(reelChatViewModelProvider(reelUid));
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => FocusScope.of(context).unfocus(),
@@ -47,130 +39,7 @@ class ChatPanel extends StatelessWidget {
               controller: scrollController,
               physics: scrollPhysics,
               slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.medium(
-                          storyTitle,
-                          fontSize: 16,
-                          color: AppColors.black,
-                          maxLines: 2,
-                        ),
-                        Gap.h6,
-                        Row(
-                          children: [
-                            SvgPicture.asset(
-                              SvgAssets.primaryLogo,
-                              width: 14,
-                              height: 14,
-                            ),
-                            Gap.w6,
-                            SvgPicture.asset(
-                              SvgAssets.blackLogo,
-                              width: 65,
-                              height: 16,
-                              colorFilter: ColorFilter.mode(
-                                AppColors.primary,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            Text.rich(
-                              TextSpan(
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xff08102F),
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: " with ",
-                                    style: AppTextStyle.regular.copyWith(
-                                      color: AppColors.blackTint20,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: storyWith,
-                                    style: AppTextStyle.medium.copyWith(
-                                      color: AppColors.black,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Gap.w4,
-                            AppText.regular(
-                              storyTime,
-                              fontSize: 10,
-                              color: AppColors.tint15,
-                            ),
-                          ],
-                        ),
-                        Gap.h12,
-                        Text.rich(
-                          TextSpan(
-                            style: AppTextStyle.regular.copyWith(
-                              color: AppColors.black,
-                              fontSize: 12,
-                              height: 1.35,
-                            ),
-                            children: [
-                              TextSpan(text: storyCaptionPreview(maxChars: 92)),
-                              TextSpan(
-                                text: " Read more",
-                                style: const TextStyle(
-                                  color: Color(0xff6A6A6A),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                recognizer: readMoreTap,
-                              ),
-                            ],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Gap.h12,
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _LikePill(
-                                liked: liked,
-                                count: likeCount,
-                                onTap: onLikeTap,
-                              ),
-                            ),
-                            Gap.w8,
-                            const Expanded(
-                              child: StatsPill(
-                                iconData: Icons.thumb_down_alt_outlined,
-                                label: "$storyDislikes",
-                              ),
-                            ),
-                            Gap.w8,
-                            const Expanded(
-                              child: StatsPill(
-                                icon: SvgAssets.sendBorder,
-                                label: "$storyShares",
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(child: Gap.h16),
-                SliverToBoxAdapter(
-                  child: Container(
-                    height: 1,
-                    color: AppColors.greyTint20.withValues(alpha: 0.1),
-                  ),
-                ),
-                SliverToBoxAdapter(child: Gap.h20),
+                SliverToBoxAdapter(child: Gap.h2),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverToBoxAdapter(
@@ -182,11 +51,12 @@ class ChatPanel extends StatelessWidget {
                             AppText.medium(
                               "Top Comments ",
                               fontSize: 16,
-                              color: AppColors.black,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xff202020),
                             ),
                             Gap.w4,
                             AppText.regular(
-                              storyCommentCount.toString(),
+                              formatCount(vm.comments.length),
                               fontSize: 12,
                               color: AppColors.tint15,
                             ),
@@ -212,76 +82,144 @@ class ChatPanel extends StatelessWidget {
                   ),
                 ),
                 SliverToBoxAdapter(child: Gap.h20),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  sliver: SliverList.separated(
-                    itemCount: storyMockComments.length,
-                    separatorBuilder: (_, __) => Gap.h16,
-                    itemBuilder: (context, i) {
-                      final c = storyMockComments[i];
-                      return CommentTile(comment: c);
-                    },
-                  ),
-                ),
+                _commentsSliver(vm),
               ],
             ),
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPad + 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: composerController,
-                    borderRadius: BorderRadius.circular(100),
-                    hint: "Drop a banger...",
-                    fillColor: const Color(0xffFAFAFA),
-                    hintColor: AppColors.tint15,
-                    showBorder: false,
-                  ),
-                ),
-                Gap.w8,
-                DthSendButton(onTap: () {}),
-              ],
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: composerController,
+              builder: (context, value, _) {
+                final hasText = value.text.trim().isNotEmpty;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: composerController,
+                        borderRadius: BorderRadius.circular(24),
+                        hint: "Drop a banger...",
+                        fillColor: const Color(0xffFAFAFA),
+                        hintColor: AppColors.tint15,
+                        showBorder: false,
+                        enabled: !vm.submitting && reelUid.isNotEmpty,
+                        minLines: 1,
+                        maxLines: 5,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                      ),
+                    ),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, anim) => SizeTransition(
+                        sizeFactor: anim,
+                        axis: Axis.horizontal,
+                        axisAlignment: -1,
+                        child: FadeTransition(opacity: anim, child: child),
+                      ),
+                      child: hasText
+                          ? Row(
+                              key: const ValueKey("send"),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Gap.w8,
+                                DthSendButton(
+                                  loading: vm.submitting,
+                                  onTap: () async {
+                                    if (vm.submitting) return;
+                                    final ok = await vm.submit(
+                                      composerController.text,
+                                    );
+                                    if (ok) composerController.clear();
+                                  },
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(key: ValueKey("empty")),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _commentsSliver(ReelChatViewModel vm) {
+    if (vm.loading && vm.comments.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (vm.error != null && vm.comments.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _CommentsErrorState(
+          message: vm.error!.message,
+          onRetry: vm.refresh,
+        ),
+      );
+    }
+    if (vm.comments.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+          child: Center(
+            child: AppText.regular(
+              "Be the first to drop a banger.",
+              fontSize: 12,
+              color: AppColors.tint15,
+            ),
+          ),
+        ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      sliver: SliverList.separated(
+        itemCount: vm.comments.length,
+        separatorBuilder: (_, _) => Gap.h16,
+        itemBuilder: (context, i) {
+          final c = vm.comments[i];
+          return CommentTile(
+            comment: c,
+            parent: false,
+            onLike: () => vm.toggleCommentLike(c),
+          );
+        },
+      ),
+    );
+  }
 }
 
-/// Tappable likes pill matching [StatsPill] styling, animated via [LikeChip].
-class _LikePill extends StatelessWidget {
-  const _LikePill({
-    required this.liked,
-    required this.count,
-    required this.onTap,
-  });
+class _CommentsErrorState extends StatelessWidget {
+  const _CommentsErrorState({required this.message, required this.onRetry});
 
-  final bool liked;
-  final int count;
-  final VoidCallback onTap;
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xffF3F4F7),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: LikeChip(
-          liked: liked,
-          count: count,
-          countLabel: formatStoryCount(count),
-          onTap: onTap,
-          iconSize: 18,
-          fontSize: 12,
-          inactiveColor: AppColors.paleLavender,
-          countColor: AppColors.paleLavender,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Column(
+        children: [
+          AppText.regular(
+            message,
+            fontSize: 12,
+            color: AppColors.blackTint20,
+            textAlign: TextAlign.center,
+          ),
+          Gap.h12,
+          AppButton.primary(text: "Retry", height: 40, press: onRetry),
+        ],
       ),
     );
   }

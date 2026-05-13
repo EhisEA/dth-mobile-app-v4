@@ -87,9 +87,7 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: StoriesView(
-            imageUrl: routeArgs[RoutingArgumentKey.imageUrl] as String? ?? "",
-            videoUrl: routeArgs[RoutingArgumentKey.reelVideoUrl] as String?,
-            videoType: routeArgs[RoutingArgumentKey.reelVideoType] as String?,
+            reelUid: routeArgs[RoutingArgumentKey.reelUid] as String? ?? "",
           ),
         );
       case PostDetailView.path:
