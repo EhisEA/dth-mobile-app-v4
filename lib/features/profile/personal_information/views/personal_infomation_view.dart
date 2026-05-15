@@ -223,7 +223,7 @@ class _PersonalInfomationViewState
                   color: AppColors.tint15,
                 ),
                 Center(child: ContestantPill(user: u)),
-                Gap.h24,
+                // Gap.h24,
                 AppTextField(
                   key: ValueKey<bool>(_editingProfile),
                   title: "Full Name",
