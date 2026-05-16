@@ -13,11 +13,16 @@ class AppWebView extends ConsumerStatefulWidget {
     required this.initialURl,
     required this.title,
     this.callbackUrl,
+    this.showOpenInExternalBrowser = true,
   });
 
   final String? callbackUrl;
   final String initialURl;
   final String title;
+
+  /// When false, the app-bar launch action is hidden so the user cannot open
+  /// the URL outside the WebView (e.g. support sessions that must stay in-app).
+  final bool showOpenInExternalBrowser;
 
   @override
   ConsumerState<AppWebView> createState() => _AppWebViewState();
@@ -78,17 +83,23 @@ class _AppWebViewState extends ConsumerState<AppWebView> {
         appBar: DthAppBar(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           title: widget.title,
-          actions: [
-            GestureDetector(
-              onTap: () {
-                LinkLauncher.openURL(widget.initialURl);
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: Icon(Icons.launch, color: AppColors.black, size: 18),
-              ),
-            ),
-          ],
+          actions: widget.showOpenInExternalBrowser
+              ? [
+                  GestureDetector(
+                    onTap: () {
+                      LinkLauncher.openURL(widget.initialURl);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: Icon(
+                        Icons.launch,
+                        color: AppColors.black,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ]
+              : null,
         ),
         body: Column(
           children: [

@@ -122,6 +122,10 @@ class AppRouter {
             title: routeArgs[RoutingArgumentKey.title] as String? ?? "",
             callbackUrl:
                 routeArgs[RoutingArgumentKey.callbackUrl] as String? ?? "",
+            showOpenInExternalBrowser:
+                routeArgs[RoutingArgumentKey.showOpenInExternalBrowser]
+                    as bool? ??
+                true,
           ),
         );
       ////////////////APPLICATION VIEW////////////////////

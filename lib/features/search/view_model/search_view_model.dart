@@ -37,6 +37,7 @@ class SearchViewModel extends BaseChangeNotifierViewModel {
         extra: {
           RoutingArgumentKey.title: "Support",
           RoutingArgumentKey.initialURl: url,
+          RoutingArgumentKey.showOpenInExternalBrowser: false,
         },
       );
     } on ApiFailure catch (e) {
