@@ -251,16 +251,14 @@ class AppButton extends StatelessWidget {
             : disableBGColor ?? const Color(0xffF2F4F7),
       ),
       child: TextButton(
-        style: isLoading
+        style: (isLoading || shrinkWrap)
             ? TextButton.styleFrom(
                 minimumSize: Size.zero,
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              )
-            : shrinkWrap
-            ? TextButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: isLoading && shrinkWrap
+                    ? const EdgeInsets.symmetric(horizontal: 20)
+                    : isLoading
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.symmetric(horizontal: 20),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               )
             : null,
@@ -269,17 +267,34 @@ class AppButton extends StatelessWidget {
           HapticFeedback.lightImpact();
         },
         child: isLoading
-            ? Center(
-                child: SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator.adaptive(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color?>(
-                      loadingColor ?? textColor,
-                    ),
-                  ),
-                ),
-              )
+            ? shrinkWrap
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator.adaptive(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color?>(
+                              loadingColor ?? textColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Center(
+                      child: SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator.adaptive(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color?>(
+                            loadingColor ?? textColor,
+                          ),
+                        ),
+                      ),
+                    )
             : Row(
                 mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
                 children: [

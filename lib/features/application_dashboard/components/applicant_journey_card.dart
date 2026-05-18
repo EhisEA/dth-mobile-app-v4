@@ -1,6 +1,7 @@
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/application_dashboard/components/applicant_journey_progress_bar.dart";
+import "package:dth_v4/features/application_dashboard/components/applicant_journey_progress_gauge.dart";
 import "package:dth_v4/features/application_dashboard/components/applicant_journey_progress_stars.dart";
 import "package:dth_v4/features/application_dashboard/components/applicant_performance_gauge.dart";
 import "package:dth_v4/widgets/widgets.dart";
@@ -58,6 +59,8 @@ class ApplicantJourneyCard extends StatelessWidget {
         return ApplicantJourneyProgressBar(progress: p);
       case "stars":
         return ApplicantJourneyProgressStars(progress: p);
+      case "gauge":
+        return ApplicantJourneyProgressGauge(progress: p);
       default:
         return null;
     }

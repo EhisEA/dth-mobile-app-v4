@@ -34,7 +34,7 @@ class ApplicantPerformanceGauge extends StatelessWidget {
           width: double.infinity,
           height: 120,
           child: CustomPaint(
-            painter: _RadialTickGaugePainter(
+            painter: ApplicantRadialTickGaugePainter(
               progress: pct / 100.0,
               arcColor: arcColor,
             ),
@@ -95,10 +95,12 @@ class ApplicantPerformanceGauge extends StatelessWidget {
   }
 }
 
-/// Draws many short **radial** strokes from an inner ring to the outer arc,
-/// like the reference segmented speedometer.
-class _RadialTickGaugePainter extends CustomPainter {
-  _RadialTickGaugePainter({required this.progress, required this.arcColor});
+/// Radial tick semicircle (segmented speedometer look); shared by dashboard and journey-card gauges.
+class ApplicantRadialTickGaugePainter extends CustomPainter {
+  ApplicantRadialTickGaugePainter({
+    required this.progress,
+    required this.arcColor,
+  });
 
   final double progress;
   final Color arcColor;
@@ -117,6 +119,21 @@ class _RadialTickGaugePainter extends CustomPainter {
     final radius = w * 0.40;
     final center = Offset(w / 2, h * 0.78);
     final tickLength = radius * 0.12;
+
+    // Wide white arc behind ticks so the gauge reads on tinted page backgrounds.
+    final trackMidRadius = radius - tickLength * 0.30;
+    final whiteTrack = Paint()
+      ..color = AppColors.white.withValues(alpha: 0.54)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = tickLength * 1.50
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: trackMidRadius),
+      _start,
+      _sweep,
+      false,
+      whiteTrack,
+    );
 
     final trackColor = AppColors.greyTint30;
     final p = progress.clamp(0.0, 1.0);
@@ -141,7 +158,7 @@ class _RadialTickGaugePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _RadialTickGaugePainter oldDelegate) {
+  bool shouldRepaint(covariant ApplicantRadialTickGaugePainter oldDelegate) {
     return oldDelegate.progress != progress || oldDelegate.arcColor != arcColor;
   }
 }

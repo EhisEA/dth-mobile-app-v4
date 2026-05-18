@@ -7,5 +7,6 @@ export 'components/applicant_performance_gauge.dart';
 export 'components/applicant_dashboard_scroll_body.dart';
 export 'components/applicant_dashboard_inline_banner.dart';
 export 'components/applicant_journey_progress_bar.dart';
+export 'components/applicant_journey_progress_gauge.dart';
 export 'components/applicant_journey_progress_stars.dart';
 export 'components/applicant_journey_card.dart';

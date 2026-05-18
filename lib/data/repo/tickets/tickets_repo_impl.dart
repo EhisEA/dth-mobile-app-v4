@@ -10,21 +10,52 @@ class TicketsRepoImpl implements TicketsRepo {
   final NetworkService _networkService;
 
   @override
+  Future<List<AvailableTicket>> fetchAvailableTickets(String eventUid) async {
+    final response = await _networkService.get(
+      ApiRoute.eventAvailableTickets(eventUid),
+    );
+    final root = response.data;
+    if (root is! Map<String, dynamic>) return const [];
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) return const [];
+    final list = data["available_tickets"];
+    if (list is! List<dynamic>) return const [];
+
+    return list
+        .map((e) {
+          if (e is! Map) return null;
+          final ticket = AvailableTicket.fromJson(
+            Map<String, dynamic>.from(e),
+          );
+          return ticket.uid.isNotEmpty ? ticket : null;
+        })
+        .whereType<AvailableTicket>()
+        .toList();
+  }
+
+  @override
   Future<ApiResponse<SubscriptionPurchaseInit>> purchaseTickets({
     required String eventUid,
-    required String seatTypeUid,
-    int quantity = 1,
+    required List<TicketPurchaseLine> lines,
   }) async {
-    final response = await _networkService.post(
-      ApiRoute.ticketsPurchase,
-      data: {"event_uid": eventUid, "seat_type_uid": seatTypeUid, "quantity": quantity},
-    );
-    final root = response.data as Map<String, dynamic>;
-    final data = root["data"];
-    if (data is! Map<String, dynamic>) {
+    final validLines = lines.where((l) => l.quantity > 0).toList();
+    if (validLines.isEmpty) {
       return const ApiResponse(data: null);
     }
-    return ApiResponse(data: SubscriptionPurchaseInit.fromJson(data));
+
+    final response = await _networkService.post(
+      ApiRoute.ticketsPurchase,
+      data: {
+        "event_uid": eventUid,
+        "tickets": validLines.map((line) => line.toJson()).toList(),
+      },
+    );
+    final root = response.data as Map<String, dynamic>;
+    final payload = root["data"];
+    if (payload is! Map<String, dynamic>) {
+      return const ApiResponse(data: null);
+    }
+    return ApiResponse(data: SubscriptionPurchaseInit.fromJson(payload));
   }
 
   @override

@@ -44,17 +44,44 @@ class ApplicantDashboardScrollBody extends StatelessWidget {
             ),
           ),
           if (data.banner != null) ...[
-            ApplicantDashboardInlineBanner(
-              banner: data.banner!,
-              backgroundColor: viewModel.bannerBackgroundForVariant(
-                data.banner!.variant,
+            Container(
+              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: AssetImage(ImageAssets.applicantBanner),
+                  fit: BoxFit.cover,
+                ),
               ),
-
-              bodyColor: viewModel.bannerBodyTextColorForVariant(
-                data.banner!.variant,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (data.banner!.title?.trim().isNotEmpty ?? false) ...[
+                      AppText.semiBold(
+                        data.banner!.title!.trim(),
+                        fontSize: 14,
+                        color: const Color(0xff38FF99),
+                        multiText: true,
+                      ),
+                      if (data.banner!.body.trim().isNotEmpty) Gap.h4,
+                    ],
+                    if (data.banner!.body.trim().isNotEmpty)
+                      AppText.regular(
+                        data.banner!.body.trim(),
+                        fontSize: 10,
+                        color: AppColors.white,
+                        multiText: true,
+                      ),
+                  ],
+                ),
               ),
             ),
-            Gap.h16,
+            Gap.h32,
           ],
           AppText.medium(journeyTitle, fontSize: 14, color: AppColors.black),
           Gap.h12,

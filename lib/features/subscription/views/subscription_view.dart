@@ -97,8 +97,7 @@ class _SubscriptionViewState extends ConsumerState<SubscriptionView> {
 
                 return SafeArea(
                   top: false,
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
+                  child: SizedBox.expand(
                     child: SubscriptionWidget(plans: plans),
                   ),
                 );

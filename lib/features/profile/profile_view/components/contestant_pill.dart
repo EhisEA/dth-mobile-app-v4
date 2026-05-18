@@ -128,7 +128,7 @@ class _UnifiedDualPill extends StatelessWidget {
                             if (raw == null || raw.isEmpty) return;
                             Clipboard.setData(ClipboardData(text: raw));
                             HapticFeedback.lightImpact();
-                            DthFlushBar.instance.showSuccess(
+                            DthFlushBar.instance.showCopySuccess(
                               title: "Copied to clipboard",
                               message:
                                   "The ID has been copied to your clipboard",

@@ -87,6 +87,8 @@ class ApplicantPerformanceInfo {
 }
 
 class ApplicantDashboardBanner {
+  /// Inline footer card (`footer_banner` JSON). For the top hero image block,
+  /// use [ApplicantDashboardHeroBanner] on [ApplicantDashboardData.banner].
   const ApplicantDashboardBanner({
     required this.variant,
     this.title,
@@ -185,7 +187,7 @@ class JourneyProgress {
 
   bool get isRenderable {
     final t = typeNormalized;
-    return t == "bar" || t == "stars";
+    return t == "bar" || t == "stars" || t == "gauge";
   }
 
   factory JourneyProgress.fromJson(Map<String, dynamic> json) {
@@ -243,6 +245,47 @@ class JourneyCta {
   }
 
   bool get isEmpty => label.isEmpty;
+}
+
+/// Top-of-dashboard hero (`banner` JSON): image-backed card with title/body and
+/// optional CTA. Distinct from [ApplicantDashboardBanner], which is used for
+/// [ApplicantDashboardData.footerBanner] only.
+class ApplicantDashboardHeroBanner {
+  const ApplicantDashboardHeroBanner({
+    required this.variant,
+    this.title,
+    required this.body,
+    this.cta,
+  });
+
+  final String variant;
+  final String? title;
+  final String body;
+  final JourneyCta? cta;
+
+  factory ApplicantDashboardHeroBanner.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const ApplicantDashboardHeroBanner(variant: "", body: "");
+    }
+    JourneyCta? cta;
+    final rawCta = json["cta"];
+    if (rawCta is Map<String, dynamic>) {
+      final c = JourneyCta.fromJson(rawCta);
+      if (!c.isEmpty) cta = c;
+    }
+    return ApplicantDashboardHeroBanner(
+      variant: json["variant"] as String? ?? "",
+      title: json["title"] as String?,
+      body: json["body"] as String? ?? "",
+      cta: cta,
+    );
+  }
+
+  bool get isEmpty {
+    final t = title?.trim() ?? "";
+    final b = body.trim();
+    return t.isEmpty && b.isEmpty;
+  }
 }
 
 class JourneyCard {
@@ -368,7 +411,7 @@ class ApplicantDashboardData {
   final ApplicantSeasonInfo season;
   final ApplicantDashboardHeader? header;
   final ApplicantPerformanceInfo performance;
-  final ApplicantDashboardBanner? banner;
+  final ApplicantDashboardHeroBanner? banner;
   final ApplicantDashboardBanner? footerBanner;
   final ApplicantJourneySection journey;
   final Map<String, String> actions;
@@ -393,10 +436,10 @@ class ApplicantDashboardData {
       });
     }
 
-    ApplicantDashboardBanner? banner;
+    ApplicantDashboardHeroBanner? banner;
     final rawBanner = json["banner"];
     if (rawBanner is Map<String, dynamic>) {
-      final b = ApplicantDashboardBanner.fromJson(rawBanner);
+      final b = ApplicantDashboardHeroBanner.fromJson(rawBanner);
       if (!b.isEmpty) banner = b;
     }
 

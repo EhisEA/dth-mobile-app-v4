@@ -59,6 +59,15 @@ dependencies:
   image_picker: ^1.1.2
   google_sign_in: ^6.2.1
   confetti: ^0.8.0
+  flutter_cache_manager: ^3.4.1
+  qr_flutter: ^4.1.0
+  barcode: ^2.2.9
+  screenshot: ^3.0.0
+  share_plus: ^12.0.2
+  just_audio: ^0.10.5
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  gal: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -91,6 +100,7 @@ flutter:
     - assets/images/subscription/
     - assets/images/application/
     - assets/images/empty_state/
+    - assets/images/tickets/
     - assets/svgs/
     - assets/svgs/application/
     - assets/svgs/auth/
@@ -135,3 +145,36 @@ flutter:
           weight: 700
         - asset: assets/fonts/Matter/Matter-Heavy.ttf
           weight: 800
+
+    - family: Cascadia Mono
+      fonts:
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-ExtraLightItalic.ttf
+          weight: 200
+          style: italic
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-Light.ttf
+          weight: 300
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/cascadia_mono/CascadiaMono-BoldItalic.ttf
+          weight: 700
+          style: italic

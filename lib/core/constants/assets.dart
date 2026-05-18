@@ -1,5 +1,8 @@
 class AudioAssets {
   static const String audioPath = "assets/audio";
+
+  static const String screenshotSound = "$audioPath/screenshot_sound.mp3";
+  static const String screenshotSound2 = "$audioPath/screenshot_sound.wav";
 }
 
 class ImageAssets {
@@ -9,8 +12,14 @@ class ImageAssets {
   static const String line = "$imagePath/line.png";
   static const String logoWhite = "$imagePath/logo_white.png";
   static const String updateIcon = "$imagePath/update_icon.png";
+  static const String ticketCardOutline =
+      "$imagePath/tickets/ticket_card_outline.png";
+  static const String ticketBg = "$imagePath/tickets/ticket_bg.png";
+  static const String ticketQrCodeOutline =
+      "$imagePath/tickets/ticket_qr_code_outline.png";
   static const String ticketEmptyState =
       "$imagePath/empty_state/ticket_empty_state.png";
+  static const String ticketTitle = "$imagePath/tickets/ticket_title.png";
 
   /////////////////////AUTH//////////////////////
   ///
@@ -49,12 +58,15 @@ class ImageAssets {
   static const String blueBg = "$imagePath/application/blue_bg.png";
   static const String greenBg = "$imagePath/application/green_bg.png";
   static const String redBg = "$imagePath/application/red_bg.png";
+  static const String applicantBanner =
+      "$imagePath/application/applicant_banner.png";
 }
 
 class SvgAssets {
   static const String svgPath = "assets/svgs";
   static const String backArrow = "$svgPath/arrow-left.svg";
   static const String clockOutline = "$svgPath/clock_outline.svg";
+  static const String download = "$svgPath/download.svg";
   static const String downArrow = "$svgPath/arrow-down.svg";
   static const String rightArrow = "$svgPath/arrow-right.svg";
   static const String googleLogo = "$svgPath/auth/google.svg";
@@ -100,6 +112,7 @@ class SvgAssets {
   static const String privacy = "$svgPath/profile/privacy.svg";
   static const String social = "$svgPath/profile/social.svg";
   static const String terms = "$svgPath/profile/terms.svg";
+  static const String profileEdit = "$svgPath/profile/profile_edit.svg";
   static const String cup = "$svgPath/profile/cup.svg";
   static const String error = "$svgPath/profile/error.svg";
   static const String doubleTick = "$svgPath/profile/double_tick.svg";
@@ -122,6 +135,10 @@ class SvgAssets {
   /////////////////////TICKETS//////////////////////
   ///
   static const String share = "$svgPath/tickets/share.svg";
+  static const String ticketEmptyState =
+      "$svgPath/tickets/ticket_empty_state.svg";
+  static const String dthText = "$svgPath/tickets/dth_text.svg";
+  static const String ticketTitle = "$svgPath/tickets/ticket_title.svg";
 
   /////////////////////SUBSCRIPTION//////////////////////
   ///

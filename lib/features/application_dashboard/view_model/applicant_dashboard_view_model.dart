@@ -25,6 +25,8 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
   String? _scheduleFetchCardKey;
   String? _interviewLinkFetchCardKey;
 
+  bool _silentDashboardBootstrapInFlight = false;
+
   /// True while [getInterviewSlots] is running for the interview picker opened
   /// from the journey card with this [journeyCardKey].
   bool interviewSlotsFetchBusyFor(String journeyCardKey) =>
@@ -55,45 +57,52 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
     await _reloadApplicantDashboard(showErrorOnFailure: false);
   }
 
-  /// Full load with [baseState] busy / idle / error (for screen and retry).
-  Future<void> loadDashboard() async {
+  /// Pull-to-refresh: does not set global busy (keeps current body visible).
+  Future<void> refreshDashboard() async {
+    await _reloadApplicantDashboard(
+      showErrorOnFailure: true,
+      setErrorStateIfFailureAndEmpty: false,
+    );
+  }
+
+  /// Screen init (and Retry): silent GET — no [baseState] busy; stale data stays
+  /// visible while refreshing; cold failure uses [ViewModelState.error].
+  Future<void> bootstrapDashboardSilently() async {
+    if (_silentDashboardBootstrapInFlight) return;
+    _silentDashboardBootstrapInFlight = true;
     try {
-      changeBaseState(const ViewModelState.busy());
+      final hadData = _data != null;
+      if (baseState.isError) {
+        changeBaseState(const ViewModelState.idle());
+        notifyListeners();
+      }
+      await _reloadApplicantDashboard(
+        showErrorOnFailure: hadData,
+        setErrorStateIfFailureAndEmpty: true,
+      );
+    } finally {
+      _silentDashboardBootstrapInFlight = false;
+    }
+  }
+
+  Future<void> _reloadApplicantDashboard({
+    required bool showErrorOnFailure,
+    bool setErrorStateIfFailureAndEmpty = false,
+  }) async {
+    final hadData = _data != null;
+    try {
       final response = await _applicationRepo.getApplicantDashboard();
       _data = response.data;
       changeBaseState(const ViewModelState.idle());
       notifyListeners();
     } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
-      DthFlushBar.instance.showError(message: e.message, title: "Failed");
-      notifyListeners();
-    }
-  }
-
-  /// Pull-to-refresh: does not set global busy (keeps current body visible).
-  Future<void> refreshDashboard() async {
-    await _reloadApplicantDashboard(showErrorOnFailure: true);
-  }
-
-  Future<void> _reloadApplicantDashboard({
-    required bool showErrorOnFailure,
-  }) async {
-    try {
-      final response = await _applicationRepo.getApplicantDashboard();
-      _data = response.data;
-      notifyListeners();
-    } on ApiFailure catch (e) {
-      if (showErrorOnFailure) {
+      if (setErrorStateIfFailureAndEmpty && !hadData && _data == null) {
+        changeBaseState(ViewModelState.error(e));
+      } else if (showErrorOnFailure) {
         DthFlushBar.instance.showError(message: e.message, title: "Failed");
       }
+      notifyListeners();
     }
-  }
-
-  /// When opening the screen with no cached payload yet (e.g. prefetch skipped or failed).
-  Future<void> ensureScreenLoaded() async {
-    if (_data != null) return;
-    if (baseState.isBusy) return;
-    await loadDashboard();
   }
 
   String appBarTitle(ApplicantDashboardData? d) {
@@ -151,6 +160,19 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       default:
         return AppColors.blackTint20;
     }
+  }
+
+  /// Top background image behind the app bar; follows [footerBanner.variant].
+  /// `danger` / `error` → red, `success` → green, otherwise (incl. no banner) → blue.
+  String applicantDashboardHeaderBackgroundAsset(ApplicantDashboardData? d) {
+    final v = (d?.footerBanner?.variant ?? "").trim().toLowerCase();
+    if (v == "danger" || v == "error") {
+      return ImageAssets.redBg;
+    }
+    if (v == "success") {
+      return ImageAssets.greenBg;
+    }
+    return ImageAssets.blueBg;
   }
 
   void handleBack(BuildContext context) {
@@ -312,6 +334,7 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
         final payload = await _loadCurrentInterviewBookingPayload();
         if (!context.mounted) return;
         Navigator.of(context).pop();
+        await refreshDashboard();
         if (!context.mounted) return;
         await showCurrentInterviewLinkSheet(context, payload: payload);
       } on ApiFailure catch (e) {

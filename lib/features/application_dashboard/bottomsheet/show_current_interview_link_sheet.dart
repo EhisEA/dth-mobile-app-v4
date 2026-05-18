@@ -6,15 +6,7 @@ import "package:flutter/services.dart";
 import "package:flutter_svg/flutter_svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
-/// Small grey label above the join URL. API `title` is often "Join your interview";
-/// Figma uses this line instead.
-const String _kInterviewLinkSheetLabel = "Your interview link:";
-
-const String _kAlrightGotIt = "Alright. Got it!";
-
-const String _kWhatYouNeedTitle = "What you need to know:";
-
-/// Static copy until backend provides a `tips` array on the payload.
+/// Static tips when API omits [CurrentInterviewBookingPayload.instructions].
 const List<String> _kInterviewTips = [
   "Copy the interview link using the copy button, then paste it into your browser or meeting app to join.",
   "Join the session at least 5 minutes before your scheduled time.",
@@ -34,6 +26,12 @@ Future<void> showCurrentInterviewLinkSheet(
     useSafeArea: false,
     builder: (ctx) => _CurrentInterviewLinkSheetBody(payload: payload),
   );
+}
+
+String _countdownLine(CurrentInterviewBookingPayload p) {
+  final api = p.countdownLabel.trim();
+  if (api.isNotEmpty) return api;
+  return _startsInLine(p);
 }
 
 String _startsInLine(CurrentInterviewBookingPayload p) {
@@ -66,6 +64,127 @@ String _startsInLine(CurrentInterviewBookingPayload p) {
   return "Starts in ${parts.join(" ")}";
 }
 
+List<Widget> _credentialsSection(CurrentInterviewBookingPayload payload) {
+  final c = payload.credentials;
+  if (c == null || !c.hasDetails) return const [];
+  final hasUser = c.username.trim().isNotEmpty;
+  final hasPass = c.password.trim().isNotEmpty;
+  return [
+    Gap.h20,
+    Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (hasUser)
+              Expanded(
+                child: _InterviewCredentialCell(
+                  label: "Username:",
+                  value: c.username.trim(),
+                  copiedMessage: "Username copied to clipboard.",
+                  end: true,
+                ),
+              ),
+            if (hasUser && hasPass) const SizedBox(width: 16),
+            if (hasPass)
+              Expanded(
+                child: _InterviewCredentialCell(
+                  label: "Password:",
+                  value: c.password.trim(),
+                  copiedMessage: "Password copied to clipboard.",
+                  end: false,
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  ];
+}
+
+class _InterviewCredentialCell extends StatelessWidget {
+  const _InterviewCredentialCell({
+    required this.label,
+    required this.value,
+    required this.copiedMessage,
+    this.end = true,
+  });
+
+  final String label;
+  final String value;
+  final String copiedMessage;
+  final bool end;
+
+  static const double _copySize = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: end
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppText.regular(
+          label,
+          fontSize: 8,
+          height: 1.2,
+          color: AppColors.blackTint20,
+          letterSpacing: -0.2,
+        ),
+        Gap.h2,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: end
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          children: [
+            AppText.semiBold(
+              value,
+              fontSize: 12,
+              height: 1.25,
+              color: AppColors.mainBlack,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              multiText: true,
+            ),
+            Gap.w6,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: value));
+                  HapticFeedback.lightImpact();
+                  DthFlushBar.instance.showCopySuccess(
+                    title: "Copied",
+                    message: copiedMessage,
+                  );
+                },
+                customBorder: const CircleBorder(),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: SvgPicture.asset(
+                    SvgAssets.copyOutline,
+                    width: _copySize,
+                    height: _copySize,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.primary,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _CurrentInterviewLinkSheetBody extends StatelessWidget {
   const _CurrentInterviewLinkSheetBody({required this.payload});
 
@@ -80,11 +199,20 @@ class _CurrentInterviewLinkSheetBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final join = payload.joinUrl.trim();
-    final canOpen = join.isNotEmpty;
-    final countdown = _startsInLine(payload).trim();
-    final primaryLabel = (payload.cta?.label ?? "").trim().isNotEmpty
-        ? payload.cta!.label.trim()
-        : _kAlrightGotIt;
+    final canCopy = join.isNotEmpty;
+    final countdown = _countdownLine(payload).trim();
+    final tips = payload.instructions.isNotEmpty
+        ? payload.instructions
+        : _kInterviewTips;
+    final headerLabel = payload.title.trim().isNotEmpty
+        ? payload.title.trim()
+        : "Your interview link:";
+    final sheetCta = payload.cta;
+    final rawPrimary = (sheetCta?.label ?? "").trim();
+    final primaryLabel = rawPrimary.isNotEmpty
+        ? rawPrimary
+        : "Alright. Got it!";
+    final primaryEnabled = sheetCta?.enabled ?? true;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -118,40 +246,40 @@ class _CurrentInterviewLinkSheetBody extends StatelessWidget {
             ),
             Gap.h8,
             AppText.regular(
-              _kInterviewLinkSheetLabel,
+              headerLabel,
               fontSize: 12,
               color: AppColors.blackTint20,
               textAlign: TextAlign.center,
               multiText: true,
             ),
-            Gap.h10,
+            Gap.h4,
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: canOpen
-                      ? AppText.medium(
-                          join,
-                          fontSize: 16,
-                          color: AppColors.black,
-                          multiText: true,
-                          maxLines: 8,
-                        )
-                      : AppText.medium(
-                          "—",
-                          fontSize: 16,
-                          color: AppColors.blackTint20,
-                        ),
-                ),
-                if (canOpen) ...[
-                  Gap.w8,
+                canCopy
+                    ? AppText.medium(
+                        join,
+                        fontSize: 16,
+                        color: AppColors.black,
+                        multiText: true,
+                        maxLines: 8,
+                      )
+                    : AppText.medium(
+                        "—",
+                        fontSize: 16,
+                        color: AppColors.blackTint20,
+                      ),
+                if (canCopy) ...[
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: join));
                         HapticFeedback.lightImpact();
-                        DthFlushBar.instance.showSuccess(
+                        DthFlushBar.instance.showCopySuccess(
                           title: "Copied",
                           message: "Interview link copied to clipboard.",
                         );
@@ -161,8 +289,8 @@ class _CurrentInterviewLinkSheetBody extends StatelessWidget {
                         padding: const EdgeInsets.all(6),
                         child: SvgPicture.asset(
                           SvgAssets.copyOutline,
-                          width: 20,
-                          height: 20,
+                          width: 16,
+                          height: 16,
                           colorFilter: const ColorFilter.mode(
                             AppColors.primary,
                             BlendMode.srcIn,
@@ -178,59 +306,59 @@ class _CurrentInterviewLinkSheetBody extends StatelessWidget {
               Gap.h8,
               AppText.regular(
                 countdown,
-                fontSize: 12,
+                fontSize: 10,
                 color: AppColors.blackTint20,
                 textAlign: TextAlign.center,
                 multiText: true,
               ),
             ],
+            ..._credentialsSection(payload),
             Gap.h20,
             Container(
               decoration: BoxDecoration(
-                color: AppColors.dth100,
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xffF6F8FE),
+                borderRadius: BorderRadius.circular(20),
               ),
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   AppText.medium(
-                    _kWhatYouNeedTitle,
-                    fontSize: 12,
+                    "What you need to know:",
+                    fontSize: 10,
                     color: AppColors.dthBlue,
                     textAlign: TextAlign.center,
                     multiText: true,
                   ),
-                  Gap.h12,
-                  for (var i = 0; i < _kInterviewTips.length; i++) ...[
+                  Gap.h20,
+                  for (var i = 0; i < tips.length; i++) ...[
                     if (i > 0)
                       const Divider(
                         height: 1,
                         thickness: 1,
                         color: Color(0xffEDEDED),
                       ),
-                    if (i > 0) Gap.h10,
+                    if (i > 0) Gap.h12,
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.done_all,
-                          size: 18,
-                          color: AppColors.mainBlack,
-                        ),
-                        Gap.w10,
+                        SvgPicture.asset(SvgAssets.doubleTick),
+                        Gap.w16,
                         Expanded(
-                          child: AppText.regular(
-                            _kInterviewTips[i],
-                            fontSize: 11,
-                            color: AppColors.blackTint20,
-                            height: 1.35,
-                            multiText: true,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 20.0),
+                            child: AppText.regular(
+                              tips[i],
+                              fontSize: 12,
+                              color: AppColors.black,
+                              height: 1.35,
+                              multiText: true,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    if (i < _kInterviewTips.length - 1) Gap.h10,
+                    if (i < tips.length - 1) Gap.h12,
                   ],
                 ],
               ),
@@ -241,7 +369,8 @@ class _CurrentInterviewLinkSheetBody extends StatelessWidget {
               width: double.infinity,
               height: 48,
               radius: 100,
-              press: () => _onPrimary(context),
+              enabled: primaryEnabled,
+              press: primaryEnabled ? () => _onPrimary(context) : null,
             ),
             Gap.h8,
           ],

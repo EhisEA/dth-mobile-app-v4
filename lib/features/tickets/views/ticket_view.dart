@@ -23,7 +23,7 @@ class _TicketViewState extends ConsumerState<TicketView> {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(ticketHomeViewModelProvider).loadInitial());
+      unawaited(ref.read(ticketHomeViewModelProvider).refresh());
     });
   }
 
@@ -72,9 +72,7 @@ class _TicketViewState extends ConsumerState<TicketView> {
     final vm = ref.watch(ticketHomeViewModelProvider);
 
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: AppColors.scaffold,
         body: SafeArea(
@@ -103,6 +101,7 @@ class _TicketViewState extends ConsumerState<TicketView> {
               Expanded(
                 child: _TicketHomeBody(
                   vm: vm,
+                  bookedEvents: vm.bookedEvents,
                   scrollController: _scrollController,
                   onOpenDescription: _openDescription,
                   onRefresh: () =>
@@ -120,100 +119,106 @@ class _TicketViewState extends ConsumerState<TicketView> {
 class _TicketHomeBody extends StatelessWidget {
   const _TicketHomeBody({
     required this.vm,
+    required this.bookedEvents,
     required this.scrollController,
     required this.onOpenDescription,
     required this.onRefresh,
   });
 
   final TicketHomeViewModel vm;
+  final ValueNotifier<List<EventListItem>> bookedEvents;
   final ScrollController scrollController;
   final void Function(EventListItem item) onOpenDescription;
   final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    final bothBusy = vm.upcomingState.isBusy && vm.bookedState.isBusy;
-    if (bothBusy) {
-      return const Center(child: CircularProgressIndicator.adaptive());
-    }
+    return ValueListenableBuilder<List<EventListItem>>(
+      valueListenable: bookedEvents,
+      builder: (context, bookedItems, _) {
+        final bothBusy = vm.upcomingState.isBusy && vm.bookedState.isBusy;
+        if (bothBusy) {
+          return const Center(child: CircularProgressIndicator.adaptive());
+        }
 
-    final unifiedEmpty =
-        vm.upcomingState.isIdle &&
-        vm.bookedState.isIdle &&
-        vm.upcomingPreview.isEmpty &&
-        vm.bookedEvents.isEmpty;
-    if (unifiedEmpty) {
-      return const TicketEmptyState();
-    }
+        final unifiedEmpty =
+            vm.upcomingState.isIdle &&
+            vm.bookedState.isIdle &&
+            vm.upcomingPreview.isEmpty &&
+            bookedItems.isEmpty;
+        if (unifiedEmpty) {
+          return const TicketEmptyState();
+        }
 
-    final showUpcomingBlock =
-        vm.upcomingState.isBusy ||
-        vm.upcomingState.isError ||
-        (vm.upcomingState.isIdle && vm.upcomingPreview.isNotEmpty);
+        final showUpcomingBlock =
+            vm.upcomingState.isBusy ||
+            vm.upcomingState.isError ||
+            (vm.upcomingState.isIdle && vm.upcomingPreview.isNotEmpty);
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        await onRefresh.call();
-      },
-      child: ListView(
-        controller: scrollController,
-        padding: EdgeInsets.zero,
-        children: [
-          if (showUpcomingBlock) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  AppText.medium(
-                    "Upcoming Shows",
-                    fontSize: 12,
-                    color: AppColors.black,
-                  ),
-                  if (vm.upcomingState.isIdle && vm.upcomingPreview.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                        MobileNavigationService.instance.navigateTo(
-                          UpcomingShowsView.path,
-                        );
-                      },
-                      behavior: HitTestBehavior.opaque,
-                      child: AppText.regular(
-                        "See all",
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          child: ListView(
+            controller: scrollController,
+            padding: EdgeInsets.zero,
+            children: [
+              if (showUpcomingBlock) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      AppText.medium(
+                        "Upcoming Shows",
                         fontSize: 12,
-                        color: AppColors.primary,
+                        color: AppColors.black,
                       ),
-                    ),
-                ],
+                      if (vm.upcomingState.isIdle &&
+                          vm.upcomingPreview.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            MobileNavigationService.instance.navigateTo(
+                              UpcomingShowsView.path,
+                            );
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: AppText.regular(
+                            "See all",
+                            fontSize: 12,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Gap.h12,
+                ..._upcomingSectionBody(context),
+                Gap.h24,
+              ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: AppText.medium(
+                  "Booked Shows",
+                  fontSize: 12,
+                  color: AppColors.black,
+                ),
               ),
-            ),
-            Gap.h12,
-            ..._upcomingSectionBody(context),
-            Gap.h24,
-          ],
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AppText.medium(
-              "Booked Shows",
-              fontSize: 12,
-              color: AppColors.black,
-            ),
+              Gap.h12,
+              ..._bookedSectionBody(context, bookedItems),
+              if (vm.bookedLoadingMore) ...[
+                Gap.h16,
+                const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                  ),
+                ),
+              ],
+              Gap.h(100),
+            ],
           ),
-          Gap.h12,
-          ..._bookedSectionBody(context),
-          if (vm.bookedLoadingMore) ...[
-            Gap.h16,
-            const Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-              ),
-            ),
-          ],
-          Gap.h(100),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -277,7 +282,10 @@ class _TicketHomeBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _bookedSectionBody(BuildContext context) {
+  List<Widget> _bookedSectionBody(
+    BuildContext context,
+    List<EventListItem> bookedEvents,
+  ) {
     return vm.bookedState.maybeWhen(
       busy: () => [
         const Padding(
@@ -300,10 +308,10 @@ class _TicketHomeBody extends StatelessWidget {
         ),
       ],
       idle: () {
-        if (vm.bookedEvents.isEmpty) {
+        if (bookedEvents.isEmpty) {
           return [Gap.h24, TicketEmptyState()];
         }
-        return vm.bookedEvents.asMap().entries.map((entry) {
+        return bookedEvents.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;
           return Column(
@@ -314,7 +322,7 @@ class _TicketHomeBody extends StatelessWidget {
                 imageUrl: item.displayImageUrl,
                 title: item.title,
                 descriptionPreview: item.shortDescription,
-                ticketQuantity: item.ticketsCount,
+                ticketQuantity: int.parse(item.ticketsCount),
                 scheduleLabel: item.dateTimeLine,
                 onReadMore: () => onOpenDescription(item),
                 onViewTickets: () {

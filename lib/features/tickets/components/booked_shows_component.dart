@@ -33,6 +33,7 @@ class BookedShowsComponent extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onViewTickets,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

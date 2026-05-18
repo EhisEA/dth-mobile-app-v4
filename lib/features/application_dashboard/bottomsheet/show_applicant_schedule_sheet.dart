@@ -40,11 +40,26 @@ Future<void> showApplicantScheduleSheet(
   );
 }
 
-class _ApplicantScheduleSheetBody extends StatelessWidget {
+bool _scheduleCtaIsInterviewLink(JourneyCta cta) {
+  return cta.action.toLowerCase().trim() == "open_sheet" &&
+      cta.target.toLowerCase().trim() == "interview_link";
+}
+
+class _ApplicantScheduleSheetBody extends StatefulWidget {
   const _ApplicantScheduleSheetBody({required this.payload, this.onEventCta});
 
   final ApplicantSchedulePayload payload;
   final Future<void> Function(JourneyCta cta)? onEventCta;
+
+  @override
+  State<_ApplicantScheduleSheetBody> createState() =>
+      _ApplicantScheduleSheetBodyState();
+}
+
+class _ApplicantScheduleSheetBodyState
+    extends State<_ApplicantScheduleSheetBody> {
+  /// Row index whose CTA is awaiting [onEventCta] (e.g. interview link fetch).
+  int? _pendingCtaEventIndex;
 
   Widget _leadingIcon(ScheduleEvent e) {
     final ic = e.icon.toLowerCase().trim();
@@ -74,17 +89,27 @@ class _ApplicantScheduleSheetBody extends StatelessWidget {
     );
   }
 
-  Widget? _eventCtaButton(ScheduleEvent e) {
+  Widget? _eventCtaButton(ScheduleEvent e, int eventIndex) {
     final cta = e.cta;
     if (cta == null || cta.label.trim().isEmpty) return null;
     final v = cta.variant.toLowerCase().trim();
-    final canPress = cta.enabled && !cta.isLoading && onEventCta != null;
+    final rowBusy = cta.isLoading || _pendingCtaEventIndex == eventIndex;
+    final canInvoke =
+        cta.enabled && !cta.isLoading && widget.onEventCta != null;
 
-    void onTap() {
+    Future<void> onTap() async {
       HapticFeedback.lightImpact();
-      final cb = onEventCta;
-      if (cb != null) {
-        unawaited(cb(cta));
+      final cb = widget.onEventCta;
+      if (cb == null) return;
+      if (_scheduleCtaIsInterviewLink(cta)) {
+        setState(() => _pendingCtaEventIndex = eventIndex);
+        try {
+          await cb(cta);
+        } finally {
+          if (mounted) setState(() => _pendingCtaEventIndex = null);
+        }
+      } else {
+        await cb(cta);
       }
     }
 
@@ -101,9 +126,13 @@ class _ApplicantScheduleSheetBody extends StatelessWidget {
           textColor: AppColors.black,
           borderColor: const Color(0xffEDEDED),
           borderWidth: 1,
-          enabled: canPress,
-          isLoading: cta.isLoading,
-          press: canPress ? onTap : null,
+          enabled: canInvoke,
+          isLoading: rowBusy,
+          press: canInvoke && !rowBusy
+              ? () {
+                  unawaited(onTap());
+                }
+              : null,
         ),
       );
     }
@@ -114,9 +143,13 @@ class _ApplicantScheduleSheetBody extends StatelessWidget {
         fontSize: 12,
         height: 36,
         radius: 100,
-        enabled: canPress,
-        isLoading: cta.isLoading,
-        press: canPress ? onTap : null,
+        enabled: canInvoke,
+        isLoading: rowBusy,
+        press: canInvoke && !rowBusy
+            ? () {
+                unawaited(onTap());
+              }
+            : null,
       );
     }
     return AppButton.primary(
@@ -125,17 +158,21 @@ class _ApplicantScheduleSheetBody extends StatelessWidget {
       fontSize: 12,
       height: 36,
       radius: 100,
-      enabled: canPress,
-      isLoading: cta.isLoading,
-      press: canPress ? onTap : null,
+      enabled: canInvoke,
+      isLoading: rowBusy,
+      press: canInvoke && !rowBusy
+          ? () {
+              unawaited(onTap());
+            }
+          : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final title = payload.title.trim().isNotEmpty
-        ? payload.title.trim()
+    final title = widget.payload.title.trim().isNotEmpty
+        ? widget.payload.title.trim()
         : "Your schedule";
 
     return Padding(
@@ -172,7 +209,7 @@ class _ApplicantScheduleSheetBody extends StatelessWidget {
               ],
             ),
             Gap.h28,
-            for (var i = 0; i < payload.events.length; i++) ...[
+            for (var i = 0; i < widget.payload.events.length; i++) ...[
               if (i > 0)
                 const Divider(
                   height: 1,
@@ -181,9 +218,9 @@ class _ApplicantScheduleSheetBody extends StatelessWidget {
                 ),
               if (i > 0) Gap.h16,
               _ScheduleEventRow(
-                event: payload.events[i],
-                leading: _leadingIcon(payload.events[i]),
-                cta: _eventCtaButton(payload.events[i]),
+                event: widget.payload.events[i],
+                leading: _leadingIcon(widget.payload.events[i]),
+                cta: _eventCtaButton(widget.payload.events[i], i),
               ),
             ],
             Gap.h8,
@@ -262,6 +299,7 @@ class _ScheduleEventRow extends StatelessWidget {
                 ),
               ],
               if (cta != null) ...[Gap.h16, cta!],
+              Gap.h20,
             ],
           ),
         ),
