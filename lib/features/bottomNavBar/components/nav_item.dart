@@ -52,8 +52,8 @@ class NavItem extends StatelessWidget {
                   duration: const Duration(milliseconds: 220),
                   child: SvgPicture.asset(
                     iconToUse,
-                    width: isActive ? 24 : 20,
-                    height: isActive ? 24 : 20,
+                    width: isActive ? 24 : 24,
+                    height: isActive ? 24 : 24,
                   ),
                 ),
               ),

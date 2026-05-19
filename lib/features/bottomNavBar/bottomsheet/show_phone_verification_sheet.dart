@@ -206,7 +206,8 @@ class _PhoneVerificationSheetBodyState
         Gap.h24,
         AppButton.primary(
           text: canSubmit ? "Send OTP" : "Complete form to continue",
-          height: 48,
+          height: 52,
+          disableBGColor: AppColors.greyTint20,
           enabled: canSubmit && ngCountry != null && !_vm.isBaseBusy,
           isLoading: _vm.isBaseBusy,
           press: canSubmit && ngCountry != null
@@ -278,7 +279,8 @@ class _PhoneVerificationSheetBodyState
           Gap.h8,
           AppButton.primary(
             text: "Resend code",
-            height: 48,
+            height: 52,
+            disableBGColor: AppColors.greyTint20,
             isLoading: _vm.isBaseBusy,
             enabled: ngCountry != null && !_vm.isBaseBusy,
             press: () {

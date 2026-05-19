@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:ui";
 
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
@@ -33,6 +34,15 @@ class ShowView extends ConsumerStatefulWidget {
 }
 
 class _ShowViewState extends ConsumerState<ShowView> {
+  static const double _buyButtonHeight = 52;
+  static const double _footerBottomPad = 8;
+
+  double _pinnedFooterExtent(BuildContext context) {
+    return _buyButtonHeight +
+        _footerBottomPad +
+        MediaQuery.paddingOf(context).bottom;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.eventUid.isEmpty) {
@@ -57,14 +67,14 @@ class _ShowViewState extends ConsumerState<ShowView> {
 
     return Scaffold(
       backgroundColor: AppColors.white,
+      extendBodyBehindAppBar: true,
       body: vm.baseState.when(
         busy: () => const Center(child: CircularProgressIndicator.adaptive()),
         error: (Failure failure) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ShowDetailHero(
-              imageUrl:
-                  "https://picsum.photos/seed/${widget.eventUid}/960/540",
+              imageUrl: "https://picsum.photos/seed/${widget.eventUid}/960/540",
               onShare: () {},
             ),
             Expanded(
@@ -121,6 +131,27 @@ class _ShowViewState extends ConsumerState<ShowView> {
           final detailVenue = event.location.trim().isNotEmpty
               ? event.location
               : "—";
+
+          void onBuyPressed() {
+            final eventUid = event.uid;
+            unawaited(
+              MobileNavigationService.instance.navigateTo(
+                PurchaseTicketsView.path,
+                extra: {
+                  RoutingArgumentKey.eventUid: eventUid,
+                  RoutingArgumentKey.onPurchaseSuccess: () async {
+                    await ref
+                        .read(eventDetailViewModelProvider(eventUid))
+                        .refresh();
+                    await ref.read(eventsStateProvider).fetchBookedEvents();
+                  },
+                },
+              ),
+            );
+          }
+
+          final footerExtent = _pinnedFooterExtent(context);
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -136,84 +167,103 @@ class _ShowViewState extends ConsumerState<ShowView> {
                         top: Radius.circular(24),
                       ),
                     ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ShowStatusChip(label: _statusChipLabel(event)),
-                          Gap.h16,
-                          AppText.medium(
-                            event.title,
-                            fontSize: 16,
-                            color: AppColors.black,
-                            maxLines: 2,
-                            letterSpacing: -0.4,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(
+                            16,
+                            20,
+                            16,
+                            footerExtent,
                           ),
-                          Gap.h4,
-                          ShowEventQuickInfoRow(
-                            location: event.location,
-                            dateTimeLine: event.dateTimeLine,
-                          ),
-                          Gap.h16,
-                          ShowAboutEventPanel(
-                            aboutBody: about,
-                            detailDate: detailDate,
-                            detailTime: detailTime,
-                            detailVenue: detailVenue,
-                          ),
-                          if (event.purchasedTickets.isNotEmpty) ...[
-                            Gap.h24,
-                            ShowPurchasedTicketsSection(
-                              tickets: event.purchasedTickets,
-                              descriptionFallback:
-                                  event.shortDescription.trim().isNotEmpty
-                                  ? event.shortDescription
-                                  : about,
-                              onViewTickets: (ticket) {
-                                unawaited(
-                                  MobileNavigationService.instance.navigateTo(
-                                    YourTicketsView.path,
-                                    extra: YourTicketsArgs(
-                                      purchasedTicket: ticket,
-                                    ).toRouteExtra(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                          Gap.h16,
-                          ShowBuyTicket(
-                            mainLabel: event.purchasedTickets.isNotEmpty
-                                ? "Buy more tickets"
-                                : "Buy ticket now",
-                            availabilityLabel:
-                                "(${event.availableTicketsCount} available)",
-                            onPressed: () {
-                              final eventUid = event.uid;
-                              unawaited(
-                                MobileNavigationService.instance.navigateTo(
-                                  PurchaseTicketsView.path,
-                                  extra: {
-                                    RoutingArgumentKey.eventUid: eventUid,
-                                    RoutingArgumentKey.onPurchaseSuccess:
-                                        () async {
-                                      await ref
-                                          .read(
-                                            eventDetailViewModelProvider(
-                                              eventUid,
-                                            ),
-                                          )
-                                          .refresh();
-                                          await ref.read(eventsStateProvider).fetchBookedEvents();
-                                    },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ShowStatusChip(label: _statusChipLabel(event)),
+                              Gap.h16,
+                              AppText.medium(
+                                event.title,
+                                fontSize: 16,
+                                color: AppColors.black,
+                                maxLines: 2,
+                                letterSpacing: -0.4,
+                              ),
+                              Gap.h4,
+                              ShowEventQuickInfoRow(
+                                location: event.location,
+                                dateTimeLine: event.dateTimeLine,
+                              ),
+                              Gap.h16,
+                              ShowAboutEventPanel(
+                                aboutBody: about,
+                                detailDate: detailDate,
+                                detailTime: detailTime,
+                                detailVenue: detailVenue,
+                              ),
+                              if (event.purchasedTickets.isNotEmpty) ...[
+                                Gap.h24,
+                                ShowPurchasedTicketsSection(
+                                  tickets: event.purchasedTickets,
+                                  descriptionFallback:
+                                      event.shortDescription.trim().isNotEmpty
+                                      ? event.shortDescription
+                                      : about,
+                                  onViewTickets: (ticket) {
+                                    unawaited(
+                                      MobileNavigationService.instance
+                                          .navigateTo(
+                                            YourTicketsView.path,
+                                            extra: YourTicketsArgs(
+                                              purchasedTicket: ticket,
+                                            ).toRouteExtra(),
+                                          ),
+                                    );
                                   },
                                 ),
-                              );
-                            },
+                              ],
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      AppColors.white.withValues(alpha: 0.55),
+                                      AppColors.white.withValues(alpha: 0.92),
+                                    ],
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    _footerBottomPad,
+                                  ),
+                                  child: ShowBuyTicket(
+                                    mainLabel: event.purchasedTickets.isNotEmpty
+                                        ? "Buy more tickets"
+                                        : "Buy ticket now",
+                                    availabilityLabel:
+                                        "(${event.availableTicketsCount} available)",
+                                    onPressed: onBuyPressed,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

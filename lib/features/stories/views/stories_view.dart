@@ -4,7 +4,8 @@ import "package:dth_v4/core/utils/colors.dart";
 import "package:dth_v4/core/utils/format_count.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/posts/components/like_chip.dart";
-import "package:dth_v4/features/posts/models/post_mapper.dart" show formatTimeAgo;
+import "package:dth_v4/features/posts/models/post_mapper.dart"
+    show formatTimeAgo;
 import "package:dth_v4/features/stories/components/chat_split_body.dart";
 import "package:dth_v4/features/stories/components/full_reel_body.dart";
 import "package:dth_v4/features/stories/components/reel_backdrop_media.dart";
@@ -97,9 +98,7 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
 
   Future<void> _toggleLike() async {
     if (widget.reelUid.isEmpty) return;
-    await ref
-        .read(reelChatViewModelProvider(widget.reelUid))
-        .toggleReelLike();
+    await ref.read(reelChatViewModelProvider(widget.reelUid)).toggleReelLike();
   }
 
   Future<void> _submitFromReel() async {
@@ -150,14 +149,10 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
       reelsCacheProvider.select((c) => c.get(widget.reelUid)),
     );
     final vmLoading = ref.watch(
-      reelChatViewModelProvider(
-        widget.reelUid,
-      ).select((v) => v.loading),
+      reelChatViewModelProvider(widget.reelUid).select((v) => v.loading),
     );
     final vmSubmitting = ref.watch(
-      reelChatViewModelProvider(
-        widget.reelUid,
-      ).select((v) => v.submitting),
+      reelChatViewModelProvider(widget.reelUid).select((v) => v.submitting),
     );
 
     if (reel == null) {
@@ -212,6 +207,7 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
                 behavior: HitTestBehavior.opaque,
                 onTap: _onReelTap,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Expanded(
                       child: AnimatedBuilder(
@@ -236,6 +232,7 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
                         ),
                       ),
                     ),
+
                     Container(
                       padding: EdgeInsets.only(
                         top: 8,
@@ -310,11 +307,10 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
                                             fontSize: 14,
                                             inactiveColor: AppColors.white,
                                             countColor: AppColors.white,
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 8,
-                                                ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 8,
+                                            ),
                                           ),
                                           _ReelComposerIcon(
                                             onTap: _toggleChat,
