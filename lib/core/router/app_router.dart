@@ -178,9 +178,32 @@ class AppRouter {
       case ConfirmationView.path:
         final confirmationSuccess =
             routeArgs[RoutingArgumentKey.confirmationSuccess] as bool? ?? true;
+        final confirmationFlow = ConfirmationFlow.fromRouteValue(
+          routeArgs[RoutingArgumentKey.confirmationFlow],
+        );
+        final confirmationEventUid =
+            routeArgs[RoutingArgumentKey.confirmationEventUid] as String?;
+        final confirmationOnSuccess =
+            routeArgs[RoutingArgumentKey.confirmationOnSuccess]
+                as Future<void> Function()?;
+        final confirmationSuccessDescription =
+            routeArgs[RoutingArgumentKey.confirmationSuccessDescription]
+                as String? ??
+            "";
+        final confirmationFailureDescription =
+            routeArgs[RoutingArgumentKey.confirmationFailureDescription]
+                as String? ??
+            "";
         return _getPageRoute(
           settings: settings,
-          viewToShow: ConfirmationView(isSuccess: confirmationSuccess),
+          viewToShow: ConfirmationView(
+            isSuccess: confirmationSuccess,
+            successDescription: confirmationSuccessDescription,
+            failureDescription: confirmationFailureDescription,
+            flow: confirmationFlow,
+            eventUid: confirmationEventUid,
+            onSuccess: confirmationOnSuccess,
+          ),
         );
 
       ////////////////TICKETS VIEW////////////////////
@@ -196,6 +219,32 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: ShowView(eventUid: eventUid),
+        );
+
+      case PurchaseTicketsView.path:
+        final purchaseEventUid =
+            routeArgs[RoutingArgumentKey.eventUid] as String? ?? "";
+        final onPurchaseSuccess =
+            routeArgs[RoutingArgumentKey.onPurchaseSuccess]
+                as Future<void> Function()?;
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: PurchaseTicketsView(
+            eventUid: purchaseEventUid,
+            onPurchaseSuccess: onPurchaseSuccess,
+          ),
+        );
+
+      case YourTicketsView.path:
+        final ticketsExtra =
+            routeArgs[RoutingArgumentKey.yourTicketsArgs]
+                as Map<String, dynamic>? ??
+            routeArgs;
+        final purchasedTicket =
+            YourTicketsArgs.fromRouteExtra(ticketsExtra).purchasedTicket;
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: YourTicketsView(purchasedTicket: purchasedTicket),
         );
       ////////////////APPLICANT DASHBOARD VIEW////////////////////
       case ApplicantDashboardView.path:

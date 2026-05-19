@@ -14,7 +14,10 @@ class EventDetail {
     required this.dateFull,
     required this.availableTicketsCount,
     required this.purchasedTickets,
-    required this.seatTypes,
+    this.seatTypes = const [],
+    required this.entrance,
+    required this.eventStatus,
+    required this.eventTime,
   });
 
   final String uid;
@@ -29,6 +32,9 @@ class EventDetail {
   final int availableTicketsCount;
   final List<PurchasedTicket> purchasedTickets;
   final List<EventSeatType> seatTypes;
+  final String entrance;
+  final String eventStatus;
+  final String eventTime;
 
   String get dateTimeLine => "$date $time".trim();
 
@@ -81,6 +87,9 @@ class EventDetail {
       availableTicketsCount: available,
       purchasedTickets: purchasedList,
       seatTypes: seatTypes,
+      entrance: json["entrance"]?.toString() ?? "",
+      eventStatus: json["event_status"]?.toString() ?? "",
+      eventTime: json["event_time"]?.toString() ?? "",
     );
   }
 }

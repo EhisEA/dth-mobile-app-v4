@@ -1,6 +1,7 @@
 export "view_model/ticket_home_view_model.dart";
 export "view_model/upcoming_shows_list_view_model.dart";
 export "view_model/event_detail_view_model.dart";
+export "view_model/purchase_tickets_view_model.dart";
 export "views/ticket_view.dart";
 export "components/ticket_empty_state.dart";
 export "components/booked_shows_component.dart";
@@ -12,4 +13,10 @@ export "components/show_status_chip.dart";
 export "components/show_event_quick_info_row.dart";
 export "components/show_about_event_panel.dart";
 export "components/show_buy_ticket.dart";
+export "components/show_purchased_ticket_card.dart";
+export "components/show_purchased_tickets_section.dart";
 export "views/show_view.dart";
+export "views/purchase_tickets_view.dart";
+export "views/your_tickets_view.dart";
+export "models/your_tickets_args.dart";
+export "components/dth_ticket_card.dart";

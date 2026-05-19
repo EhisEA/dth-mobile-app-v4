@@ -7,7 +7,7 @@ class EventListItem {
     required this.date,
     required this.time,
     this.featuredImageUrl,
-    this.ticketsCount = 0,
+    this.ticketsCount = "0",
   });
 
   final String uid;
@@ -21,7 +21,8 @@ class EventListItem {
   final String? featuredImageUrl;
 
   /// Booked events include a count; upcoming lists omit it and this stays `0`.
-  final int ticketsCount;
+  final String ticketsCount;
+  // final int ticketsCount;
 
   String get displayImageUrl => featuredImageUrl ?? "";
 
@@ -36,7 +37,7 @@ class EventListItem {
       date: json["date"]?.toString() ?? "",
       time: json["time"]?.toString() ?? "",
       featuredImageUrl: json["featured_image_url"]?.toString(),
-      ticketsCount: json["tickets_count"] as int? ?? 0,
+      ticketsCount: json["tickets_count"]?.toString() ?? "0",
     );
   }
 }

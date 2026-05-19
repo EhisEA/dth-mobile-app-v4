@@ -46,7 +46,8 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
             },
           );
 
-      if (returnedFromCallback == true) {
+      final paymentSucceeded = returnedFromCallback == true;
+      if (paymentSucceeded) {
         await _repo.verifyPayment(reference: data.reference);
         await _subscriptionPlansState.fetchPlans();
         await _userState.getUserDetails();
@@ -54,16 +55,19 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
           title: "Subscription",
           message: "Your payment was confirmed.",
         );
-        await MobileNavigationService.instance.push(
-          ConfirmationView.path,
-          extra: {RoutingArgumentKey.confirmationSuccess: true},
-        );
-      } else {
-        await MobileNavigationService.instance.push(
-          ConfirmationView.path,
-          extra: {RoutingArgumentKey.confirmationSuccess: false},
-        );
       }
+
+      await MobileNavigationService.instance.push(
+        ConfirmationView.path,
+        extra: {
+          RoutingArgumentKey.confirmationSuccess: paymentSucceeded,
+          RoutingArgumentKey.confirmationFlow: ConfirmationFlow.subscription,
+          RoutingArgumentKey.confirmationSuccessDescription:
+              "Your payment was successful. You now have pro access to DTH 5.",
+          RoutingArgumentKey.confirmationFailureDescription:
+              "We couldn't process your payment. Please try again or use a different method.",
+        },
+      );
 
       changeBaseState(const ViewModelState.idle());
     } on ApiFailure catch (e) {
