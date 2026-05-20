@@ -17,6 +17,7 @@ class DeepLinkPaths {
   static const String timeline = "/timeline";
   static const String comment = "/comment";
   static const String event = "/event";
+  static const String reel = "/reel";
 }
 
 /// Custom payload keys carried inside a link's metadata.
@@ -25,6 +26,7 @@ class DeepLinkParams {
   static const String postId = "post_id";
   static const String commentId = "comment_id";
   static const String eventId = "event_id";
+  static const String reelUid = "reel_uid";
 }
 
 /// Branch link analytics labels.

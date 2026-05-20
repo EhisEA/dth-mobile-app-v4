@@ -114,7 +114,6 @@ class DeepLinkService {
   }
 
   Future<String?> createCommentLink({
-    required String postId,
     required String commentId,
     String title = "",
     String description = "",
@@ -127,10 +126,7 @@ class DeepLinkService {
       title: title,
       description: description,
       imageUrl: imageUrl,
-      data: {
-        DeepLinkParams.postId: postId,
-        DeepLinkParams.commentId: commentId,
-      },
+      data: {DeepLinkParams.commentId: commentId},
     );
   }
 
@@ -148,6 +144,23 @@ class DeepLinkService {
       description: description,
       imageUrl: imageUrl,
       data: {DeepLinkParams.eventId: eventId},
+    );
+  }
+
+  Future<String?> createReelLink({
+    required String reelUid,
+    String title = "",
+    String description = "",
+    String imageUrl = "",
+  }) {
+    return _source.createLink(
+      canonicalIdentifier: "reel/$reelUid",
+      feature: DeepLinkFeature.sharing,
+      path: DeepLinkPaths.reel,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      data: {DeepLinkParams.reelUid: reelUid},
     );
   }
 
