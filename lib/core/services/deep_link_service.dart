@@ -44,20 +44,39 @@ class DeepLinkService {
   final DeepLinkSource _source;
   static const _logger = AppLogger(DeepLinkService);
 
-  final _controller = StreamController<DeepLink>.broadcast();
+  /// Holds a link that arrived before any subscriber attached (e.g. on cold
+  /// start, where Branch emits before the router has subscribed). Flushed to
+  /// the first listener via [_controller]'s `onListen` and then cleared, so
+  /// each link is delivered at most once.
+  DeepLink? _pending;
   StreamSubscription<DeepLink>? _sub;
+  late final StreamController<DeepLink> _controller =
+      StreamController<DeepLink>.broadcast(onListen: _flushPending);
 
   Stream<DeepLink> get links => _controller.stream;
 
   Future<void> initialise({bool enableLogging = false}) async {
     await _source.initialise(enableLogging: enableLogging);
     _sub = _source.links.listen(
-      (link) {
-        _logger.i("DeepLink received: path=${link.path} data=${link.data}");
-        _controller.add(link);
-      },
+      _handleIncoming,
       onError: (Object err) => _logger.e("DeepLink source error: $err"),
     );
+  }
+
+  void _handleIncoming(DeepLink link) {
+    _logger.i("DeepLink received: path=${link.path} data=${link.data}");
+    if (_controller.hasListener) {
+      _controller.add(link);
+    } else {
+      _pending = link;
+    }
+  }
+
+  void _flushPending() {
+    final pending = _pending;
+    if (pending == null) return;
+    _pending = null;
+    _controller.add(pending);
   }
 
   Future<String?> createReferralLink({
