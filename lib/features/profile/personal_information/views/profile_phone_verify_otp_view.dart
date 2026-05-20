@@ -1,6 +1,4 @@
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/core/router/router.dart";
-import "package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart";
 import "package:dth_v4/features/profile/personal_information/view_model/personal_information_view_model.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
@@ -96,9 +94,7 @@ class _ProfilePhoneVerifyOtpViewState
                   onCompleted: (code) async {
                     final ok = await vm.submitPhoneVerificationCode(code);
                     if (!mounted || !ok) return;
-                    MobileNavigationService.instance.popUntil(
-                      BottomNavBar.path,
-                    );
+                    MobileNavigationService.instance.goBack();
                   },
                 ),
                 Gap.h16,

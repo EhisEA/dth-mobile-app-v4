@@ -1,5 +1,4 @@
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";

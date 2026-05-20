@@ -1,5 +1,6 @@
 import "package:dth_v4/core/core.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 
 /// App theme data configuration
 ///
@@ -25,6 +26,7 @@ class AppThemeData {
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
       elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
       iconTheme: IconThemeData(color: Colors.black),
       titleTextStyle: TextStyle(
         fontFamily: AppFontFamily.primary,

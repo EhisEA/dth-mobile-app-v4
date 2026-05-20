@@ -43,7 +43,75 @@ class _PersonalInformationStepState
   String? _gender;
   DthCountry? _selectedCountry;
 
+  bool _prefillPostFrameQueued = false;
+  bool _appliedPhoneCountryPrefill = false;
+
   static final _dobFormat = DateFormat('dd-MM-yyyy');
+
+  DthCountry _defaultCountryPick(List<DthCountry> list) {
+    for (final c in list) {
+      if (c.isoCode == 'NG') return c;
+    }
+    return list.first;
+  }
+
+  void _schedulePrefillFromProfile() {
+    if (_prefillPostFrameQueued) return;
+    _prefillPostFrameQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prefillPostFrameQueued = false;
+      if (!mounted) return;
+      final user = ref.read(userStateProvider).user.value;
+      _syncNameEmailFromUser(user);
+      final list = ref
+          .read(countriesListProvider)
+          .maybeWhen(data: (l) => l, orElse: () => null);
+      _syncPhoneCountryFromUser(user, list);
+    });
+  }
+
+  void _syncNameEmailFromUser(UserModel? user) {
+    if (user == null) return;
+    if (_nameController.text.isEmpty && user.fullName.trim().isNotEmpty) {
+      _nameController.text = user.fullName.trim();
+    }
+    if (_emailController.text.isEmpty && user.email.trim().isNotEmpty) {
+      _emailController.text = user.email.trim();
+    }
+  }
+
+  void _syncPhoneCountryFromUser(UserModel? user, List<DthCountry>? countries) {
+    if (_appliedPhoneCountryPrefill || user == null) return;
+    if (countries == null || countries.isEmpty) return;
+
+    if (_phoneController.text.trim().isNotEmpty) {
+      if (_selectedCountry == null) {
+        final pick =
+            DthCountry.findByIso(countries, user.isoCode) ??
+            _defaultCountryPick(countries);
+        setState(() => _selectedCountry = pick);
+      }
+      _appliedPhoneCountryPrefill = true;
+      return;
+    }
+
+    final pick =
+        DthCountry.findByIso(countries, user.isoCode) ??
+        _defaultCountryPick(countries);
+
+    final hasStoredPhone = user.phoneNumber.trim().isNotEmpty;
+
+    setState(() {
+      _selectedCountry = pick;
+      if (hasStoredPhone) {
+        _phoneController.text = displayNationalPhoneInField(
+          storedPhone: user.phoneNumber,
+          country: pick,
+        );
+      }
+    });
+    _appliedPhoneCountryPrefill = true;
+  }
 
   @override
   void initState() {
@@ -120,121 +188,110 @@ class _PersonalInformationStepState
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    ref.listen<AsyncValue<List<DthCountry>>>(countriesListProvider, (_, next) {
-      next.whenData((list) {
-        if (!mounted || _selectedCountry != null) return;
-        DthCountry? pick;
-        for (final c in list) {
-          if (c.isoCode == 'NG') {
-            pick = c;
-            break;
-          }
-        }
-        pick ??= list.isNotEmpty ? list.first : null;
-        if (pick != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() => _selectedCountry = pick);
-          });
-        }
-      });
-    });
-    final genderOptions = [
-      for (final gender in widget.applicationProcess.genderOptions)
-        AppDropdownOption(value: gender.label, label: gender.label),
-    ];
-    return Form(
-      key: widget.formKey,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          AppText.medium(
-            'Personal Information',
-            fontSize: 24,
-            letterSpacing: -0.4,
-            color: AppColors.tertiary60,
-          ),
-          Gap.h8,
-          AppText.regular(
-            'Provide your basic details to complete your profile.',
-            fontSize: 14,
-            height: 1.4,
-            color: AppColors.blackTint20,
-          ),
-          Gap.h24,
-          AppTextField(
-            title: 'Full Name',
-            hint: 'Enter your full name',
-            controller: _nameController,
-            focusNode: _nameFocus,
-            titleColor: AppColors.black,
-            validator: Validator.fullname,
-            textInputAction: TextInputAction.next,
-            formatter: [FilteringTextInputFormatter.singleLineFormatter],
-          ),
-          Gap.h12,
-          AppTextField(
-            title: 'Email Address',
-            hint: 'example@email.com',
-            controller: _emailController,
-            focusNode: _emailFocus,
-            titleColor: AppColors.black,
-            validator: Validator.email,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            formatter: [FilteringTextInputFormatter.singleLineFormatter],
-          ),
-          Gap.h16,
-          Row(
+    ref.watch(countriesListProvider);
+    return ValueListenableBuilder<UserModel?>(
+      valueListenable: ref.watch(userStateProvider).user,
+      builder: (context, profileUser, _) {
+        _schedulePrefillFromProfile();
+        final genderOptions = [
+          for (final gender in widget.applicationProcess.genderOptions)
+            AppDropdownOption(value: gender.label, label: gender.label),
+        ];
+        return Form(
+          key: widget.formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              Expanded(
-                child: AppTextField(
-                  title: 'Date of Birth',
-                  hint: 'DD-MM-YYYY',
-                  controller: _dobController,
-                  focusNode: _dobFocus,
-                  readOnly: true,
-                  enabled: false,
-                  titleColor: AppColors.black,
-                  validator: Validator.emptyField,
-                  textInputAction: TextInputAction.next,
-                  suffixIcon: SvgPicture.asset(SvgAssets.calendarEdit),
-                  onTap: _pickDob,
-                ),
+              AppText.medium(
+                'Personal Information',
+                fontSize: 24,
+                letterSpacing: -0.4,
+                color: AppColors.tertiary60,
               ),
-              Gap.w12,
-              Expanded(
-                child: AppDropdownFormField<String>(
-                  title: 'Gender',
-                  hint: 'Select gender',
-                  options: genderOptions,
-                  onChanged: (v) => setState(() => _gender = v),
-                ),
+              Gap.h8,
+              AppText.regular(
+                'Provide your basic details to complete your profile.',
+                fontSize: 14,
+                height: 1.4,
+                color: AppColors.blackTint20,
               ),
+              Gap.h24,
+              AppTextField(
+                title: 'Full Name',
+                hint: 'Enter your full name',
+                controller: _nameController,
+                focusNode: _nameFocus,
+                titleColor: AppColors.black,
+                validator: Validator.fullname,
+                textInputAction: TextInputAction.next,
+                formatter: [FilteringTextInputFormatter.singleLineFormatter],
+              ),
+              Gap.h12,
+              AppTextField(
+                title: 'Email Address',
+                hint: 'example@email.com',
+                controller: _emailController,
+                focusNode: _emailFocus,
+                titleColor: AppColors.black,
+                validator: Validator.email,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                formatter: [FilteringTextInputFormatter.singleLineFormatter],
+              ),
+              Gap.h16,
+              Row(
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      title: 'Date of Birth',
+                      hint: 'DD-MM-YYYY',
+                      controller: _dobController,
+                      focusNode: _dobFocus,
+                      readOnly: true,
+                      enabled: false,
+                      titleColor: AppColors.black,
+                      validator: Validator.emptyField,
+                      textInputAction: TextInputAction.next,
+                      suffixIcon: SvgPicture.asset(SvgAssets.calendarEdit),
+                      onTap: _pickDob,
+                    ),
+                  ),
+                  Gap.w12,
+                  Expanded(
+                    child: AppDropdownFormField<String>(
+                      title: 'Gender',
+                      hint: 'Select gender',
+                      options: genderOptions,
+                      onChanged: (v) => setState(() => _gender = v),
+                    ),
+                  ),
+                ],
+              ),
+
+              Gap.h16,
+              PhoneNumberCountryInput(
+                title: 'Phone Number',
+                hint: 'Enter phone number',
+                controller: _phoneController,
+                focusNode: _phoneFocus,
+                displayCountry: _selectedCountry,
+                textInputAction: TextInputAction.done,
+                onCountryTap: () {
+                  showCountryPickerBottomSheet(
+                    context,
+                    initialCountry: _selectedCountry,
+                    onSelected: (c) => setState(() => _selectedCountry = c),
+                  );
+                },
+                onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                validator: (v) => validateNationalPhone(v, _selectedCountry),
+              ),
+              Gap.h32,
             ],
           ),
-
-          Gap.h16,
-          PhoneNumberCountryInput(
-            title: 'Phone Number',
-            hint: 'Enter phone number',
-            controller: _phoneController,
-            focusNode: _phoneFocus,
-            displayCountry: _selectedCountry,
-            textInputAction: TextInputAction.done,
-            onCountryTap: () {
-              showCountryPickerBottomSheet(
-                context,
-                initialCountry: _selectedCountry,
-                onSelected: (c) => setState(() => _selectedCountry = c),
-              );
-            },
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            validator: (v) => validateNationalPhone(v, _selectedCountry),
-          ),
-          Gap.h32,
-        ],
-      ),
+        );
+      },
     );
   }
 }

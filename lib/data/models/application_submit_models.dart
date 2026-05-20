@@ -25,6 +25,7 @@ class ApplicationSubmitRequest {
     required this.accountName,
     required this.accountNumber,
     required this.isFinalStep,
+    required this.includeBankDetails,
   });
 
   final String fullName;
@@ -52,8 +53,12 @@ class ApplicationSubmitRequest {
   final String accountNumber;
   final bool isFinalStep;
 
+  /// When false (API `collect_bank_details` is false), bank fields are omitted
+  /// from [toJson] so the server does not validate empty bank strings.
+  final bool includeBankDetails;
+
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       "full_name": fullName,
       "email": email,
       "gender": gender,
@@ -74,10 +79,13 @@ class ApplicationSubmitRequest {
       "name_of_participants": nameOfParticipants,
       "video_link": videoLink,
       "social_media_link": socialMediaLink,
-      "bank_name": bankName,
-      "account_name": accountName,
-      "account_number": accountNumber,
       "is_final_step": isFinalStep,
     };
+    if (includeBankDetails) {
+      map["bank_name"] = bankName;
+      map["account_name"] = accountName;
+      map["account_number"] = accountNumber;
+    }
+    return map;
   }
 }

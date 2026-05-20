@@ -7,3 +7,4 @@ export "utils/utils.dart";
 export "extension/extension.dart";
 export "enums/enums.dart";
 export "services/services.dart";
+export "router/router.dart";

@@ -32,14 +32,30 @@ class ProfileRepoImpl implements ProfileRepo {
   }
 
   @override
+  Future<ApiResponse<ProfilePhoneSubmitResult>> submitProfilePhone({
+    required String isoCode,
+    required String phone,
+  }) async {
+    final response = await _networkService.post(
+      ApiRoute.profilePhone,
+      data: {"iso_code": isoCode, "phone": phone},
+    );
+    final root = response.data as Map<String, dynamic>;
+    return ApiResponse(data: ProfilePhoneSubmitResult.fromResponseRoot(root));
+  }
+
+  @override
   Future<ApiResponse<void>> verifyPhoneOtp({
     required String token,
     required String signature,
+    String? deviceName,
   }) async {
-    await _networkService.post(
-      ApiRoute.profilePhoneVerifyOtp,
-      data: {"token": token, "signature": signature},
-    );
+    final payload = <String, dynamic>{"token": token, "signature": signature};
+    final dn = deviceName?.trim();
+    if (dn != null && dn.isNotEmpty) {
+      payload["device_name"] = dn;
+    }
+    await _networkService.post(ApiRoute.profilePhoneVerifyOtp, data: payload);
     return const ApiResponse();
   }
 
@@ -71,6 +87,55 @@ class ProfileRepoImpl implements ProfileRepo {
     final result = UserModel.fromJson(data);
     await _localCache.saveUserData(result.toJson());
     return ApiResponse(data: result);
+  }
+
+  @override
+  Future<ApiResponse<String>> requestAccountDeletion({
+    String? deviceName,
+  }) async {
+    final Object? body;
+    final trimmed = deviceName?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      body = {"device_name": trimmed};
+    } else {
+      body = null;
+    }
+    final response = await _networkService.get(
+      ApiRoute.profileDeleteAccount,
+      data: body,
+    );
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) {
+      return const ApiResponse(data: null);
+    }
+    final sig = data["signature"] as String?;
+    return ApiResponse(data: sig);
+  }
+
+  @override
+  Future<ApiResponse<String?>> confirmAccountDeletion({
+    required String token,
+    required String signature,
+    String? deviceName,
+    String? fcmToken,
+  }) async {
+    final payload = <String, dynamic>{"token": token, "signature": signature};
+    final dn = deviceName?.trim();
+    if (dn != null && dn.isNotEmpty) {
+      payload["device_name"] = dn;
+    }
+    final ft = fcmToken?.trim();
+    if (ft != null && ft.isNotEmpty) {
+      payload["fcm_token"] = ft;
+    }
+    final response = await _networkService.post(
+      ApiRoute.profileDeleteAccount,
+      data: payload,
+    );
+    final root = response.data as Map<String, dynamic>;
+    final message = root["message"] as String?;
+    return ApiResponse(data: message);
   }
 }
 

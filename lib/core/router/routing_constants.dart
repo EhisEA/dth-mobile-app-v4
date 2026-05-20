@@ -1,6 +1,10 @@
 class NavigatorRoutes {
   static const String bottomNavBar = "/bottom-nav-bar";
 
+  ////////////////APPLICANT DASHBOARD////////////////////
+  ///
+  static const String applicantDashboard = "/applicant-dashboard";
+
   ////////////////SPLASH////////////////////
   ///
   static const String splash = "/splash";
@@ -16,6 +20,8 @@ class NavigatorRoutes {
   ///
   static const String home = "/home";
   static const String stories = "/stories";
+  static const String postDetail = "/post-detail";
+  static const String commentThread = "/comment-thread";
 
   ////////////////SEARCH////////////////////
   ///
@@ -26,6 +32,8 @@ class NavigatorRoutes {
   static const String profile = "/profile";
   static const String personalInformation = "/personal-information";
   static const String profilePhoneVerifyOtp = "/profile-phone-verify-otp";
+  static const String deleteAccountConsent = "/delete-account-consent";
+  static const String deleteAccountOtp = "/delete-account-otp";
 
   ////////////////APPLICATION////////////////////
   ///
@@ -37,4 +45,10 @@ class NavigatorRoutes {
   ///
   static const String subscription = "/subscription";
   static const String confirmation = "/confirmation";
+
+  ////////////////TICKETS////////////////////
+  ///
+  static const String tickets = "/tickets";
+  static const String upcomingShows = "/upcoming-shows";
+  static const String show = "/show";
 }

@@ -22,6 +22,9 @@ class AppColors {
   //57688E
   static Color dthBlue = const Color(0xFF57688E);
 
+  //F0F5FF
+  static Color dth100 = const Color(0xFFF0F5FF);
+
   // D2D2D2
   static Color tint5 = const Color(0xffD2D2D2);
 
@@ -37,17 +40,29 @@ class AppColors {
   // 454545
   static Color tint25 = const Color(0xff454545);
 
+  // 474954
+  static const Color paleLavender = Color(0xff474954);
+
   // F7F7F7
   static Color greyTint15 = const Color(0xffF7F7F7);
 
   // F4F4F4
   static Color greyTint20 = const Color(0xffF4F4F4);
 
+  // F2F2F2
+  static Color greyTint25 = const Color(0xffF2F2F2);
+
   // EFEFEF
   static Color greyTint30 = const Color(0xffEFEFEF);
 
   // EBEBEB
   static Color greyTint35 = const Color(0xffEBEBEB);
+
+  // 787878
+  static Color greyTint50 = const Color(0xff787878);
+
+  // 505050
+  static Color greyTint55 = const Color(0xff505050);
 
   // FE5349
   static Color redTint35 = const Color(0xffFE5349);

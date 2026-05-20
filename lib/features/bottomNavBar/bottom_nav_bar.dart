@@ -1,13 +1,14 @@
 import "dart:async";
 
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
+import "package:dth_v4/features/bottomNavBar/bottomsheet/show_phone_verification_sheet.dart";
 import "package:dth_v4/features/bottomNavBar/components/nav_item.dart";
+import "package:dth_v4/features/bottomNavBar/phone_verification_eligibility.dart";
 import "package:dth_v4/features/bottomNavBar/viewmodel/bottom_nav_bar_view_model.dart";
-import "package:dth_v4/features/home/home_view.dart";
+import "package:dth_v4/features/home/views/home_view.dart";
 import "package:dth_v4/features/profile/profile_view/views/profile_view.dart";
-import "package:dth_v4/features/search/search_view.dart";
+import "package:dth_v4/features/search/views/search_view.dart";
 import "package:dth_v4/features/subscription/views/subscription_view.dart";
 import "package:dth_v4/features/tickets/tickets.dart";
 import "package:dth_v4/widgets/widgets.dart";
@@ -23,43 +24,96 @@ final bottomNavBarViewModel = ChangeNotifierProvider.autoDispose(
   ),
 );
 
-class _NavEntry {
-  const _NavEntry({
+class _NavBinding {
+  const _NavBinding({
     required this.label,
     required this.assetInactive,
     required this.assetActive,
+    required this.screen,
   });
   final String label;
   final String assetInactive;
   final String assetActive;
+  final Widget screen;
 }
 
-const List<_NavEntry> _kNavEntries = [
-  _NavEntry(
+/// Maps an `AppModuleNavItem.name` (server-controlled identifier) to its
+/// concrete tab UI: icons + screen widget. Items the server doesn't include
+/// are simply not rendered.
+_NavBinding? _bindNavItem(AppModuleNavItem item) {
+  switch (item.name) {
+    case 'timeline':
+      return _NavBinding(
+        label: item.label,
+        assetInactive: SvgAssets.home,
+        assetActive: SvgAssets.homeActive,
+        screen: const HomeView(),
+      );
+    case 'search':
+      return _NavBinding(
+        label: item.label,
+        assetInactive: SvgAssets.search,
+        assetActive: SvgAssets.searchActive,
+        screen: const SearchView(),
+      );
+    case 'tickets':
+      return _NavBinding(
+        label: item.label,
+        assetInactive: SvgAssets.ticket,
+        assetActive: SvgAssets.ticketActive,
+        screen: const TicketView(),
+      );
+    case 'subscriptions':
+      return _NavBinding(
+        label: item.label,
+        assetInactive: SvgAssets.verify,
+        assetActive: SvgAssets.verifyActive,
+        screen: const SubscriptionView(),
+      );
+    case 'profile':
+      return _NavBinding(
+        label: item.label,
+        assetInactive: SvgAssets.profile,
+        assetActive: SvgAssets.profileActive,
+        screen: const ProfileView(),
+      );
+    default:
+      return null;
+  }
+}
+
+/// Fallback used when the modules call hasn't returned yet or failed —
+/// matches the previous hard-coded layout so users never see a blank nav.
+final List<_NavBinding> _kFallbackBindings = [
+  _NavBinding(
     label: 'Home',
     assetInactive: SvgAssets.home,
     assetActive: SvgAssets.homeActive,
+    screen: const HomeView(),
   ),
-  _NavEntry(
+  _NavBinding(
     label: 'Search',
     assetInactive: SvgAssets.search,
     assetActive: SvgAssets.searchActive,
+    screen: const SearchView(),
   ),
-  _NavEntry(
+  _NavBinding(
     label: 'Tickets',
     assetInactive: SvgAssets.ticket,
     assetActive: SvgAssets.ticketActive,
+    screen: const TicketView(),
   ),
-  _NavEntry(
+  _NavBinding(
     label: 'Subscription',
     assetInactive: SvgAssets.verify,
     assetActive: SvgAssets.verifyActive,
+    screen: const SubscriptionView(),
   ),
-
-  _NavEntry(
+  _NavBinding(
     label: 'Profile',
     assetInactive: SvgAssets.profile,
     assetActive: SvgAssets.profileActive,
+    screen: const ProfileView(),
   ),
 ];
 
@@ -75,14 +129,19 @@ class BottomNavBar extends ConsumerStatefulWidget {
 }
 
 class BottomNavBarState extends ConsumerState<BottomNavBar> {
-  List<CustomNavBarScreen> _buildScreens() {
-    return [
-      CustomNavBarScreen(screen: HomeView()),
-      CustomNavBarScreen(screen: SearchView()),
-      CustomNavBarScreen(screen: TicketView()),
-      CustomNavBarScreen(screen: SubscriptionView()),
-      CustomNavBarScreen(screen: ProfileView()),
-    ];
+  /// Resolves the tab list from the server-provided `navigation` payload.
+  /// Falls back to the static set if modules haven't loaded yet — splash
+  /// awaits the call before navigating here, so this fallback is only a
+  /// safety net for retry/failure paths.
+  List<_NavBinding> _resolveBindings() {
+    final modules = ref.read(appModulesStateProvider).appModules.value;
+    final navItems = modules?.navigation ?? const <AppModuleNavItem>[];
+    if (navItems.isEmpty) return _kFallbackBindings;
+    final bindings = navItems
+        .map(_bindNavItem)
+        .whereType<_NavBinding>()
+        .toList(growable: false);
+    return bindings.isEmpty ? _kFallbackBindings : bindings;
   }
 
   final PersistentTabController _tabController = PersistentTabController(
@@ -91,9 +150,11 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
   DateTime? _lastBackPress;
   Timer? _exitTimer;
   static const _exitWindow = Duration(seconds: 2);
+  bool _phoneVerificationSheetShown = false;
 
   void changeTab(int newIndex) {
-    if (newIndex < 0 || newIndex >= _kNavEntries.length) return;
+    final bindings = _resolveBindings();
+    if (newIndex < 0 || newIndex >= bindings.length) return;
     _tabController.jumpToTab(newIndex);
   }
 
@@ -133,14 +194,27 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
     super.dispose();
   }
 
+  void _tryShowPhoneVerificationSheet() {
+    if (_phoneVerificationSheetShown || !mounted) return;
+    final user = ref.read(userStateProvider).user.value;
+    if (user == null || !shouldEnforcePhoneVerification(user)) return;
+    _phoneVerificationSheetShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(showPhoneVerificationBottomSheet(context, user: user));
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     final model = ref.read(bottomNavBarViewModel);
     unawaited(
-      Future.microtask(() {
-        model.userState.getUserDetails();
+      Future.microtask(() async {
+        await model.userState.getUserDetails();
+        if (!mounted) return;
         unawaited(model.subscriptionPlansState.fetchPlans());
+        _tryShowPhoneVerificationSheet();
       }),
     );
     _tabController.addListener(() {
@@ -148,32 +222,44 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
     });
   }
 
-  Widget _buildCustomNavBar() {
+  Widget _buildCustomNavBar(List<_NavBinding> bindings) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final bottomPad = bottomInset > 0 ? 4.0 : 8.0;
     return Material(
       color: AppColors.white,
       elevation: 8,
       shadowColor: Colors.black26,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset > 0 ? 4 : 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            for (var i = 0; i < _kNavEntries.length; i++)
-              Expanded(
-                child: NavItem(
-                  icon: _kNavEntries[i].assetInactive,
-                  activeIcon: _kNavEntries[i].assetActive,
-                  isActive: _tabController.index == i,
-                  onTap: () {
-                    setState(() {
-                      _tabController.index = i;
-                    });
-                  },
-                ),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final outerH = c.maxHeight.isFinite ? c.maxHeight : 84.0;
+          final innerH = (outerH - bottomPad).clamp(1.0, 400.0);
+          return Padding(
+            padding: EdgeInsets.only(bottom: bottomPad),
+            child: SizedBox(
+              height: innerH,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  for (var i = 0; i < bindings.length; i++)
+                    Expanded(
+                      child: NavItem(
+                        icon: bindings[i].assetInactive,
+                        activeIcon: bindings[i].assetActive,
+                        isActive: _tabController.index == i,
+                        semanticLabel: bindings[i].label,
+                        onTap: () {
+                          setState(() {
+                            _tabController.index = i;
+                          });
+                        },
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -181,24 +267,41 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
   @override
   Widget build(BuildContext context) {
     final model = ref.watch(bottomNavBarViewModel);
+    // Watch the modules notifier so a late-arriving fetch (retry after a
+    // failed splash call) rebuilds the nav with the server's tab list.
+    final modulesState = ref.watch(appModulesStateProvider);
     return ValueListenableBuilder<UserModel?>(
       valueListenable: model.userModel,
       builder: (context, userModel, _) {
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: _onPopInvoked,
-          child: PersistentTabView.custom(
-            context,
-            backgroundColor: Colors.transparent,
-            controller: _tabController,
-            handleAndroidBackButtonPress: false,
-            screens: _buildScreens(),
-            confineToSafeArea: false,
-            navBarHeight: 84,
-            itemCount: _kNavEntries.length,
-            bottomScreenMargin: 0,
-            customWidget: _buildCustomNavBar(),
-          ),
+        return ValueListenableBuilder<AppModulesModel?>(
+          valueListenable: modulesState.appModules,
+          builder: (context, _, _) {
+            final bindings = _resolveBindings();
+            // Clamp the active index in case the server returned fewer
+            // tabs than the previous render had.
+            if (_tabController.index >= bindings.length) {
+              _tabController.index = 0;
+            }
+            return PopScope(
+              canPop: false,
+              onPopInvokedWithResult: _onPopInvoked,
+              child: PersistentTabView.custom(
+                context,
+                backgroundColor: Colors.transparent,
+                controller: _tabController,
+                handleAndroidBackButtonPress: false,
+                screens: [
+                  for (final b in bindings)
+                    CustomNavBarScreen(screen: b.screen),
+                ],
+                confineToSafeArea: false,
+                navBarHeight: 84,
+                itemCount: bindings.length,
+                bottomScreenMargin: 0,
+                customWidget: _buildCustomNavBar(bindings),
+              ),
+            );
+          },
         );
       },
     );

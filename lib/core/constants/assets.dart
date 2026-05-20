@@ -6,7 +6,28 @@ class ImageAssets {
   static const String imagePath = "assets/images";
   static const String logo = "$imagePath/logo.png";
   static const String logo2 = "$imagePath/logo2.png";
+  static const String line = "$imagePath/line.png";
+  static const String logoWhite = "$imagePath/logo_white.png";
   static const String updateIcon = "$imagePath/update_icon.png";
+  static const String ticketEmptyState =
+      "$imagePath/empty_state/ticket_empty_state.png";
+
+  /////////////////////AUTH//////////////////////
+  ///
+  static const String authBg1 = "$imagePath/auth/1.png";
+  static const String authBg2 = "$imagePath/auth/2.png";
+  static const String authBg3 = "$imagePath/auth/3.png";
+
+  /////////////////////SPLASH//////////////////////
+  ///
+  static const String splash1 = "$imagePath/splash/1.png";
+  static const String splash2 = "$imagePath/splash/2.png";
+  static const String splash3 = "$imagePath/splash/3.png";
+
+  /////////////////////HOME//////////////////////
+  ///
+  static const String applyimg = "$imagePath/home/apply_img.png";
+  static const String phoneVerify = "$imagePath/home/phone_verify.png";
 
   /////////////////////PROFILE//////////////////////
   ///
@@ -24,12 +45,19 @@ class ImageAssets {
   static const String phoneBg = "$imagePath/subscription/phone_bg.png";
 
   /////////////////////APPLICATION//////////////////////
-  static const String applicationBg = "$imagePath/application/application_bg.png";
+  static const String applicationBg =
+      "$imagePath/application/application_bg.png";
+  static const String blueBg = "$imagePath/application/blue_bg.png";
+  static const String greenBg = "$imagePath/application/green_bg.png";
+  static const String redBg = "$imagePath/application/red_bg.png";
+  static const String applicantBanner =
+      "$imagePath/application/applicant_banner.png";
 }
 
 class SvgAssets {
   static const String svgPath = "assets/svgs";
   static const String backArrow = "$svgPath/arrow-left.svg";
+  static const String clockOutline = "$svgPath/clock_outline.svg";
   static const String downArrow = "$svgPath/arrow-down.svg";
   static const String rightArrow = "$svgPath/arrow-right.svg";
   static const String googleLogo = "$svgPath/auth/google.svg";
@@ -51,6 +79,7 @@ class SvgAssets {
 
   /////////////////////HOME//////////////////////
   static const String live = "$svgPath/home/live.svg";
+  static const String phoneVerify = "$svgPath/home/phone_verify.svg";
   static const String notification = "$svgPath/home/notification.svg";
   static const String greyLogo = "$svgPath/home/grey_logo.svg";
   static const String primaryLogo = "$svgPath/home/primary_logo.svg";
@@ -75,13 +104,29 @@ class SvgAssets {
   static const String privacy = "$svgPath/profile/privacy.svg";
   static const String social = "$svgPath/profile/social.svg";
   static const String terms = "$svgPath/profile/terms.svg";
+  static const String profileEdit = "$svgPath/profile/profile_edit.svg";
   static const String cup = "$svgPath/profile/cup.svg";
+  static const String error = "$svgPath/profile/error.svg";
+  static const String doubleTick = "$svgPath/profile/double_tick.svg";
 
   /////////////////////APPLICATION//////////////////////
   ///
   static const String support = "$svgPath/application/support.svg";
+  static const String copyOutline = "$svgPath/application/copy_outline.svg";
   static const String edit = "$svgPath/application/edit.svg";
   static const String calendarEdit = "$svgPath/application/calendar-edit.svg";
+  static const String infoOutline = "$svgPath/application/info-circle.svg";
+  static const String clock = "$svgPath/application/clock.svg";
+  static const String star = "$svgPath/application/star.svg";
+
+  /////////////////////SEARCH//////////////////////
+  ///
+  static const String location = "$svgPath/search/location.svg";
+  static const String clockFilled = "$svgPath/search/clock.svg";
+
+  /////////////////////TICKETS//////////////////////
+  ///
+  static const String share = "$svgPath/tickets/share.svg";
 
   /////////////////////SUBSCRIPTION//////////////////////
   ///

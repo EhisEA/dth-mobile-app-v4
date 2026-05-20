@@ -85,7 +85,7 @@ class ProfileImageWidget extends StatelessWidget {
                       ),
                       child: Center(
                         child: SvgPicture.asset(
-                          SvgAssets.edit,
+                          SvgAssets.profileEdit,
                           height: 14,
                           width: 14,
                           colorFilter: ColorFilter.mode(

@@ -25,7 +25,7 @@ class DataManipulationInterceptor extends Interceptor {
   ) async {
     final baseHeaders = <String, dynamic>{
       "Accept": "application/json",
-      ...AppInfo.payload,
+      ...(await AppInfo.payload(_ref.read(deviceInfoStateProvider))),
     };
     if (options.data is! FormData) {
       baseHeaders["Content-Type"] = "application/json";

@@ -1,14 +1,20 @@
 import "package:dth_v4/data/data.dart";
+import "package:dth_v4/features/application_dashboard/applicant_dashboard.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 import "package:intl/intl.dart";
 
 class ApplicationViewModel extends BaseChangeNotifierViewModel {
-  ApplicationViewModel(this._applicationRepo, this._userProfileState);
+  ApplicationViewModel(
+    this._applicationRepo,
+    this._userProfileState,
+    this._applicantDashboardViewModel,
+  );
 
   final ApplicationRepo _applicationRepo;
   final UserProfileState _userProfileState;
+  final ApplicantDashboardViewModel _applicantDashboardViewModel;
 
   ApplicationDraft _draft = ApplicationDraft.empty;
 
@@ -122,6 +128,7 @@ class ApplicationViewModel extends BaseChangeNotifierViewModel {
       accountName: source.accountName.trim(),
       accountNumber: source.accountNumber.trim(),
       isFinalStep: isFinalStep,
+      includeBankDetails: _applicationProcess?.collectBankDetails ?? false,
     );
   }
 
@@ -147,8 +154,13 @@ class ApplicationViewModel extends BaseChangeNotifierViewModel {
     try {
       setState(_submitApplicationKey, const ViewModelState.busy());
       await _applicationRepo.submitApplication(body);
-      _userProfileState.updateUserDataFromServer();
+      await _userProfileState.updateUserDataFromServer();
+      await _applicantDashboardViewModel.refreshAfterApplicationSubmit();
       setState(_submitApplicationKey, const ViewModelState.idle());
+      DthFlushBar.instance.showSuccess(
+        title: "Success",
+        message: "Application submitted successfully!",
+      );
       onSuccess?.call();
     } on ApiFailure catch (e) {
       setState(_submitApplicationKey, ViewModelState.error(e));
@@ -201,5 +213,6 @@ final applicationViewModelProvider =
       return ApplicationViewModel(
         ref.read(applicationRepositoryProvider),
         ref.read(userProfileStateProvider),
+        ref.read(applicantDashboardViewModelProvider),
       );
     });

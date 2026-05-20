@@ -32,15 +32,26 @@ class UserProfileState extends BaseState {
       final userData = _localCache.getUserData();
       final hasToken = _localCache.getToken() != null;
 
+      // When signed in, prefer the server first. Applying stale cache before the
+      // GET completes can overwrite a fresh user right after profile PUT (race).
+      if (hasToken) {
+        await getUserDetailsFromServer();
+        if (_user.value == null && userData != null) {
+          _user.value = UserModel.fromJson(userData);
+          _logger.i(
+            "getUserDetails: fallback _user from cache (server had no user): "
+            "${_user.value?.toJson()}",
+          );
+        }
+        return;
+      }
+
       if (userData != null) {
         _user.value = UserModel.fromJson(userData);
         _logger.i(
-          "getUserDetails: set _user from local cache: ${_user.value?.toJson()}",
+          "getUserDetails: set _user from local cache (no token): "
+          "${_user.value?.toJson()}",
         );
-      }
-
-      if (userData != null || hasToken) {
-        await getUserDetailsFromServer();
       }
     } catch (e) {
       handleError(e, "getUserDetails");
@@ -81,9 +92,12 @@ class UserProfileState extends BaseState {
     }
   }
 
-  void updateUserData(UserModel user) {
-    unawaited(_localCache.saveUserData(user.toJson()));
-    unawaited(getUserDetails());
+  /// Persists [user], updates in-memory state, then reconciles with the server.
+  /// Use after profile mutations so tabs (e.g. Profile) stay in sync with `/me`.
+  Future<void> updateUserData(UserModel user) async {
+    await _localCache.saveUserData(user.toJson());
+    _user.value = user;
+    await getUserDetailsFromServer();
   }
 
   void logOut() {

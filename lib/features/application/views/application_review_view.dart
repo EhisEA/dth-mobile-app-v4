@@ -1,6 +1,6 @@
 import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/core/router/router.dart';
 import 'package:dth_v4/data/models/application_draft.dart';
+import 'package:dth_v4/data/models/application_process_models.dart';
 import 'package:dth_v4/features/application/components/review_section_card.dart';
 import 'package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart';
 import 'package:dth_v4/features/application/view_model/application_view_model.dart';
@@ -12,7 +12,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_utils/flutter_utils.dart';
 
-/// Pop result: wizard page index `0–4` when the user taps a section to edit.
 class ApplicationReviewView extends ConsumerStatefulWidget {
   const ApplicationReviewView({super.key, this.routeDraft});
 
@@ -44,7 +43,12 @@ class ApplicationReviewView extends ConsumerStatefulWidget {
     ];
   }
 
-  static List<ReviewSectionField> _contactRows(ApplicationDraft d) {
+  static List<ReviewSectionField> _contactRows(
+    ApplicationDraft d,
+    ApplicationProcess? process,
+  ) {
+    final nearestCampusLabel =
+        process?.nearestCampusDisplay(d.nearestCampus) ?? d.nearestCampus;
     return [
       (
         label: 'Residential Address',
@@ -59,7 +63,11 @@ class ApplicationReviewView extends ConsumerStatefulWidget {
       (label: 'City/Town', value: d.cityOfResidence, forceFullWidth: false),
       (label: 'State of Origin', value: d.stateOfOrigin, forceFullWidth: false),
       (label: 'LGA', value: d.lga, forceFullWidth: false),
-      (label: 'Nearest Campus', value: d.nearestCampus, forceFullWidth: false),
+      (
+        label: 'Nearest Campus',
+        value: nearestCampusLabel,
+        forceFullWidth: false,
+      ),
     ];
   }
 
@@ -203,7 +211,10 @@ class _ApplicationReviewViewState extends ConsumerState<ApplicationReviewView> {
                       ReviewSectionCard(
                         title: 'Contact Information',
                         wizardPageIndex: 1,
-                        rows: ApplicationReviewView._contactRows(vm.draft),
+                        rows: ApplicationReviewView._contactRows(
+                          vm.draft,
+                          vm.applicationProcess,
+                        ),
                       ),
                       Gap.h12,
                       ReviewSectionCard(
@@ -217,12 +228,15 @@ class _ApplicationReviewViewState extends ConsumerState<ApplicationReviewView> {
                         wizardPageIndex: 3,
                         rows: ApplicationReviewView._videoRows(vm.draft),
                       ),
-                      Gap.h12,
-                      ReviewSectionCard(
-                        title: 'Bank Details',
-                        wizardPageIndex: 4,
-                        rows: ApplicationReviewView._bankRows(vm.draft),
-                      ),
+                      if (vm.applicationProcess?.collectBankDetails ??
+                          false) ...[
+                        Gap.h12,
+                        ReviewSectionCard(
+                          title: 'Bank Details',
+                          wizardPageIndex: 4,
+                          rows: ApplicationReviewView._bankRows(vm.draft),
+                        ),
+                      ],
                       Gap.h24,
                     ],
                   ),
