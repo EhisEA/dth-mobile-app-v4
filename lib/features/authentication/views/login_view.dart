@@ -1,5 +1,4 @@
 import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/core/router/router.dart';
 import 'package:dth_v4/features/authentication/view_model/login_view_model.dart';
 import 'package:dth_v4/features/authentication/views/create_account_view.dart';
 import 'package:dth_v4/features/authentication/views/verify_otp_view.dart';
@@ -81,7 +80,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       AppText.regular(
                         'Enter your email to continue from where you left off.',
                         fontSize: 14,
-                        color: const Color(0xff474954),
+                        color: AppColors.paleLavender,
                       ),
                       Gap.h24,
                       AppTextField(

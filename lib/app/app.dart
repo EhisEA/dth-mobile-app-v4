@@ -43,7 +43,14 @@ class MyApp extends StatelessWidget {
           );
         }
 
-        return child;
+        // Unfocus on pointer down without a TapGestureRecognizer — a root
+        // [GestureDetector] competes in the gesture arena with embedded
+        // players (e.g. YouTube) and can break their play/pause controls.
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          child: child,
+        );
       },
       theme: AppThemeData.lightTheme,
       themeMode: ThemeMode.light,

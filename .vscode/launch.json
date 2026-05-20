@@ -45,3 +45,6 @@
         }
     ]
 }
+
+// flutter build ios -t lib/main_dev.dart --flavor dev --dart-define-from-file=config/dev.json
+// flutter build apk -t lib/main_dev.dart --flavor dev --dart-define-from-file=config/dev.json

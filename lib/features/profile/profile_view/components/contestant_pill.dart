@@ -16,6 +16,8 @@ class ContestantPill extends StatelessWidget {
     vertical: 10,
   );
 
+  static const _pillRadius = 100.0;
+
   @override
   Widget build(BuildContext context) {
     final role = user?.participationRole ?? ParticipationRole.user;
@@ -23,119 +25,155 @@ class ContestantPill extends StatelessWidget {
       case ParticipationRole.contestant:
         final u = user;
         if (u == null) return const SizedBox.shrink();
-        return _withProfileSpacing(_dualPills(label: "CONTESTANT", user: u));
+        return _withProfileSpacing(
+          _UnifiedDualPill(
+            label: 'CONTESTANT',
+            user: u,
+            padding: _chipPadding,
+            radius: _pillRadius,
+          ),
+        );
       case ParticipationRole.applicant:
         final u = user;
         if (u == null) return const SizedBox.shrink();
-        return _withProfileSpacing(_dualPills(label: "APPLICANT", user: u));
+        return _withProfileSpacing(
+          _UnifiedDualPill(
+            label: 'APPLICANT',
+            user: u,
+            padding: _chipPadding,
+            radius: _pillRadius,
+          ),
+        );
       case ParticipationRole.user:
       case ParticipationRole.unknown:
         return const SizedBox.shrink();
     }
   }
 
-  Widget _withProfileSpacing(Widget pillRow) {
+  Widget _withProfileSpacing(Widget pill) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Gap.h16,
-        Center(child: pillRow),
-      ],
-    );
-  }
-
-  Widget _dualPills({required String label, required UserModel user}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _PillShell(
-          child: AppText.medium(
-            label,
-            fontSize: 10,
-            color: AppColors.mainBlack,
-            letterSpacing: 0.4,
-          ),
-        ),
-        Gap.w8,
-        _IdPill(user: user),
-      ],
+      children: [Gap.h16, pill, Gap.h32],
     );
   }
 }
 
-class _PillShell extends StatelessWidget {
-  const _PillShell({required this.child});
+class _UnifiedDualPill extends StatelessWidget {
+  const _UnifiedDualPill({
+    required this.label,
+    required this.user,
+    required this.padding,
+    required this.radius,
+  });
 
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: ContestantPill._chipPadding,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(100),
-        color: AppColors.white,
-        border: Border.all(color: AppColors.greyTint30),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _IdPill extends StatelessWidget {
-  const _IdPill({required this.user});
-
+  final String label;
   final UserModel user;
+  final EdgeInsets padding;
+  final double radius;
+
+  static final _dividerColor = AppColors.greyTint30;
+  static final _borderColor = AppColors.greyTint30;
 
   String _displayUid(String raw) {
-    if (raw.isEmpty) return "—";
-    final u = raw.toUpperCase();
-    if (u.length <= 14) return u;
-    return "${u.substring(0, 12)}…";
+    if (raw.isEmpty) return '—';
+    return raw.toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    final uid = user.participationType.id ?? "";
-    final display = _displayUid(uid);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: user.participationType.id == null
-            ? null
-            : () {
-                Clipboard.setData(
-                  ClipboardData(text: user.participationType.id ?? ""),
-                );
-                HapticFeedback.lightImpact();
-              },
-        borderRadius: BorderRadius.circular(100),
-        child: _PillShell(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppText.medium(
-                display,
-                fontSize: 10,
-                color: AppColors.mainBlack,
-                letterSpacing: 0.4,
-              ),
-              Gap.w4,
-              SvgPicture.asset(
-                SvgAssets.copy,
-                width: 14,
-                height: 14,
-                colorFilter: ColorFilter.mode(
-                  AppColors.primary,
-                  BlendMode.srcIn,
+    final id = user.participationType.id;
+    final display = _displayUid(id ?? '');
+    final canCopy = id != null && id.isNotEmpty;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        if (!w.isFinite || w <= 0) {
+          return const SizedBox.shrink();
+        }
+        // Room for label + divider + paddings + copy icon; id truncates if needed.
+        const leftAndChromeReserve = 132.0;
+        final idMaxWidth = (w - leftAndChromeReserve).clamp(72.0, 280.0);
+
+        return Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: w),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(color: _borderColor),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: padding,
+                  child: AppText.medium(
+                    label,
+                    fontSize: 10,
+                    color: AppColors.mainBlack,
+                    letterSpacing: 0.4,
+                  ),
                 ),
-              ),
-            ],
+                Container(width: 1, height: 12, color: _dividerColor),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: canCopy
+                        ? () {
+                            final raw = user.participationType.id;
+                            if (raw == null || raw.isEmpty) return;
+                            Clipboard.setData(ClipboardData(text: raw));
+                            HapticFeedback.lightImpact();
+                            DthFlushBar.instance.showCopySuccess(
+                              title: "Copied to clipboard",
+                              message:
+                                  "The ID has been copied to your clipboard",
+                            );
+                          }
+                        : null,
+                    child: Padding(
+                      padding: padding,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: idMaxWidth),
+                            child: AppText.medium(
+                              display,
+                              fontSize: 10,
+                              color: AppColors.mainBlack,
+                              letterSpacing: 0.4,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (canCopy) ...[
+                            Gap.w4,
+                            SvgPicture.asset(
+                              SvgAssets.copyOutline,
+                              width: 14,
+                              height: 14,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.primary,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

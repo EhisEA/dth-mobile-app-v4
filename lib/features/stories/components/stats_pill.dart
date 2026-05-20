@@ -1,3 +1,4 @@
+import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -27,20 +28,20 @@ class StatsPill extends StatelessWidget {
               icon!,
               width: 18,
               height: 18,
-              colorFilter: const ColorFilter.mode(
-                Color(0xff474954),
+              colorFilter: ColorFilter.mode(
+                AppColors.paleLavender,
                 BlendMode.srcIn,
               ),
             )
           else
-            Icon(iconData, size: 18, color: const Color(0xff474954)),
+            Icon(iconData, size: 18, color: AppColors.paleLavender),
           Gap.w6,
           Flexible(
             child: AppText.regular(
               label,
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: const Color(0xff474954),
+              color: AppColors.paleLavender,
               maxLines: 1,
             ),
           ),

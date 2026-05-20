@@ -109,4 +109,52 @@ class AppTextStyle {
     letterSpacing: _ls,
     fontWeight: FontWeight.w800,
   );
+
+  /// Weight 200 — `CascadiaMono-ExtraLight.ttf`.
+  static const TextStyle cascadiaMonoExtraLight = TextStyle(
+    fontFamily: AppFontFamily.cascadiaMono,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w200,
+  );
+
+  /// Weight 300 — `CascadiaMono-Light.ttf`.
+  static const TextStyle cascadiaMonoLight = TextStyle(
+    fontFamily: AppFontFamily.cascadiaMono,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w300,
+  );
+
+  /// Weight 400 — `CascadiaMono-Regular.ttf`.
+  static const TextStyle cascadiaMonoRegular = TextStyle(
+    fontFamily: AppFontFamily.cascadiaMono,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// Weight 500 — `CascadiaMono-Medium.ttf`.
+  static const TextStyle cascadiaMonoMedium = TextStyle(
+    fontFamily: AppFontFamily.cascadiaMono,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// Weight 600 — `CascadiaMono-SemiBold.ttf`.
+  static const TextStyle cascadiaMonoSemiBold = TextStyle(
+    fontFamily: AppFontFamily.cascadiaMono,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w600,
+  );
+
+  /// Weight 700 — `CascadiaMono-Bold.ttf`.
+  static const TextStyle cascadiaMonoBold = TextStyle(
+    fontFamily: AppFontFamily.cascadiaMono,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w700,
+  );
 }

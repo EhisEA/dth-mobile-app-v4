@@ -281,6 +281,127 @@ class AppText extends StatelessWidget {
     this.fontWeight,
     this.fontStyle,
   }) : baseStyle = AppTextStyle.matterBold;
+
+  const AppText.cascadiaMonoExtraLight(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.cascadiaMonoExtraLight;
+
+  const AppText.cascadiaMonoLight(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.cascadiaMonoLight;
+
+  const AppText.cascadiaMonoRegular(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.cascadiaMonoRegular;
+
+  const AppText.cascadiaMonoMedium(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.cascadiaMonoMedium;
+
+  const AppText.cascadiaMonoSemiBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.cascadiaMonoSemiBold;
+
+  const AppText.cascadiaMonoBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.cascadiaMonoBold;
+
   @override
   Widget build(BuildContext context) {
     final effectiveStyle = (baseStyle ?? AppTextStyle.regular).copyWith(

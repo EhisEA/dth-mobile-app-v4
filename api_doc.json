@@ -1,0 +1,1909 @@
+{
+    "variable": [
+        {
+            "id": "baseUrl",
+            "key": "baseUrl",
+            "type": "string",
+            "name": "string",
+            "value": "https:\/\/dth5.on-forge.com"
+        }
+    ],
+    "info": {
+        "name": "DTH API Documentation",
+        "_postman_id": "8ef4f3b1-bd7a-4da4-a2bc-5fed37ae47f3",
+        "description": "",
+        "schema": "https:\/\/schema.getpostman.com\/json\/collection\/v2.1.0\/collection.json"
+    },
+    "item": [
+        {
+            "name": "Application",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get Application Process Data",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/application\/process",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/application\/process"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Initialize the application flow by retrieving all necessary dropdown lists (Talent Categories, Nigerian Locations, Banks, and Enums)."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Application process data retrieved.\",\n \"data\": {\n   \"application_process\": {\n     \"talent_categories\": [\n       {\n         \"id\": 1,\n         \"name\": \"Music\"\n       }\n     ],\n     \"locations\": [\n       {\n         \"state\": \"Lagos\",\n         \"lgas\": [\"Ikeja\", \"Surulere\"]\n       }\n     ],\n     \"banks\": [\"Access Bank\", \"Zenith Bank\"],\n     \"gender_options\": [\n       {\"label\": \"Male\", \"value\": \"male\"},\n       {\"label\": \"Female\", \"value\": \"female\"}\n     ],\n     \"presentation_modes\": [\n       {\"label\": \"Individual\", \"value\": \"Individual\"},\n       {\"label\": \"Group\", \"value\": \"Group\"}\n     ],\n     \"is_final_step\": false,\n     \"collect_bank_details\": true\n   }\n },\n \"errors\": null\n}",
+                            "name": "Data retrieved"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n \"message\": \"Unauthenticated.\"\n}",
+                            "name": "Unauthenticated"
+                        },
+                        {
+                            "header": [],
+                            "code": 403,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"failed\",\n \"message\": \"Applications are currently closed.\",\n \"data\": null,\n \"errors\": []\n}",
+                            "name": "Applications closed"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Current Application",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/application",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/application"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve the current user's audition application for the active season, this includes all partially saved data (drafts) and final submissions."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Application retrieved successfully.\",\n \"data\": {\n     \"application\": {\n         \"uid\": \"01JKP...\",\n         \"status\": \"draft\",\n         \"submitted_at\": null,\n         \"full_name\": \"John Doe\",\n         \"email\": \"john@example.com\",\n         \"gender\": \"male\",\n         \"date_of_birth\": \"2000-01-01\",\n         \"phone\": \"+2347033456789\",\n         \"residential_address\": \"123 Main St\",\n         \"state_of_residence\": \"Lagos\",\n         \"state_of_origin\": \"Delta\",\n         \"city\": \"Ikeja\",\n         \"lga\": \"Ikeja\",\n         \"nearest_campus\": null,\n         \"stage_name\": \"JD\",\n         \"talent_category_id\": 1,\n         \"talent_category_name\": \"Music\",\n         \"description\": \"A brief description\",\n         \"mode_of_presentation\": \"Individual\",\n         \"size_of_crew\": \"1\",\n         \"name_of_participants\": null,\n         \"video_link\": \"https:\/\/youtube.com\/watch?v=123\",\n         \"social_media_link\": \"https:\/\/instagram.com\/johndoe\",\n         \"bank_name\": \"Access Bank\",\n         \"account_name\": \"John Doe\",\n         \"account_number\": \"0123456789\"\n     }\n },\n \"errors\": null\n}",
+                            "name": "Application found"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n \"message\": \"Unauthenticated.\"\n}",
+                            "name": "Unauthenticated"
+                        },
+                        {
+                            "header": [],
+                            "code": 403,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"failed\",\n \"message\": \"Applications are currently closed.\",\n \"data\": null,\n \"errors\": []\n}",
+                            "name": "Applications closed"
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"failed\",\n \"message\": \"No application found for the current season.\",\n \"data\": null,\n \"errors\": []\n}",
+                            "name": "No application"
+                        }
+                    ]
+                },
+                {
+                    "name": "Store Application Progress",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/application",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/application"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"full_name\":\"John Doe\",\"email\":\"john@example.com\",\"gender\":\"male\",\"date_of_birth\":\"1995-05-15\",\"iso_code\":\"NG\",\"phone\":\"+2347033456789\",\"residential_address\":\"123 Lekki Way\",\"state_of_residence\":\"Lagos\",\"state_of_origin\":\"Edo\",\"city\":\"Ikeja\",\"lga\":\"Ikeja\",\"nearest_campus\":\"Unilag\",\"stage_name\":\"Star Boy\",\"talent_category_id\":1,\"description\":\"Singing and dancing\",\"mode_of_presentation\":\"Individual\",\"size_of_crew\":\"1\",\"name_of_participants\":[],\"video_link\":\"https:\\\/\\\/youtube.com\\\/watch?v=abc\",\"social_media_link\":\"https:\\\/\\\/instagram.com\\\/user\",\"bank_name\":\"Access Bank\",\"account_name\":\"John Doe\",\"account_number\":\"0123456789\",\"is_final_step\":false}"
+                        },
+                        "description": "Save or update application data throughout the multi-step flow, this endpoint handles partial saves (drafts) and final submissions."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Progress saved successfully.\",\n \"data\": null,\n \"errors\": null\n}",
+                            "name": "Progress saved"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n \"message\": \"Unauthenticated.\"\n}",
+                            "name": "Unauthenticated"
+                        },
+                        {
+                            "header": [],
+                            "code": 403,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"failed\",\n \"message\": \"Applications are currently closed.\",\n \"data\": null,\n \"errors\": []\n}",
+                            "name": "Applications closed"
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"failed\",\n \"message\": \"This application has already been submitted.\",\n \"data\": null,\n \"errors\": []\n}",
+                            "name": "Already submitted"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Authentication",
+            "description": "\nGeneral countries endpoints for the registration process.",
+            "item": [
+                {
+                    "name": "Get Countries",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/countries",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/countries"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a list of all supported countries with their dial codes,\nphone number formats, and base64 encoded flags.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Countries retrieved successfully.\",\"data\":{\"countries\":[{\"dial_code\":\"+234\",\"iso_code\":\"NG\",\"flag\":\"data:image\/png;base64,...\"}]},\"errors\":null}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Register",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/register",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/register"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"full_name\":\"John Doe\",\"email\":\"john@example.com\",\"iso_code\":\"NG\",\"phone\":\"+2347033456789\",\"device_name\":\"iPhone 15 Pro\"}"
+                        },
+                        "description": "Begin registration by sending a 6-digit verification code to the given email address.\nThe user's full name, phone number and email are collected upfront. Once the OTP is verified,\nthe account is created automatically. Fails if an account with the email already exists.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"A verification code has been sent to your email.\",\"data\":{\"signature\":\"$2y$12$exampleSignatureHash\",\"expiration\":10},\"errors\":null}",
+                            "name": "OTP sent"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"You must wait before requesting another OTP.\",\"data\":null,\"errors\":[]}",
+                            "name": "Throttled"
+                        },
+                        {
+                            "header": [],
+                            "code": 409,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"An account with this email already exists.\",\"data\":null,\"errors\":[]}",
+                            "name": "Email taken"
+                        }
+                    ]
+                },
+                {
+                    "name": "Verify registration OTP",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/register\/verify-otp",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/register\/verify-otp"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"token\":\"123456\",\"signature\":\"$2y$12$exampleSignatureHash\",\"device_name\":\"iPhone 15 Pro\",\"fcm_token\":\"fcm-token-value-123\"}"
+                        },
+                        "description": "Validate the 6-digit code sent during registration. On success, creates the\nuser account and returns an authenticated user with a Sanctum API token.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Registration complete.\",\"data\":{\"user\":{\"uid\":\"01JKN7A...\",\"full_name\":\"John Doe\",\"email\":\"john@example.com\",\"phone\":\"+2347012345678\",\"iso_code\":\"NG\",\"is_phone_verified\":false,\"participation_type\":{\"name\":\"user\",\"id\":null}},\"token\":\"1|abc123tokenvalue\"},\"errors\":null}",
+                            "name": "Account created"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"The OTP token is invalid.\",\"data\":null,\"errors\":[]}",
+                            "name": "Invalid OTP"
+                        },
+                        {
+                            "header": [],
+                            "code": 409,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"An account with this email already exists.\",\"data\":null,\"errors\":[]}",
+                            "name": "Email taken"
+                        }
+                    ]
+                },
+                {
+                    "name": "Resend registration OTP",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/register\/resend-otp",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/register\/resend-otp"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\":\"john@example.com\",\"device_name\":\"iPhone 15 Pro\"}"
+                        },
+                        "description": "Resend the 6-digit verification code for a pending registration.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"A new verification code has been sent to your email.\",\"data\":{\"signature\":\"$2y$12$exampleSignatureHash\",\"expiration\":10},\"errors\":null}",
+                            "name": "OTP resent"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"No pending verification found. Please register again.\",\"data\":null,\"errors\":[]}",
+                            "name": "No pending OTP"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"You must wait before requesting another OTP.\",\"data\":null,\"errors\":[]}",
+                            "name": "Throttled"
+                        }
+                    ]
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/login",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/login"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\":\"john@example.com\",\"device_name\":\"iPhone 15 Pro\"}"
+                        },
+                        "description": "Begin login by sending a 6-digit verification code to an existing user's email address.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"A login code has been sent to your email.\",\"data\":{\"signature\":\"$2y$12$exampleSignatureHash\",\"expiration\":10},\"errors\":null}",
+                            "name": "OTP sent"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"No account found with this email.\",\"data\":null,\"errors\":[]}",
+                            "name": "No account"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"You must wait before requesting another OTP.\",\"data\":null,\"errors\":[]}",
+                            "name": "Throttled"
+                        }
+                    ]
+                },
+                {
+                    "name": "Verify login OTP",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/login\/verify-otp",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/login\/verify-otp"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"token\":\"123456\",\"signature\":\"$2y$12$exampleSignatureHash\",\"device_name\":\"iPhone 15 Pro\",\"fcm_token\":\"fcm-token-value-123\"}"
+                        },
+                        "description": "Validate the 6-digit login code. Returns the authenticated user and a\nSanctum API token on success.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Login successful.\",\"data\":{\"user\":{\"uid\":\"01JKN7A...\",\"full_name\":\"John Doe\",\"email\":\"john@example.com\",\"phone\":\"+2347012345678\",\"iso_code\":\"NG\",\"is_phone_verified\":true,\"participation_type\":{\"name\":\"user\",\"id\":null}},\"token\":\"1|abc123tokenvalue\"},\"errors\":null}",
+                            "name": "Login successful"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"The OTP token is invalid.\",\"data\":null,\"errors\":[]}",
+                            "name": "Invalid OTP"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"Account does not exist.\",\"data\":null,\"errors\":[]}",
+                            "name": "No account"
+                        }
+                    ]
+                },
+                {
+                    "name": "Resend login OTP",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/login\/resend-otp",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/login\/resend-otp"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\":\"john@example.com\",\"device_name\":\"iPhone 15 Pro\"}"
+                        },
+                        "description": "Resend the 6-digit login code for a pending login attempt.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"A new login code has been sent to your email.\",\"data\":{\"signature\":\"$2y$12$exampleSignatureHash\",\"expiration\":10},\"errors\":null}",
+                            "name": "OTP resent"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"No pending login code found. Please try logging in again.\",\"data\":null,\"errors\":[]}",
+                            "name": "No pending OTP"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"You must wait before requesting another OTP.\",\"data\":null,\"errors\":[]}",
+                            "name": "Throttled"
+                        }
+                    ]
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/logout",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/logout"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Revoke the current API token. The token used to authenticate this\nrequest will no longer be valid."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Logged out successfully.\",\"data\":null,\"errors\":null}",
+                            "name": "Logged out"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": "Unauthenticated"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Livestream",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get Active Livestream",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/livestreams",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/livestreams"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve the currently active livestream and record a view."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Livestream Comments",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/livestreams\/:uid\/comments",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/livestreams\/:uid\/comments",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "architecto",
+                                    "description": "Required The UID of the livestream."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a list of direct comments for a livestream."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Post Comment to Livestream",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/livestreams\/:uid\/comments",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/livestreams\/:uid\/comments",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "architecto",
+                                    "description": "Required The UID of the livestream."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"description\":\"Eius et animi quos velit et.\"}"
+                        },
+                        "description": "Authenticated users can post a comment to a specific livestream."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Payment",
+            "description": "\n### Verify Transaction",
+            "item": [
+                {
+                    "name": "GET api\/payment\/verify\/{reference?}",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/payment\/verify\/:reference",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/payment\/verify\/:reference",
+                            "variable": [
+                                {
+                                    "id": "reference",
+                                    "key": "reference",
+                                    "value": "TR_123456789",
+                                    "description": "The transaction reference to verify."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Polls",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get Current Poll",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/polls",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/polls"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve the single active visible poll for the current season, including all options with\nweighted vote counts and percentages. Returns null data when no active season or visible poll exists."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Poll retrieved.\",\"data\":{\"uid\":\"01jw...\",\"question\":\"Who do you want to see shine this week?\",\"description\":\"Cast your vote for your favourite artist.\",\"total_votes\":133500,\"total_votes_description\":\"5 points accumulated for this poll\",\"status\":\"active\",\"has_ended\":false,\"time_left\":\"4 days left\",\"ends_at\":\"2026-05-27T00:00:00.000000Z\",\"has_voted\":false,\"voted_option_uid\":null,\"options\":[{\"uid\":\"01jw...\",\"name\":\"Contestant Publicity\",\"votes_count\":77330,\"percentage\":58.0}]},\"errors\":null}",
+                            "name": "Poll retrieved"
+                        },
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Poll retrieved.\",\"data\":null,\"errors\":null}",
+                            "name": "No active poll"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": "Unauthenticated"
+                        }
+                    ]
+                },
+                {
+                    "name": "Submit Poll Vote",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/polls\/:poll_uid",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/polls\/:poll_uid",
+                            "variable": [
+                                {
+                                    "id": "poll_uid",
+                                    "key": "poll_uid",
+                                    "value": "1",
+                                    "description": ""
+                                },
+                                {
+                                    "id": "poll",
+                                    "key": "poll",
+                                    "value": "01jw...",
+                                    "description": "The UID of the poll."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"option_uid\":\"01jw...\"}"
+                        },
+                        "description": "Cast a vote on the specified poll. Each user may only vote once per poll.\nThe vote weight is automatically determined by the user's active subscription plan perk."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Vote submitted.\",\"data\":{\"uid\":\"01jw...\",\"question\":\"Who do you want to see shine this week?\",\"description\":\"Cast your vote for your favourite artist.\",\"total_votes\":133501,\"status\":\"active\",\"has_ended\":false,\"time_left\":\"4 days left\",\"ends_at\":\"2026-05-27T00:00:00.000000Z\",\"has_voted\":true,\"voted_option_uid\":\"01jw...\",\"options\":[{\"uid\":\"01jw...\",\"name\":\"Contestant Publicity\",\"votes_count\":77331,\"percentage\":58.0}]},\"errors\":null}",
+                            "name": "Vote submitted"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"This poll has ended.\",\"data\":null,\"errors\":[]}",
+                            "name": "Poll ended"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": "Unauthenticated"
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"You have already voted on this poll.\",\"data\":null,\"errors\":[]}",
+                            "name": "Already voted"
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"The option uid field is required.\",\"data\":null,\"errors\":{\"option_uid\":[\"The option uid field is required.\"]}}",
+                            "name": "Validation error"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Profile",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get authenticated user",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/profile",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/profile"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Return the currently authenticated user's profile."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"User retrieved.\",\"data\":{\"user\":{\"uid\":\"01JKN7A...\",\"full_name\":\"John Doe\",\"email\":\"john@example.com\",\"phone\":\"+2347012345678\",\"iso_code\":\"NG\",\"avatar\":\"https:\/\/api.example.com\/storage\/1\/avatar.png\",\"is_phone_verified\":true,\"participation_type\":{\"name\":\"applicant\",\"id\":\"0XX6R77SSIZP\"}}},\"errors\":null}",
+                            "name": "Success"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": "Unauthenticated"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update profile",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/profile",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/profile"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "multipart\/form-data"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "full_name",
+                                    "value": "John Doe",
+                                    "type": "text",
+                                    "description": "The user's full name. Must not be greater than 255 characters."
+                                },
+                                {
+                                    "key": "iso_code",
+                                    "value": "NG",
+                                    "type": "text",
+                                    "description": "The ISO 3166-1 alpha-2 country code."
+                                },
+                                {
+                                    "key": "phone",
+                                    "value": "+2347033456789",
+                                    "type": "text",
+                                    "description": "The user's phone number including dial code. Must start with one of <code>+<\/code>."
+                                },
+                                {
+                                    "key": "avatar",
+                                    "src": [],
+                                    "type": "file"
+                                },
+                                {
+                                    "key": "_method",
+                                    "value": "PUT",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "description": "Update the currently authenticated user's profile details (name, phone, country, and avatar)."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Profile updated successfully.\",\"data\":{\"user\":{\"uid\":\"01JKN7A...\",\"full_name\":\"John Doe\",\"email\":\"john@example.com\",\"phone\":\"+2347033456789\",\"iso_code\":\"NG\",\"avatar\":\"https:\/\/api.example.com\/storage\/1\/avatar.png\",\"is_phone_verified\":false,\"participation_type\":{\"name\":\"user\",\"id\":null}}},\"errors\":null}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Request account deletion OTP",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/profile\/delete-account",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/profile\/delete-account"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"device_name\":\"iPhone 15 Pro\"}"
+                        },
+                        "description": "Send a 6-digit verification code to the authenticated user's email to confirm account deletion."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Account deletion token has been sent!\",\"data\":{\"signature\":\"$2y$12$exampleSignatureHash\"},\"errors\":null}",
+                            "name": "OTP sent"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"You must wait before requesting another OTP.\",\"data\":null,\"errors\":[]}",
+                            "name": "Throttled"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": "Unauthenticated"
+                        }
+                    ]
+                },
+                {
+                    "name": "Confirm account deletion",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/profile\/delete-account",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/profile\/delete-account"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"token\":\"123456\",\"signature\":\"$2y$12$exampleSignatureHash\",\"device_name\":\"iPhone 15 Pro\",\"fcm_token\":\"fcm-token-value-123\"}"
+                        },
+                        "description": "Deletes the user's account"
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Account will be deleted in 30 days, login to your account to cancel the deletion.\",\"data\":null,\"errors\":null}",
+                            "name": "Success"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"The OTP token is invalid.\",\"data\":null,\"errors\":[]}",
+                            "name": "Invalid OTP"
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"The OTP token has expired.\",\"data\":null,\"errors\":[]}",
+                            "name": "Expired OTP"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": "Unauthenticated"
+                        }
+                    ]
+                },
+                {
+                    "name": "Phone",
+                    "description": "",
+                    "item": [
+                        {
+                            "name": "Send phone OTP",
+                            "request": {
+                                "url": {
+                                    "host": "{{baseUrl}}",
+                                    "path": "api\/profile\/phone\/send-otp",
+                                    "query": [],
+                                    "raw": "{{baseUrl}}\/api\/profile\/phone\/send-otp"
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application\/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application\/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\"phone\":\"+2349078500004\",\"channel\":\"text\",\"device_name\":\"Samsung S19\"}"
+                                },
+                                "description": "Begin phone number verification by sending a 6-digit code to the user's phone."
+                            },
+                            "response": [
+                                {
+                                    "header": [],
+                                    "code": 200,
+                                    "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"A verification code has been sent to your phone number.\",\"data\":{\"signature\":\"uihier98eruige004\"},\"errors\":null}",
+                                    "name": "OTP sent"
+                                },
+                                {
+                                    "header": [],
+                                    "code": 400,
+                                    "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"Could not send verification code.\",\"data\":null,\"errors\":[]}",
+                                    "name": "Error"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Verify phone number",
+                            "request": {
+                                "url": {
+                                    "host": "{{baseUrl}}",
+                                    "path": "api\/profile\/phone\/verify-otp",
+                                    "query": [],
+                                    "raw": "{{baseUrl}}\/api\/profile\/phone\/verify-otp"
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application\/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application\/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\"token\":\"123456\",\"signature\":\"wfiojorwjfrwgwr\",\"device_name\":\"Samsung S12\"}"
+                                },
+                                "description": "Validate the 6-digit code sent to the user's phone to complete verification."
+                            },
+                            "response": [
+                                {
+                                    "header": [],
+                                    "code": 200,
+                                    "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Phone number has been verified\",\"data\":null,\"errors\":null}",
+                                    "name": "Verified"
+                                },
+                                {
+                                    "header": [],
+                                    "code": 400,
+                                    "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"The OTP token is invalid.\",\"data\":null,\"errors\":[]}",
+                                    "name": "Invalid OTP"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Settings",
+            "description": "",
+            "item": [
+                {
+                    "name": "Mobile App",
+                    "description": "",
+                    "item": [
+                        {
+                            "name": "Get the current app status",
+                            "request": {
+                                "url": {
+                                    "host": "{{baseUrl}}",
+                                    "path": "api\/mobile\/app\/status",
+                                    "query": [],
+                                    "raw": "{{baseUrl}}\/api\/mobile\/app\/status"
+                                },
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "X-Device-OS",
+                                        "value": "ios"
+                                    },
+                                    {
+                                        "key": "X-App-Version",
+                                        "value": "1.0"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application\/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application\/json"
+                                    }
+                                ],
+                                "body": null,
+                                "description": "Returns the mobile app status and version information for each platform.",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [
+                                {
+                                    "header": [],
+                                    "code": 200,
+                                    "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Mobile app status successfully retrieved.\",\"data\":{\"app_status\":\"active\",\"ios_versions\":[\"1.0\"],\"android_versions\":[\"1.0\"],\"is_supported\":true},\"errors\":null}",
+                                    "name": ""
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Get the app modules",
+                            "request": {
+                                "url": {
+                                    "host": "{{baseUrl}}",
+                                    "path": "api\/mobile\/app\/modules",
+                                    "query": [],
+                                    "raw": "{{baseUrl}}\/api\/mobile\/app\/modules"
+                                },
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application\/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application\/json"
+                                    }
+                                ],
+                                "body": null,
+                                "description": "Returns the enabled\/disabled status for each mobile app module.",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [
+                                {
+                                    "header": [],
+                                    "code": 200,
+                                    "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Mobile app modules successfully retrieved.\",\"data\":{\"application\":true,\"livestream\":true,\"timeline\":true,\"ticket\":true,\"voting\":true,\"poll\":true,\"judges\":true,\"subscription\":true},\"errors\":null}",
+                                    "name": ""
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Social Authentication",
+            "description": "",
+            "item": [
+                {
+                    "name": "Login with Google",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/social\/google",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/social\/google"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"id_token\":\"architecto\",\"device_name\":\"architecto\",\"full_name\":\"architecto\"}"
+                        },
+                        "description": "Authenticate using a Google ID token obtained from Google Sign-In SDK.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Login successful.\",\"data\":{\"user\":{\"id\":1,\"full_name\":\"John Doe\",\"email\":\"john@example.com\"},\"token\":\"1|abc123tokenvalue\"},\"errors\":null}",
+                            "name": "Login successful"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"Invalid token audience.\",\"data\":null,\"errors\":[]}",
+                            "name": "Invalid token"
+                        }
+                    ]
+                },
+                {
+                    "name": "Login with Apple",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/social\/apple",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/social\/apple"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"id_token\":\"architecto\",\"device_name\":\"architecto\",\"full_name\":\"architecto\"}"
+                        },
+                        "description": "Authenticate using an Apple identity token obtained from Sign in with Apple.\n\n> Note: Apple only provides the user's name on the **first** authorization.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Login successful.\",\"data\":{\"user\":{\"id\":1,\"full_name\":\"John Doe\",\"email\":\"john@example.com\"},\"token\":\"1|abc123tokenvalue\"},\"errors\":null}",
+                            "name": "Login successful"
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\"event\":\"default\",\"status\":\"failed\",\"message\":\"Invalid token audience.\",\"data\":null,\"errors\":[]}",
+                            "name": "Invalid token"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Subscription",
+            "description": "",
+            "item": [
+                {
+                    "name": "List all subscription plans",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/subscription\/plans",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/subscription\/plans"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve all active subscription plans along with their pricing, features, perks, and permissions.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Plans retrieved.\",\"data\":{\"plans\":[{\"uid\":\"PLAN_01...\",\"name\":\"Basic Plan\",\"slug\":\"basic\",\"tag\":null,\"order\":1,\"amount\":2000,\"currency\":\"NGN\",\"amount_usd\":2,\"description\":\"Basic audition access\",\"features\":[\"500 Weekly Vote Credit\"],\"is_active_subscription\":false,\"permissions\":[\"audition.basic\"],\"perks\":{\"priority\":false}}]},\"errors\":null}",
+                            "name": "Plans retrieved"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get current subscription",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/subscription",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/subscription"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve the currently active subscription for the authenticated user, including plan features and pricing."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Subscription retrieved.\",\"data\":{\"subscription\":{\"uid\":\"SUB_01JKN7A...\",\"status\":\"active\",\"price\":5000,\"currency\":\"NGN\",\"expires_at\":\"2026-05-20T10:00:00.000000Z\",\"plan\":{\"uid\":\"PLAN_X...\",\"name\":\"Premium Plan\",\"slug\":\"premium\",\"tag\":\"popular\",\"amount\":5000,\"currency\":\"NGN\",\"features\":[\"Access to all audition categories\",\"Priority audition slot\",\"Digital participation certificate\"]}}},\"errors\":null}",
+                            "name": "Subscription found"
+                        },
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Subscription retrieved.\",\"data\":{\"subscription\":null},\"errors\":null}",
+                            "name": "No active subscription"
+                        }
+                    ]
+                },
+                {
+                    "name": "Initialize subscription payment",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/subscription\/purchase",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/subscription\/purchase"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"plan_uid\":\"PLAN_01JKN7A...\"}"
+                        },
+                        "description": "Initialize a payment transaction for a selected subscription plan. This endpoint returns a checkout URL where the user can complete the payment."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"event\":\"default\",\"status\":\"success\",\"message\":\"Payment initialized.\",\"data\":{\"authorization_url\":\"https:\/\/checkout.paystack.com\/...\",\"reference\":\"SUB-ABCD...\",\"callback_url\":\"https:\/\/lol.com\"},\"errors\":null}",
+                            "name": "Payment initialized"
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\"message\":\"No query results for model [App\\\\Models\\\\Plan].\"}",
+                            "name": "Plan not found"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Timeline Post",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get Timeline Posts",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-posts",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-posts"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a paginated list of timeline posts including their media and interaction counts."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Timeline posts retrieved successfully.\",\n \"data\": {\n     \"posts\": [\n         {\n             \"uid\": \"01JKP...\",\n             \"title\": \"de9jaspirit with The Crazy Team\",\n             \"description\": \"...\",\n             \"type\": \"video\",\n             \"video_type\": \"youtube\",\n             \"video_link\": \"https:\/\/www.youtube.com\/embed\/EnKDv5M7HIE\",\n             \"video_thumbnail\": \"https:\/\/img.youtube.com\/vi\/EnKDv5M7HIE\/maxresdefault.jpg\",\n             \"media\": null,\n             \"counts\": {\n                 \"comments\": 5,\n                 \"reactions\": 12,\n                 \"views\": 45,\n                 \"shares\": 0\n             },\n             \"created_at\": \"2024-04-24T...\"\n         }\n     ]\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Timeline Post Details",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-posts\/:uid",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-posts\/:uid",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "01JKP...",
+                                    "description": "Required The UID of the timeline post."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a single timeline post with its media and interaction counts."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Timeline post retrieved successfully.\",\n \"data\": {\n     \"post\": {\n         \"uid\": \"01JKP...\",\n         \"title\": \"de9jaspirit with The Crazy Team\",\n         \"description\": \"...\",\n         \"type\": \"video\",\n         \"video_type\": \"youtube\",\n         \"video_link\": \"https:\/\/www.youtube.com\/embed\/EnKDv5M7HIE\",\n         \"video_thumbnail\": \"https:\/\/img.youtube.com\/vi\/EnKDv5M7HIE\/maxresdefault.jpg\",\n         \"media\": null,\n         \"counts\": {\n             \"comments\": 10,\n             \"reactions\": 25,\n             \"views\": 100,\n             \"shares\": 0\n         }\n     }\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Timeline Post Comments",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-posts\/:uid\/comments",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-posts\/:uid\/comments",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "01JKP...",
+                                    "description": "Required The UID of the timeline post."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a paginated list of direct comments for a timeline post."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Comments retrieved successfully.\",\n \"data\": {\n     \"comments\": [\n         {\n             \"uid\": \"01JKP...\",\n             \"user\": {\n                 \"full_name\": \"John Doe\",\n                 \"avatar\": \"https:\/\/...\"\n             },\n             \"description\": \"Great post!\",\n             \"type\": \"direct\",\n             \"parent_id\": null,\n             \"counts\": {\n                 \"comments\": 0,\n                 \"reactions\": 0,\n                 \"shares\": 0\n             },\n             \"created_at\": \"...\"\n         }\n     ]\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Post Comment to Timeline Post",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-posts\/:uid\/comments",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-posts\/:uid\/comments",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "01JKP...",
+                                    "description": "Required The UID of the timeline post."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"description\":\"Eius et animi quos velit et.\"}"
+                        },
+                        "description": "Authenticated users can post a comment to a specific timeline post."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Comment posted successfully.\",\n \"data\": {\n     \"comment\": {\n         \"uid\": \"01JKP...\",\n         \"user\": {\n             \"full_name\": \"John Doe\",\n             \"avatar\": \"https:\/\/...\"\n         },\n         \"description\": \"This is a great post!\",\n         \"type\": \"direct\",\n         \"parent_id\": null,\n         \"counts\": {\n             \"comments\": 0,\n             \"reactions\": 0,\n             \"shares\": 0\n         },\n         \"created_at\": \"...\"\n     }\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Comment Replies",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-posts\/comments\/:uid\/replies",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-posts\/comments\/:uid\/replies",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "01JKP...",
+                                    "description": "Required The UID of the parent comment."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a paginated list of replies for a specific comment."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Replies retrieved successfully.\",\n \"data\": {\n     \"replies\": [\n         {\n             \"uid\": \"01JKP...\",\n             \"user\": {\n                 \"full_name\": \"Jane Doe\",\n                 \"avatar\": \"https:\/\/...\"\n             },\n             \"description\": \"I agree!\",\n             \"type\": \"reply\",\n             \"parent_id\": null,\n             \"counts\": {\n                 \"comments\": 0,\n                 \"reactions\": 2,\n                 \"shares\": 0\n             },\n             \"created_at\": \"...\"\n         }\n     ]\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Post Reply to Comment",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-posts\/comments\/:uid\/replies",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-posts\/comments\/:uid\/replies",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "01JKP...",
+                                    "description": "Required The UID of the parent comment."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"description\":\"Eius et animi quos velit et.\"}"
+                        },
+                        "description": "Authenticated users can reply to an existing comment."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Reply posted successfully.\",\n \"data\": {\n     \"replies\": {\n         \"uid\": \"01JKP...\",\n         \"user\": {\n             \"full_name\": \"John Doe\",\n             \"avatar\": \"https:\/\/...\"\n         },\n         \"description\": \"I agree!\",\n         \"type\": \"reply\",\n         \"parent_id\": null,\n         \"counts\": {\n             \"comments\": 0,\n             \"reactions\": 0,\n             \"shares\": 0\n         },\n         \"created_at\": \"...\"\n     }\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Timeline Reels",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get Timeline Reels",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-reels",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-reels"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a paginated list of timeline reels including their media and interaction counts."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n \"event\": \"default\",\n \"status\": \"success\",\n \"message\": \"Timeline reels retrieved successfully.\",\n \"data\": {\n     \"reels\": [\n         {\n             \"uid\": \"01JKP...\",\n             \"title\": \"Amazing Reel\",\n             \"description\": \"Check this out!\",\n             \"video_type\": \"hls\",\n             \"video_link\": null,\n             \"video_thumbnail\": null,\n             \"media\": {\n                 \"url\": \"...\",\n                 \"thumbnail\": \"...\",\n                 \"mime_type\": \"video\/mp4\"\n             },\n             \"counts\": {\n                 \"comments\": 5,\n                 \"reactions\": 12,\n                 \"views\": 45,\n                 \"shares\": 0\n             },\n             \"created_at\": \"2024-04-24T...\"\n         }\n     ]\n },\n \"errors\": null\n}",
+                            "name": "Success"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Timeline Reel Details",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-reels\/:uid",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-reels\/:uid",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "01JKP...",
+                                    "description": "Required The UID of the timeline reel."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a single timeline reel with its media and interaction counts."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Reel Comments",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-reels\/:uid\/comments",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-reels\/:uid\/comments",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "architecto",
+                                    "description": "Required The UID of the timeline reel."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Retrieve a paginated list of direct comments for a timeline reel."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Post Comment to Reel",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/timeline-reels\/:uid\/comments",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/timeline-reels\/:uid\/comments",
+                            "variable": [
+                                {
+                                    "id": "uid",
+                                    "key": "uid",
+                                    "value": "architecto",
+                                    "description": "Required The UID of the timeline reel."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"description\":\"Eius et animi quos velit et.\"}"
+                        },
+                        "description": "Authenticated users can post a comment to a specific timeline reel."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "Authorization",
+                "type": "string"
+            }
+        ]
+    }
+}

@@ -22,6 +22,7 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
 
   static const int _defaultCooldownSeconds = 60;
   static const int _maxAvatarBytes = 2048 * 1024;
+  static const int maxFullNameLength = 120;
 
   final ProfileRepo _profileRepo;
   final UserProfileState _userState;
@@ -29,6 +30,11 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
 
   final ValueNotifier<bool> canResend = ValueNotifier<bool>(false);
   final ValueNotifier<DateTime> endTime;
+  final ValueNotifier<bool> savingProfile = ValueNotifier<bool>(false);
+
+  /// Full-page [Loader.page] should not cover the screen during profile save
+  /// (that path uses [savingProfile] only).
+  bool get isBlockingPageBusy => isBaseBusy && !savingProfile.value;
 
   String? _verificationSignature;
   String _phoneNumberForVerification = "";
@@ -186,6 +192,80 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
+  /// Updates `full_name`, `phone`, and `iso_code` together (multipart profile PUT).
+  Future<bool> saveProfileDetails({
+    required String fullName,
+    required String phone,
+    required String isoCode,
+  }) async {
+    final name = fullName.trim();
+    if (name.isEmpty) {
+      DthFlushBar.instance.showError(
+        title: "Name",
+        message: "Please enter your full name.",
+      );
+      return false;
+    }
+    if (name.length > maxFullNameLength) {
+      DthFlushBar.instance.showError(
+        title: "Name",
+        message:
+            "That name is too long. Please use $maxFullNameLength characters or fewer.",
+      );
+      return false;
+    }
+    final phoneTrimmed = phone.trim();
+    if (phoneTrimmed.isEmpty) {
+      DthFlushBar.instance.showError(
+        title: "Phone",
+        message: "Please enter your phone number.",
+      );
+      return false;
+    }
+    final current = _userState.user.value;
+    if (current != null &&
+        name == current.fullName.trim() &&
+        phoneTrimmed == current.phoneNumber.trim() &&
+        isoCode == current.isoCode) {
+      return true;
+    }
+    try {
+      savingProfile.value = true;
+      notifyListeners();
+      final response = await _profileRepo.updateProfile(
+        fullName: name,
+        phone: phoneTrimmed,
+        isoCode: isoCode,
+      );
+      final updated = response.data;
+      if (updated == null) {
+        savingProfile.value = false;
+        notifyListeners();
+        DthFlushBar.instance.showError(
+          title: "Update failed",
+          message: "We could not save your profile. Please try again.",
+        );
+        return false;
+      }
+      await _userState.updateUserData(updated);
+      DthFlushBar.instance.showSuccess(
+        title: "Profile",
+        message: "Your profile was updated.",
+      );
+      savingProfile.value = false;
+      notifyListeners();
+      return true;
+    } on ApiFailure catch (e) {
+      savingProfile.value = false;
+      notifyListeners();
+      DthFlushBar.instance.showError(
+        message: e.message,
+        title: "Update failed",
+      );
+      return false;
+    }
+  }
+
   /// Picks an image from the gallery, enforces max size, uploads as `avatar`, refreshes user.
   ///
   /// Uses [ImagePicker] directly so we do not depend on [MediaService.getImage]'s
@@ -285,6 +365,7 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
   void dispose() {
     canResend.dispose();
     endTime.dispose();
+    savingProfile.dispose();
     super.dispose();
   }
 }

@@ -1,3 +1,4 @@
+export 'delete_account/delete_account.dart';
 export 'personal_information/views/personal_infomation_view.dart';
 export 'personal_information/views/profile_phone_verify_otp_view.dart';
 export 'profile_view/views/profile_view.dart';

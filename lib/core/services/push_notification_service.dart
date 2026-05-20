@@ -2,6 +2,25 @@ import "package:firebase_core/firebase_core.dart";
 import "package:firebase_messaging/firebase_messaging.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
+/// Background message handler. MUST be a top-level function (not a static
+/// method on a class) AND carry `@pragma('vm:entry-point')`.
+///
+/// When a push arrives while the app is killed/backgrounded, the OS spawns a
+/// fresh Flutter isolate and looks up this handler via its top-level
+/// entry-point pointer (`PluginUtilities.getCallbackHandle`). Static class
+/// methods don't resolve through that lookup, and the AOT tree-shaker would
+/// otherwise drop the function because nothing in Dart calls it directly.
+@pragma("vm:entry-point")
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  const logger = AppLogger(PushNotificationService);
+  // The bg isolate has its own Firebase context — re-initialize so any other
+  // Firebase services added later work. Safe to call when the main isolate
+  // already initialized: returns the existing default app.
+  await Firebase.initializeApp();
+  logger.i("Background message: ${message.messageId}");
+  logger.i("Background message data: ${message.data}");
+}
+
 class PushNotificationService {
   // final _logger = appLogger(PushNotificationService);
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -10,28 +29,11 @@ class PushNotificationService {
   static final PushNotificationService _i = PushNotificationService._();
   static PushNotificationService get instance => _i;
 
-  static Future<void> firebaseMessagingBackgroundHandler(
-    RemoteMessage message,
-  ) async {
-    const logger = AppLogger(PushNotificationService);
-    logger.i("Handling a background message: ");
-    // locator<HizoFlushBar>().showSuccess(
-    //   message: "Notification gotten",
-    //   duration: const Duration(seconds: 20),
-    // );
-    // If you're going to use other Firebase services in the background, such as Firestore,
-    // make sure you call `initializeApp` before using other Firebase services.
-    await Firebase.initializeApp();
-
-    logger.i("Handling a background message: ${message.messageId}");
-    logger.i("Handling a background message: $message");
-  }
-
   Future<void> initialise() async {
     // if (Platform.isIOS) {
     // }
     final NotificationSettings settings = await _fcm.requestPermission();
-
+    getToken();
     //Get first notification
     // RemoteMessage? initialMessage =
     //     await FirebaseMessaging.instance.getInitialMessage();

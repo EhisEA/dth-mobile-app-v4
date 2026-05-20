@@ -1,4 +1,5 @@
 import "package:dth_v4/core/utils/utils.dart";
+import "package:dth_v4/data/state/device_info_state.dart";
 import "package:flutter/foundation.dart";
 
 class AppConstants {
@@ -12,8 +13,9 @@ class AppLink {
       "https://play.google.com/store/apps/details?id=com.dth.dth";
 
   static const String vent = "https://vent.africa";
-  static const String privacyPolicy = "https://dth.ng/#";
-  static const String termsAndConditions = "https://dth.ng/#";
+  static const String privacyPolicy = "https://dth.ng/privacy";
+  static const String termsAndConditions = "https://dth.ng/terms";
+  static const String dthWebsite = "https://dth.ng";
 }
 
 class AppInfo {
@@ -40,11 +42,13 @@ class AppInfo {
     return AppVersion.getAppVersionSync();
   }
 
-  static Map<String, dynamic> get payload {
+  static Future<Map<String, dynamic>> payload(
+    DeviceInfoState deviceInfo,
+  ) async {
     return {
+      "x-Device-Name": await deviceInfo.getDeviceName(),
       "x-Device-OS": deviceOS,
       "x-App-Version": getAppVersionSync(),
-      // appVersion,
     };
   }
 }

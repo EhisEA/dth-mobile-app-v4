@@ -1,7 +1,5 @@
 import "dart:ui";
-
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/features/application/view_model/application_view_model.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";

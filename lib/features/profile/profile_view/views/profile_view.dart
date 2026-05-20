@@ -1,11 +1,13 @@
 import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/core/router/router.dart';
 import 'package:dth_v4/data/data.dart';
 import 'package:dth_v4/features/app_web_view/app_web_view.dart';
 import 'package:dth_v4/features/application/views/application_view.dart';
+import 'package:dth_v4/features/application_dashboard/applicant_dashboard.dart';
+import 'package:dth_v4/features/profile/logout/logout.dart';
 import 'package:dth_v4/features/profile/profile.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_utils/flutter_utils.dart';
 
@@ -42,6 +44,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     return ValueListenableBuilder<UserModel?>(
       valueListenable: userState.user,
       builder: (context, user, _) {
+        final appModules = ref.watch(appModulesStateProvider);
+        final modulesPayload = appModules.appModules.value;
+        final hideApplicantDashboardTile =
+            user?.participationRole == ParticipationRole.user &&
+            modulesPayload?.application == false;
+        final showApplicantDashboardTile =
+            (user?.eligible ?? false) && !hideApplicantDashboardTile;
         final role = user?.participationRole ?? ParticipationRole.user;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -81,8 +90,8 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         color: AppColors.tint15,
                       ),
                       ContestantPill(user: user),
-                      if (user?.participationRole ==
-                          ParticipationRole.user) ...[
+                      if (user?.participationRole == ParticipationRole.user &&
+                          appModules.appModules.value?.application == true) ...[
                         Gap.h32,
                         ApplicationWidget(
                           participationRole:
@@ -91,7 +100,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                             _navigationService.navigateTo(ApplicationView.path);
                           },
                         ),
-                      Gap.h32,
+                        Gap.h32,
                       ],
                       AppText.medium(
                         "Account Settings",
@@ -99,44 +108,29 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         color: AppColors.tint15,
                       ),
                       Gap.h24,
-                      ContestantDashboardTile(
-                        role: user?.participationRole ?? ParticipationRole.user,
-                        onTap: () {
-                          // if (user?.participationRole ==
-                          //     ParticipationRole.user) {
-                          //   _navigationService.navigateTo(ApplicationView.path);
-                          // }
-                          // null;
-                        },
-                      ),
-                      Gap.h32,
+                      if (!showApplicantDashboardTile)
+                        const SizedBox.shrink()
+                      else ...[
+                        ContestantDashboardTile(
+                          role: role,
+                          applicationStatus: user?.applicationStatus,
+                          onTap: () {
+                            _navigationService.navigateTo(
+                              ApplicantDashboardView.path,
+                            );
+                          },
+                        ),
+                        Gap.h32,
+                      ],
                       ProfileTlle(
                         title: "Personal Information",
                         description: "Update your profile information",
                         icon: SvgAssets.personal,
                         showRightArrow: false,
-                        widget: user != null && !user.isPhoneVerified
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: const Color(0xffFFF2F1),
-                                ),
-                                child: AppText.regular(
-                                  "Need Attention",
-                                  fontSize: 10,
-                                  color: AppColors.redTint35,
-                                ),
-                              )
-                            : null,
                         onTap: () {
                           if (user == null) return;
                           _navigationService.navigateTo(
                             PersonalInfomationView.path,
-                            extra: {RoutingArgumentKey.user: user},
                           );
                         },
                       ),
@@ -180,20 +174,28 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           );
                         },
                       ),
-                      Gap.h28,
-                      ProfileTlle(
-                        title: "Social Media Community",
-                        description:
-                            "Connect with our community and stay updated",
-                        icon: SvgAssets.social,
-                        onTap: () {},
-                      ),
+                      // Gap.h28,
+                      // ProfileTlle(
+                      //   title: "Social Media Community",
+                      //   description:
+                      //       "Connect with our community and stay updated",
+                      //   icon: SvgAssets.social,
+                      //   onTap: () {},
+                      // ),
                       Gap.h28,
                       ProfileTlle(
                         title: "Learn More",
                         description: "Discover more about De9jaTalenthunt",
                         icon: SvgAssets.learn,
-                        onTap: () {},
+                        onTap: () {
+                          MobileNavigationService.instance.navigateTo(
+                            AppWebView.path,
+                            extra: {
+                              RoutingArgumentKey.title: "Learn More",
+                              RoutingArgumentKey.initialURl: AppLink.dthWebsite,
+                            },
+                          );
+                        },
                       ),
                       Gap.h32,
                       AppText.medium(
@@ -208,7 +210,10 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         icon: SvgAssets.logout,
                         isRed: true,
                         showRightArrow: false,
-                        onTap: () {},
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          showLogoutConfirmationSheet(context);
+                        },
                       ),
                       Gap.h28,
                       ProfileTlle(
@@ -216,7 +221,14 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         description: "Delete your account permanently",
                         icon: SvgAssets.delete,
                         isRed: true,
-                        onTap: () {},
+                        onTap: () {
+                          ref
+                              .read(deleteAccountViewModelProvider)
+                              .resetForNewFlow();
+                          MobileNavigationService.instance.navigateTo(
+                            DeleteAccountConsentView.path,
+                          );
+                        },
                       ),
                       Gap.h30,
                       Gap.h30,

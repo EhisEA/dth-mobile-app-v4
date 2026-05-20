@@ -1,5 +1,4 @@
 import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/core/router/router.dart';
 import 'package:dth_v4/features/authentication/view_model/verify_otp_view_model.dart';
 import 'package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart';
 import 'package:dth_v4/widgets/widgets.dart';

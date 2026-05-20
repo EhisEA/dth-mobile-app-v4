@@ -104,6 +104,7 @@ class PhoneNumberCountryInput extends StatefulWidget {
     this.validator,
     this.formatter,
     this.readOnly = false,
+    this.lockCountryPicker = false,
     this.suffix,
     this.initialNationalDigits,
   });
@@ -124,6 +125,9 @@ class PhoneNumberCountryInput extends StatefulWidget {
   final String? Function(String value)? validator;
   final List<TextInputFormatter>? formatter;
   final bool readOnly;
+
+  /// When true, country flag/dial code are fixed (no chevron, no tap).
+  final bool lockCountryPicker;
 
   /// Shown at the end of the input row (e.g. “Verify Now”).
   final Widget? suffix;
@@ -228,7 +232,9 @@ class _PhoneNumberCountryInputState extends State<PhoneNumberCountryInput> {
   @override
   Widget build(BuildContext context) {
     final textAction = widget.textInputAction ?? TextInputAction.done;
-    final showChevron = !widget.readOnly || widget.onCountryTap != null;
+    final showChevron =
+        !widget.lockCountryPicker &&
+        (!widget.readOnly || widget.onCountryTap != null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +262,9 @@ class _PhoneNumberCountryInputState extends State<PhoneNumberCountryInput> {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: widget.readOnly
+                      onTap: widget.lockCountryPicker
+                          ? null
+                          : widget.readOnly
                           ? widget.onCountryTap
                           : (widget.onCountryTap ?? () {}),
                       borderRadius: BorderRadius.circular(8),
@@ -358,7 +366,15 @@ class _PhoneNumberCountryInputState extends State<PhoneNumberCountryInput> {
                             },
                     ),
                   ),
-                  if (widget.suffix != null) ...[Gap.w8, widget.suffix!],
+                  if (widget.suffix != null) ...[
+                    Gap.w8,
+                    Align(
+                      alignment: Alignment.center,
+                      widthFactor: 1,
+                      heightFactor: 1,
+                      child: widget.suffix!,
+                    ),
+                  ],
                 ],
               ),
             ],

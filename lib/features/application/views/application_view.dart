@@ -1,5 +1,4 @@
 import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/core/router/router.dart';
 import 'package:dth_v4/data/models/application_process_models.dart';
 import 'package:dth_v4/features/application/view_model/application_view_model.dart';
 import 'package:dth_v4/features/application/views/application_review_view.dart';
@@ -9,6 +8,7 @@ import 'package:dth_v4/features/application/views/steps/contact_information_step
 import 'package:dth_v4/features/application/views/steps/personal_information_step.dart';
 import 'package:dth_v4/features/application/views/steps/talent_showcase_step.dart';
 import 'package:dth_v4/features/application/components/application_segmented_progress.dart';
+import 'package:dth_v4/features/search/search.dart';
 import 'package:dth_v4/widgets/text/textstyles.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -26,16 +26,17 @@ class ApplicationView extends ConsumerStatefulWidget {
 }
 
 class _ApplicationViewState extends ConsumerState<ApplicationView> {
-  static const int _totalSteps = 5;
-
-  late final PageController _pageController;
   final List<GlobalKey<FormState>> _formKeys = List.generate(
-    _totalSteps,
+    5,
     (_) => GlobalKey<FormState>(),
   );
-  final List<void Function()?> _persistFns = List.filled(_totalSteps, null);
+  final List<void Function()?> _persistFns = List.filled(5, null);
+
+  late final PageController _pageController;
 
   int _currentIndex = 0;
+
+  static int _stepCount(ApplicationProcess p) => p.collectBankDetails ? 5 : 4;
 
   @override
   void initState() {
@@ -100,19 +101,10 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
   }
 
   String _primaryButtonLabel() {
-    switch (_currentIndex) {
-      case 0:
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-        return 'Proceed';
-      default:
-        return 'Proceed';
-    }
+    return 'Proceed';
   }
 
-  String _primaryButtonSubtitle() {
+  String _primaryButtonSubtitle(ApplicationProcess process) {
     switch (_currentIndex) {
       case 0:
         return '(Contact Information)';
@@ -121,7 +113,7 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
       case 2:
         return '(Audition Video)';
       case 3:
-        return '(Bank Details)';
+        return process.collectBankDetails ? '(Bank Details)' : '(Review)';
       case 4:
         return '(Review)';
       default:
@@ -206,141 +198,153 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
     BuildContext context,
     ApplicationProcess process,
   ) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: _onBack,
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      height: 36,
-                      width: 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.greyTint15),
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: SvgPicture.asset(
-                          SvgAssets.backArrow,
-                          height: 20,
-                          width: 20,
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.black,
-                            BlendMode.srcIn,
+    final vm = ref.watch(searchViewModelProvider);
+    return Loader.page(
+      isLoading: vm.supportSessionBusy,
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _onBack,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        height: 36,
+                        width: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.greyTint15),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: SvgPicture.asset(
+                            SvgAssets.backArrow,
+                            height: 20,
+                            width: 20,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.black,
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Gap.w24,
-                  Expanded(
-                    child: ApplicationSegmentedProgress(
-                      currentStepIndex: _currentIndex,
-                      totalSteps: _totalSteps,
-                    ),
-                  ),
-                  Gap.w24,
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                    },
-                    child: SvgPicture.asset(SvgAssets.support),
-                  ),
-                ],
-              ),
-            ),
-            Gap.h8,
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _currentIndex = i),
-                children: [
-                  PersonalInformationStep(
-                    formKey: _formKeys[0],
-                    onRegisterPersist: (fn) => _registerPersist(0, fn),
-                    applicationProcess: process,
-                  ),
-                  ContactInformationStep(
-                    formKey: _formKeys[1],
-                    onRegisterPersist: (fn) => _registerPersist(1, fn),
-                    applicationProcess: process,
-                  ),
-                  TalentShowcaseStep(
-                    formKey: _formKeys[2],
-                    onRegisterPersist: (fn) => _registerPersist(2, fn),
-                    applicationProcess: process,
-                  ),
-                  AuditionVideoStep(
-                    formKey: _formKeys[3],
-                    onRegisterPersist: (fn) => _registerPersist(3, fn),
-                  ),
-                  BankDetailsStep(
-                    formKey: _formKeys[4],
-                    onRegisterPersist: (fn) => _registerPersist(4, fn),
-                    applicationProcess: process,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: AppButton.primary(
-                text: _primaryButtonLabel(),
-                press: _onProceed,
-                subtitle: _primaryButtonSubtitle(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-              child: Text.rich(
-                TextSpan(
-                  style: AppTextStyle.regular.copyWith(
-                    fontSize: 11,
-                    color: AppColors.blackTint20,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: 'Proudly sponsored by ',
-                      style: AppTextStyle.regular.copyWith(
-                        fontSize: 12,
-                        color: AppColors.blackTint20,
+                    Gap.w24,
+                    Expanded(
+                      child: ApplicationSegmentedProgress(
+                        currentStepIndex: _currentIndex,
+                        totalSteps: _stepCount(process),
                       ),
                     ),
-                    TextSpan(
-                      text: 'Vent Africa',
-                      style: AppTextStyle.regular.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xff009DF9),
-                      ),
+                    Gap.w24,
+                    GestureDetector(
+                      onTap: () async {
+                        HapticFeedback.lightImpact();
+                        await ref
+                            .read(searchViewModelProvider)
+                            .requestSupportWebSession();
+                      },
+                      child: SvgPicture.asset(SvgAssets.support),
                     ),
                   ],
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              Gap.h8,
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _currentIndex = i),
+                  children: [
+                    PersonalInformationStep(
+                      formKey: _formKeys[0],
+                      onRegisterPersist: (fn) => _registerPersist(0, fn),
+                      applicationProcess: process,
+                    ),
+                    ContactInformationStep(
+                      formKey: _formKeys[1],
+                      onRegisterPersist: (fn) => _registerPersist(1, fn),
+                      applicationProcess: process,
+                    ),
+                    TalentShowcaseStep(
+                      formKey: _formKeys[2],
+                      onRegisterPersist: (fn) => _registerPersist(2, fn),
+                      applicationProcess: process,
+                    ),
+                    AuditionVideoStep(
+                      formKey: _formKeys[3],
+                      onRegisterPersist: (fn) => _registerPersist(3, fn),
+                    ),
+                    if (process.collectBankDetails)
+                      BankDetailsStep(
+                        formKey: _formKeys[4],
+                        onRegisterPersist: (fn) => _registerPersist(4, fn),
+                        applicationProcess: process,
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: AppButton.primary(
+                  text: _primaryButtonLabel(),
+                  press: () => _onProceed(process),
+                  subtitle: _primaryButtonSubtitle(process),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                child: Text.rich(
+                  TextSpan(
+                    style: AppTextStyle.regular.copyWith(
+                      fontSize: 11,
+                      color: AppColors.blackTint20,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Proudly sponsored by ',
+                        style: AppTextStyle.regular.copyWith(
+                          fontSize: 12,
+                          color: AppColors.blackTint20,
+                        ),
+                      ),
+                      TextSpan(
+                        text: 'Vent Africa',
+                        style: AppTextStyle.regular.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xff009DF9),
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _onProceed() async {
+  Future<void> _onProceed(ApplicationProcess process) async {
     FocusScope.of(context).unfocus();
+    final steps = _stepCount(process);
     final form = _formKeys[_currentIndex].currentState;
     if (form == null || !form.validate()) return;
     _persistFns[_currentIndex]?.call();
 
-    if (_currentIndex < _totalSteps - 1) {
+    if (_currentIndex < steps - 1) {
       await _pageController.animateToPage(
         _currentIndex + 1,
         duration: const Duration(milliseconds: 280),
@@ -354,7 +358,7 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
       );
       if (!mounted) return;
       if (result == null) return;
-      if (result is int && result >= 0 && result < _totalSteps) {
+      if (result is int && result >= 0 && result < steps) {
         _pageController.jumpToPage(result);
         setState(() => _currentIndex = result);
       }

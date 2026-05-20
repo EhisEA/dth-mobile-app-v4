@@ -30,48 +30,91 @@ class _ContactInformationStepState extends ConsumerState<ContactInformationStep>
   bool get wantKeepAlive => true;
 
   late final FocusNode _addressFocus;
-  late final FocusNode _nearestCampusFocus;
+  late final FocusNode _cityFocus;
   late final TextEditingController _addressController;
-  late final TextEditingController _nearestCampusController;
+  late final TextEditingController _cityController;
+
+  /// When [ApplicationProcess.nearestCampuses] is empty, free text is still allowed.
+  FocusNode? _nearestCampusFreeTextFocus;
+  TextEditingController? _nearestCampusFreeTextController;
+
+  /// Selected API `value` when campus options exist.
+  String? _nearestCampusValue;
 
   String? _stateOfResidence;
-  String? _cityOfResidence;
   String? _stateOfOrigin;
   String? _lga;
 
-  String? _cityPrerequisiteError;
   String? _lgaPrerequisiteError;
+
+  List<ApplicationLabelValue> get _campuses =>
+      widget.applicationProcess.nearestCampuses;
+
+  void _hydrateNearestCampusFromDraft(String raw) {
+    final saved = raw.trim();
+    if (saved.isEmpty) return;
+    if (_campuses.isEmpty) {
+      _nearestCampusFreeTextController?.text = saved;
+      return;
+    }
+    for (final c in _campuses) {
+      if (c.value == saved) {
+        _nearestCampusValue = saved;
+        return;
+      }
+    }
+    for (final c in _campuses) {
+      if (c.label == saved) {
+        _nearestCampusValue = c.value;
+        return;
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _addressFocus = FocusNode();
-    _nearestCampusFocus = FocusNode();
+    _cityFocus = FocusNode();
     _addressController = TextEditingController();
-    _nearestCampusController = TextEditingController();
+    _cityController = TextEditingController();
+    if (_campuses.isEmpty) {
+      _nearestCampusFreeTextFocus = FocusNode();
+      _nearestCampusFreeTextController = TextEditingController();
+    }
+    final draft = ref.read(applicationViewModelProvider).draft;
+    if (draft.cityOfResidence.trim().isNotEmpty) {
+      _cityController.text = draft.cityOfResidence.trim();
+    }
+    _hydrateNearestCampusFromDraft(draft.nearestCampus);
     widget.onRegisterPersist(_persist);
   }
 
   @override
   void dispose() {
     _addressFocus.dispose();
-    _nearestCampusFocus.dispose();
+    _cityFocus.dispose();
     _addressController.dispose();
-    _nearestCampusController.dispose();
+    _cityController.dispose();
+    _nearestCampusFreeTextFocus?.dispose();
+    _nearestCampusFreeTextController?.dispose();
     super.dispose();
   }
 
   void _persist() {
+    final nearestCampus = _campuses.isEmpty
+        ? (_nearestCampusFreeTextController?.text.trim() ?? '')
+        : (_nearestCampusValue ?? '');
     ref
         .read(applicationViewModelProvider)
         .setContact(
           ContactInformationInput(
             residentialAddress: _addressController.text.trim(),
             stateOfResidence: _stateOfResidence ?? '',
-            cityOfResidence: _cityOfResidence ?? '',
+            cityOfResidence: _cityController.text.trim(),
             stateOfOrigin: _stateOfOrigin ?? '',
             lga: _lga ?? '',
-            nearestCampus: _nearestCampusController.text.trim(),
+            nearestCampus: nearestCampus,
           ),
         );
   }
@@ -84,22 +127,7 @@ class _ContactInformationStepState extends ConsumerState<ContactInformationStep>
     ];
   }
 
-  /// Cities/towns shown here are really LGAs for the state they live in.
-  /// The API does not send a separate city list. No items until they pick that state.
-  List<AppDropdownOption<String>> _cityOptions() {
-    if (_stateOfResidence == null) return [];
-    final location = widget.applicationProcess.locationForState(
-      _stateOfResidence!,
-    );
-    if (location == null) return [];
-    return [
-      for (final lga in location.lgas)
-        AppDropdownOption(value: lga, label: lga),
-    ];
-  }
-
-  /// LGAs for their state of origin (same idea as city list, different state field).
-  /// No items until they pick state of origin.
+  /// LGAs for their state of origin. No items until they pick state of origin.
   List<AppDropdownOption<String>> _lgaOptions() {
     if (_stateOfOrigin == null) return [];
     final location = widget.applicationProcess.locationForState(
@@ -112,11 +140,18 @@ class _ContactInformationStepState extends ConsumerState<ContactInformationStep>
     ];
   }
 
+  List<AppDropdownOption<String>> _nearestCampusOptions() {
+    return [
+      for (final c in _campuses)
+        AppDropdownOption<String>(value: c.value, label: c.label),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final cities = _cityOptions();
     final lgas = _lgaOptions();
+    final campusOptions = _nearestCampusOptions();
 
     return Form(
       key: widget.formKey,
@@ -158,46 +193,19 @@ class _ContactInformationStepState extends ConsumerState<ContactInformationStep>
             onChanged: (v) {
               setState(() {
                 _stateOfResidence = v;
-                _cityOfResidence = null;
-                _cityPrerequisiteError = null;
+                _cityController.clear();
               });
             },
           ),
           Gap.h16,
-          AppDropdownFormField<String>(
-            key: ValueKey<String?>('city_${_stateOfResidence ?? 'none'}'),
+          AppTextField(
             title: 'City/Town',
-            hint: _stateOfResidence == null
-                ? 'Select state of residence first'
-                : 'Select city of residence',
-            search: true,
-            options: cities,
-            enabled: _stateOfResidence != null && cities.isNotEmpty,
-            interactionError: _cityPrerequisiteError,
-            onDisabledTap: () {
-              setState(() {
-                if (_stateOfResidence == null) {
-                  _cityPrerequisiteError =
-                      "Select your state of residence before choosing a city or town.";
-                } else if (cities.isEmpty) {
-                  _cityPrerequisiteError =
-                      "No city or town options are available for the selected state. "
-                      "Choose a different state of residence.";
-                }
-              });
-            },
-            onChanged: (v) => setState(() {
-              _cityOfResidence = v;
-              _cityPrerequisiteError = null;
-            }),
-            validator: (v) {
-              if (_stateOfResidence == null) return null;
-              if (cities.isEmpty) return null;
-              if (v == null || v.isEmpty) {
-                return 'This field is required';
-              }
-              return null;
-            },
+            hint: 'Enter your city or town',
+            controller: _cityController,
+            titleColor: AppColors.black,
+            focusNode: _cityFocus,
+            validator: Validator.emptyField,
+            textInputAction: TextInputAction.next,
           ),
           Gap.h16,
           Row(
@@ -259,15 +267,36 @@ class _ContactInformationStepState extends ConsumerState<ContactInformationStep>
             ],
           ),
           Gap.h16,
-          AppTextField(
-            title: 'Nearest Campus',
-            hint: 'Enter the campus nearest to you',
-            controller: _nearestCampusController,
-            focusNode: _nearestCampusFocus,
-            titleColor: AppColors.black,
-            validator: Validator.emptyField,
-            textInputAction: TextInputAction.done,
-          ),
+          if (_campuses.isEmpty)
+            AppTextField(
+              title: 'Nearest Campus',
+              hint: 'Enter the campus nearest to you',
+              controller: _nearestCampusFreeTextController!,
+              focusNode: _nearestCampusFreeTextFocus!,
+              titleColor: AppColors.black,
+              validator: Validator.emptyField,
+              textInputAction: TextInputAction.done,
+            )
+          else
+            AppDropdownFormField<String>(
+              key: ValueKey<String?>(
+                'nearest_campus_${campusOptions.length}_$_nearestCampusValue',
+              ),
+              title: 'Nearest Campus',
+              hint: 'Select nearest campus',
+              search: true,
+              options: campusOptions,
+              initialValue: _nearestCampusValue,
+              validator: (v) {
+                if (v == null || v.isEmpty) {
+                  return 'This field is required';
+                }
+                return null;
+              },
+              onChanged: (v) => setState(() {
+                _nearestCampusValue = v;
+              }),
+            ),
           Gap.h32,
         ],
       ),

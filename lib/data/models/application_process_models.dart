@@ -37,10 +37,8 @@ class ApplicationLabelValue {
   final String value;
 
   factory ApplicationLabelValue.fromJson(Map<String, dynamic> json) {
-    return ApplicationLabelValue(
-      label: json["label"] as String,
-      value: json["value"] as String,
-    );
+    final label = json["label"] as String? ?? json["name"] as String? ?? "";
+    return ApplicationLabelValue(label: label, value: json["value"] as String);
   }
 }
 
@@ -52,6 +50,7 @@ class ApplicationProcess {
     required this.banks,
     required this.genderOptions,
     required this.presentationModes,
+    required this.nearestCampuses,
     required this.isFinalStep,
     required this.collectBankDetails,
   });
@@ -61,6 +60,9 @@ class ApplicationProcess {
   final List<String> banks;
   final List<ApplicationLabelValue> genderOptions;
   final List<ApplicationLabelValue> presentationModes;
+
+  /// Options for contact step `nearest_campus` (submit [ApplicationLabelValue.value]).
+  final List<ApplicationLabelValue> nearestCampuses;
   final bool isFinalStep;
   final bool collectBankDetails;
 
@@ -93,9 +95,22 @@ class ApplicationProcess {
                     ApplicationLabelValue.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
+      nearestCampuses: (json["nearest_campuses"] as List<dynamic>? ?? const [])
+          .map((e) => ApplicationLabelValue.fromJson(e as Map<String, dynamic>))
+          .toList(),
       isFinalStep: json["is_final_step"] as bool? ?? false,
-      collectBankDetails: json["collect_bank_details"] as bool? ?? false,
+      collectBankDetails: _boolField(json["collect_bank_details"]),
     );
+  }
+
+  static bool _boolField(Object? value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final s = value.toLowerCase();
+      return s == "true" || s == "1" || s == "yes";
+    }
+    return false;
   }
 
   ApplicationProcessLocation? locationForState(String state) {
@@ -106,6 +121,16 @@ class ApplicationProcess {
       }
     }
     return null;
+  }
+
+  /// Human-readable campus name for [stored] (API `value`); falls back to [stored].
+  String nearestCampusDisplay(String stored) {
+    final v = stored.trim();
+    if (v.isEmpty) return v;
+    for (final c in nearestCampuses) {
+      if (c.value == v) return c.label;
+    }
+    return stored;
   }
 
   /// Resolves [ApplicationDraft.talentCategory] (category name) to an API id.

@@ -124,7 +124,6 @@ class SubscriptionPlanCard extends StatelessWidget {
                       press: () {},
                       text: coveredLabel,
                       height: 48,
-                      enabled: false,
                     )
                   else if (tierVsActive != null && tierVsActive > 0)
                     AppButton.onBorder(

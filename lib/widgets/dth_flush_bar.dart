@@ -1,4 +1,5 @@
 import "package:another_flushbar/flushbar.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_svg/flutter_svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
@@ -35,6 +36,23 @@ class DthFlushBar {
         icon: SvgAssets.verifyActive,
       ),
     ).show(navigatorKey.currentContext!);
+  }
+
+  /// Use after writing to the clipboard. Skips the in-app success bar on
+  /// Android, where the OS already surfaces its own copy confirmation.
+  void showCopySuccess({
+    required String message,
+    required String title,
+    Duration? duration,
+    FlushbarPosition? position = FlushbarPosition.TOP,
+  }) {
+    if (defaultTargetPlatform == TargetPlatform.android) return;
+    showSuccess(
+      message: message,
+      title: title,
+      duration: duration,
+      position: position,
+    );
   }
 
   void showError({
