@@ -26,6 +26,27 @@ class RoutingArgumentKey {
   /// `bool` — subscription checkout simulation ([ConfirmationView]).
   static const String confirmationSuccess = "confirmationSuccess";
 
+  /// [ConfirmationFlow] — [ConfirmationView] dismiss behaviour.
+  static const String confirmationFlow = "confirmationFlow";
+
+  /// Body copy for [ConfirmationView] when [confirmationSuccess] is true.
+  static const String confirmationSuccessDescription =
+      "confirmationSuccessDescription";
+
+  /// Body copy for [ConfirmationView] when [confirmationSuccess] is false.
+  static const String confirmationFailureDescription =
+      "confirmationFailureDescription";
+
+  /// Event uid when [confirmationFlow] is [ConfirmationFlow.ticket].
+  static const String confirmationEventUid = "confirmationEventUid";
+
+  /// Optional `Future<void> Function()` after successful ticket payment.
+  /// In-memory navigation only — not serializable.
+  static const String confirmationOnSuccess = "confirmationOnSuccess";
+
+  /// Optional callback forwarded from [ShowView] → [PurchaseTicketsView].
+  static const String onPurchaseSuccess = "onPurchaseSuccess";
+
   static const String callbackUrl = "callbackUrl";
 
   /// [ShowView] — full event location line (quick info row).
@@ -49,9 +70,31 @@ class RoutingArgumentKey {
 
   /// [ShowView] — event uid for `GET /api/events/{event_uid}`.
   static const String eventUid = "eventUid";
+
+  /// [YourTicketsView] — [PurchasedTicket.toJson] for the selected group.
+  static const String purchasedTicket = "purchasedTicket";
+
+  /// @deprecated Use [purchasedTicket]. Legacy route map for [YourTicketsView].
+  static const String yourTicketsArgs = "yourTicketsArgs";
 }
 
 abstract class OtpFlowArg {
   static const String login = "login";
   static const String register = "register";
+}
+
+/// Source flow for [ConfirmationView] (dismiss behaviour, navigation).
+enum ConfirmationFlow {
+  subscription,
+  ticket;
+
+  static ConfirmationFlow fromRouteValue(Object? value) {
+    if (value is ConfirmationFlow) return value;
+    final raw = value?.toString();
+    if (raw == null || raw.isEmpty) return ConfirmationFlow.subscription;
+    return ConfirmationFlow.values.firstWhere(
+      (flow) => flow.name == raw,
+      orElse: () => ConfirmationFlow.subscription,
+    );
+  }
 }

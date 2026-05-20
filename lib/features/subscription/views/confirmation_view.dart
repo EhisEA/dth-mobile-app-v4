@@ -1,26 +1,53 @@
-import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/widgets/widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:flutter_utils/flutter_utils.dart';
+import "dart:async";
+
+import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/tickets/views/show_view.dart";
+import "package:dth_v4/widgets/widgets.dart";
+import "package:flutter/material.dart";
+import "package:flutter_svg/svg.dart";
+import "package:flutter_utils/flutter_utils.dart";
 
 class ConfirmationView extends StatelessWidget {
-  const ConfirmationView({super.key, required this.isSuccess});
+  const ConfirmationView({
+    super.key,
+    required this.isSuccess,
+    required this.successDescription,
+    required this.failureDescription,
+    this.flow = ConfirmationFlow.subscription,
+    this.eventUid,
+    this.onSuccess,
+  });
+
   static const String path = NavigatorRoutes.confirmation;
 
   final bool isSuccess;
+  final String successDescription;
+  final String failureDescription;
+  final ConfirmationFlow flow;
+  final String? eventUid;
+  final Future<void> Function()? onSuccess;
+
+  String get _description =>
+      isSuccess ? successDescription : failureDescription;
+
+  String get _dismissLabel => switch (flow) {
+    ConfirmationFlow.ticket when isSuccess => "Back to event",
+    ConfirmationFlow.subscription when isSuccess => "Dismiss",
+    _ => "Try a different method",
+  };
+
   @override
   Widget build(BuildContext context) {
+    final dismissLabel = _dismissLabel;
+
     return Scaffold(
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: AppButton.onBorder(
-            text: isSuccess ? "Dismiss" : "Try a different method",
+            text: dismissLabel,
             fontSize: 15,
-            press: () {
-              MobileNavigationService.instance.goBack();
-            },
+            press: () => unawaited(_onDismiss()),
           ),
         ),
       ),
@@ -84,9 +111,7 @@ class ConfirmationView extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: AppText.regular(
-                  isSuccess
-                      ? "Your payment was successful. You now have pro access to DTH 5."
-                      : "We couldn't process your payment. Please try again or use a different method.",
+                  _description,
                   fontSize: 14,
                   color: AppColors.black,
                   centered: true,
@@ -98,5 +123,17 @@ class ConfirmationView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _onDismiss() async {
+    if (flow == ConfirmationFlow.ticket && isSuccess) {
+      MobileNavigationService.instance.popUntil(ShowView.path);
+      final callback = onSuccess;
+      if (callback != null) {
+        await callback();
+      }
+      return;
+    }
+    MobileNavigationService.instance.goBack();
   }
 }

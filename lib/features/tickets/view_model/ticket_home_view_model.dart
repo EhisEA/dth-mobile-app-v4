@@ -1,97 +1,56 @@
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/widgets/widgets.dart";
+import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
-/// Tickets tab: first page of upcoming (horizontal strip) + paginated booked list.
+/// Tickets tab: [EventsState] holds cached lists; this VM owns loading/error UI state.
 class TicketHomeViewModel extends BaseChangeNotifierViewModel {
-  TicketHomeViewModel(this._eventsRepo);
+  TicketHomeViewModel(this._eventsState);
 
-  final EventsRepo _eventsRepo;
+  final EventsState _eventsState;
 
-  ViewModelState _upcomingState = const ViewModelState.busy();
-  ViewModelState get upcomingState => _upcomingState;
+  static const _upcomingKey = "ticketHomeUpcoming";
+  static const _bookedKey = "ticketHomeBooked";
 
-  ViewModelState _bookedState = const ViewModelState.busy();
-  ViewModelState get bookedState => _bookedState;
+  ViewModelState get upcomingState =>
+      getState(_upcomingKey) ?? const ViewModelState.busy();
 
-  List<EventListItem> _upcomingPreview = const [];
-  List<EventListItem> get upcomingPreview => _upcomingPreview;
+  ViewModelState get bookedState =>
+      getState(_bookedKey) ?? const ViewModelState.busy();
 
-  List<EventListItem> _bookedEvents = const [];
-  List<EventListItem> get bookedEvents => _bookedEvents;
+  List<EventListItem> get upcomingPreview => _eventsState.upcomingEvents;
 
-  String? _bookedNextCursor;
-  bool get hasMoreBooked => _bookedNextCursor != null;
+  ValueNotifier<List<EventListItem>> get bookedEvents =>
+      _eventsState.bookedEvents;
+
+  bool get hasMoreBooked => _eventsState.bookedNextCursor != null;
 
   bool _bookedLoadingMore = false;
   bool get bookedLoadingMore => _bookedLoadingMore;
 
-  Future<void> loadInitial() async {
-    _upcomingState = const ViewModelState.busy();
-    _bookedState = const ViewModelState.busy();
-    notifyListeners();
-    await Future.wait<void>([
-      _loadUpcoming(),
-      _loadBooked(),
-    ]);
-  }
+  // Future<void> loadInitial() async {
+  //   await Future.wait<void>([_loadUpcoming(), _loadBooked()]);
+  // }
 
-  /// Pull-to-refresh: reload upcoming and booked without the initial full-screen busy state.
   Future<void> refresh() async {
-    await Future.wait<void>([
-      _loadUpcoming(),
-      _loadBooked(),
-    ]);
+    await Future.wait<void>([_loadUpcoming(), _loadBooked()]);
   }
 
   Future<void> retryUpcoming() async {
-    _upcomingState = const ViewModelState.busy();
-    notifyListeners();
     await _loadUpcoming();
   }
 
   Future<void> retryBooked() async {
-    _bookedState = const ViewModelState.busy();
-    notifyListeners();
     await _loadBooked();
   }
 
-  Future<void> _loadUpcoming() async {
-    try {
-      final upcoming = await _eventsRepo.fetchUpcomingEvents(perPage: 16);
-      _upcomingPreview = upcoming.items;
-      _upcomingState = const ViewModelState.idle();
-    } on ApiFailure catch (e) {
-      _upcomingState = ViewModelState.error(e);
-    }
-    notifyListeners();
-  }
-
-  Future<void> _loadBooked() async {
-    try {
-      final booked = await _eventsRepo.fetchBookedEvents(perPage: 16);
-      _bookedEvents = booked.items;
-      _bookedNextCursor = booked.nextCursor;
-      _bookedState = const ViewModelState.idle();
-    } on ApiFailure catch (e) {
-      _bookedState = ViewModelState.error(e);
-    }
-    notifyListeners();
-  }
-
   Future<void> loadMoreBooked() async {
-    final cursor = _bookedNextCursor;
-    if (cursor == null || _bookedLoadingMore) return;
+    if (_bookedLoadingMore || _eventsState.bookedNextCursor == null) return;
     _bookedLoadingMore = true;
     notifyListeners();
     try {
-      final page = await _eventsRepo.fetchBookedEvents(
-        cursor: cursor,
-        perPage: 16,
-      );
-      _bookedEvents = [..._bookedEvents, ...page.items];
-      _bookedNextCursor = page.nextCursor;
+      await _eventsState.fetchMoreBookedEvents();
     } on ApiFailure catch (e) {
       DthFlushBar.instance.showError(title: "Tickets", message: e.message);
     } finally {
@@ -99,10 +58,34 @@ class TicketHomeViewModel extends BaseChangeNotifierViewModel {
       notifyListeners();
     }
   }
+
+  Future<void> _loadUpcoming({bool setBusy = true}) async {
+    if (setBusy) {
+      setState(_upcomingKey, const ViewModelState.busy());
+    }
+    try {
+      await _eventsState.fetchUpcomingEvents();
+      setState(_upcomingKey, const ViewModelState.idle());
+    } on ApiFailure catch (e) {
+      setState(_upcomingKey, ViewModelState.error(e));
+    }
+  }
+
+  Future<void> _loadBooked({bool setBusy = true}) async {
+    if (setBusy) {
+      setState(_bookedKey, const ViewModelState.busy());
+    }
+    try {
+      await _eventsState.fetchBookedEvents();
+      setState(_bookedKey, const ViewModelState.idle());
+    } on ApiFailure catch (e) {
+      setState(_bookedKey, ViewModelState.error(e));
+    }
+  }
 }
 
 final ticketHomeViewModelProvider = ChangeNotifierProvider<TicketHomeViewModel>(
   (ref) {
-    return TicketHomeViewModel(ref.read(eventsRepositoryProvider));
+    return TicketHomeViewModel(ref.read(eventsStateProvider));
   },
 );

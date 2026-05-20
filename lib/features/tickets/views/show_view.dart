@@ -6,8 +6,12 @@ import "package:dth_v4/features/tickets/components/show_about_event_panel.dart";
 import "package:dth_v4/features/tickets/components/show_buy_ticket.dart";
 import "package:dth_v4/features/tickets/components/show_detail_hero.dart";
 import "package:dth_v4/features/tickets/components/show_event_quick_info_row.dart";
+import "package:dth_v4/features/tickets/components/show_purchased_tickets_section.dart";
 import "package:dth_v4/features/tickets/components/show_status_chip.dart";
 import "package:dth_v4/features/tickets/view_model/event_detail_view_model.dart";
+import "package:dth_v4/features/tickets/models/your_tickets_args.dart";
+import "package:dth_v4/features/tickets/views/purchase_tickets_view.dart";
+import "package:dth_v4/features/tickets/views/your_tickets_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -117,8 +121,6 @@ class _ShowViewState extends ConsumerState<ShowView> {
           final detailVenue = event.location.trim().isNotEmpty
               ? event.location
               : "—";
-          final canPurchase = event.seatTypes.isNotEmpty;
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -160,13 +162,55 @@ class _ShowViewState extends ConsumerState<ShowView> {
                             detailTime: detailTime,
                             detailVenue: detailVenue,
                           ),
+                          if (event.purchasedTickets.isNotEmpty) ...[
+                            Gap.h24,
+                            ShowPurchasedTicketsSection(
+                              tickets: event.purchasedTickets,
+                              descriptionFallback:
+                                  event.shortDescription.trim().isNotEmpty
+                                  ? event.shortDescription
+                                  : about,
+                              onViewTickets: (ticket) {
+                                unawaited(
+                                  MobileNavigationService.instance.navigateTo(
+                                    YourTicketsView.path,
+                                    extra: YourTicketsArgs(
+                                      purchasedTicket: ticket,
+                                    ).toRouteExtra(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                           Gap.h16,
                           ShowBuyTicket(
+                            mainLabel: event.purchasedTickets.isNotEmpty
+                                ? "Buy more tickets"
+                                : "Buy ticket now",
                             availabilityLabel:
                                 "(${event.availableTicketsCount} available)",
-                            onPressed: canPurchase
-                                ? () => unawaited(vm.purchaseTicket())
-                                : null,
+                            onPressed: () {
+                              final eventUid = event.uid;
+                              unawaited(
+                                MobileNavigationService.instance.navigateTo(
+                                  PurchaseTicketsView.path,
+                                  extra: {
+                                    RoutingArgumentKey.eventUid: eventUid,
+                                    RoutingArgumentKey.onPurchaseSuccess:
+                                        () async {
+                                      await ref
+                                          .read(
+                                            eventDetailViewModelProvider(
+                                              eventUid,
+                                            ),
+                                          )
+                                          .refresh();
+                                          await ref.read(eventsStateProvider).fetchBookedEvents();
+                                    },
+                                  },
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -182,9 +226,8 @@ class _ShowViewState extends ConsumerState<ShowView> {
   }
 
   String _statusChipLabel(EventDetail e) {
-    for (final t in e.purchasedTickets) {
-      final raw = t.eventStatus.trim();
-      if (raw.isEmpty) continue;
+    final raw = e.eventStatus.trim();
+    if (raw.isNotEmpty) {
       if (raw.length == 1) return raw.toUpperCase();
       return raw[0].toUpperCase() + raw.substring(1).toLowerCase();
     }
