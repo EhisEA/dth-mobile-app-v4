@@ -59,15 +59,14 @@ class _PersonalInfomationViewState
       );
       return;
     }
-    final country =
-        displayCountry ?? DthCountry.findByIso(countries, u.isoCode);
-    if (country == null) {
-      DthFlushBar.instance.showError(
-        title: "Country",
-        message: "Could not resolve your country. Try again shortly.",
-      );
-      return;
-    }
+    // Google-auth users skip phone collection at sign-up, so [u.isoCode] can
+    // be empty. Fall back to Nigeria (the app's default — same pick as the
+    // create-account form) and then the first available country, so the user
+    // can still enter edit mode and choose their own country from the picker.
+    final country = displayCountry ??
+        DthCountry.findByIso(countries, u.isoCode) ??
+        DthCountry.findByIso(countries, "NG") ??
+        countries.first;
     setState(() {
       _editingProfile = true;
       _editCountry = country;
@@ -224,7 +223,7 @@ class _PersonalInfomationViewState
                   color: AppColors.tint15,
                 ),
                 Center(child: ContestantPill(user: u)),
-                Gap.h24,
+                // Gap.h24,
                 AppTextField(
                   key: ValueKey<bool>(_editingProfile),
                   title: "Full Name",
@@ -282,29 +281,6 @@ class _PersonalInfomationViewState
                   onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   validator: _editingProfile
                       ? (v) => validateNationalPhone(v, _editCountry)
-                      : null,
-                  suffix: (!_editingProfile && !u.isPhoneVerified)
-                      ? AppButton.primary(
-                          height: 32,
-                          width: 76,
-                          text: "Verify Now",
-                          radius: 30,
-                          fontSize: 11,
-                          isLoading: vm.isBaseBusy,
-                          fontWeight: FontWeight.w400,
-                          press: u.phoneNumber.trim().isEmpty
-                              ? () {}
-                              : () async {
-                                  final sent = await vm
-                                      .sendPhoneVerificationCode(
-                                        u.phoneNumber.trim(),
-                                      );
-                                  if (!mounted || !sent) return;
-                                  MobileNavigationService.instance.push(
-                                    ProfilePhoneVerifyOtpView.path,
-                                  );
-                                },
-                        )
                       : null,
                 ),
               ],

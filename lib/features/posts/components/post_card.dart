@@ -37,9 +37,10 @@ class PostCard extends StatelessWidget {
           ],
           Gap.h12,
           PostMedia(post: post),
-          Gap.h12,
+          Gap.h4,
           PostActions(
             post: post,
+            showContainer: false,
             onLike: onLike,
             onComment: onComment,
             onShare: onShare,

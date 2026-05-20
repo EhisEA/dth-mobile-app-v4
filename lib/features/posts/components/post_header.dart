@@ -25,6 +25,13 @@ class PosTimelinetHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  AppText.regular(
+                    post.title,
+                    fontSize: 14,
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  // Gap.h2,
                   Wrap(
                     children: [
                       SvgPicture.asset(SvgAssets.blackLogo, height: 16),
@@ -36,18 +43,18 @@ class PosTimelinetHeader extends StatelessWidget {
                       ),
                       Gap.w2,
                       AppText.medium(
-                        post.authorName,
+                        post.subtitle ?? "General",
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: AppColors.black,
                       ),
-                      Gap.w4,
+                      Gap.w6,
+                      AppText.regular(
+                        post.createdAt ?? "",
+                        fontSize: 10,
+                        color: _muted,
+                      ),
                     ],
-                  ),
-                  AppText.regular(
-                    post.createdAt ?? "",
-                    fontSize: 10,
-                    color: _muted,
                   ),
                 ],
               ),
@@ -107,7 +114,7 @@ class PostDetailsHeader extends StatelessWidget {
                       ),
                       Gap.w2,
                       AppText.medium(
-                        post.authorName,
+                        post.subtitle ?? "General",
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: AppColors.black,

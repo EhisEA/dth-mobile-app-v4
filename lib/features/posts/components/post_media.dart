@@ -68,12 +68,14 @@ class _VideoBlock extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                CachedNetworkImage(
-                  imageUrl: thumbnailUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) =>
-                      ColoredBox(color: AppColors.baseShimmer(context)),
-                ),
+                thumbnailUrl.trim().isEmpty
+                    ? const ColoredBox(color: Colors.black)
+                    : CachedNetworkImage(
+                        imageUrl: thumbnailUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            ColoredBox(color: AppColors.baseShimmer(context)),
+                      ),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

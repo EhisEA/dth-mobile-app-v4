@@ -1,20 +1,22 @@
-import 'package:dth_v4/core/core.dart';
-import 'package:dth_v4/features/search/search.dart';
-import 'package:dth_v4/features/tickets/tickets.dart';
-import 'package:dth_v4/widgets/widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_utils/flutter_utils.dart';
+import "dart:async";
+import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/search/components/search_header.dart";
+import "package:dth_v4/features/search/components/search_trending_reels.dart";
+import "package:dth_v4/features/search/view_model/search_view_model.dart";
+import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:flutter_utils/flutter_utils.dart";
 
-class SearchView extends StatefulWidget {
+class SearchView extends ConsumerStatefulWidget {
   const SearchView({super.key});
 
   static const String path = NavigatorRoutes.search;
 
   @override
-  State<SearchView> createState() => _SearchViewState();
+  ConsumerState<SearchView> createState() => _SearchViewState();
 }
 
-class _SearchViewState extends State<SearchView> {
+class _SearchViewState extends ConsumerState<SearchView> {
   late final FocusNode _searchFocus;
   late final TextEditingController _searchController;
 
@@ -34,46 +36,49 @@ class _SearchViewState extends State<SearchView> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.white,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Gap.h10,
-                SearchHeader(
-                  controller: _searchController,
-                  focusNode: _searchFocus,
-                  onSupportTap: () {},
-                ),
-                Gap.h16,
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.only(bottom: 100),
-                    children: [
-                      SearchTrendingReels(),
-                      Gap.h24,
-                      AppText.medium(
-                        "Upcoming Shows",
-                        color: AppColors.black,
-                        fontSize: 12,
-                      ),
-                      Gap.h12,
-                      ...List.generate(
-                        2,
-                        (index) =>
-                            UpcomingShowsComponent(showDivider: index < 1),
-                      ),
-                    ],
+    final vm = ref.watch(searchViewModelProvider);
+    return Loader.page(
+      isLoading: vm.supportSessionBusy,
+      child: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.white,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Gap.h10,
+                  SearchHeader(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
+                    onSupportTap: () => unawaited(
+                      ref
+                          .read(searchViewModelProvider)
+                          .requestSupportWebSession(),
+                    ),
                   ),
-                ),
-              ],
+                  Gap.h16,
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.only(bottom: 100),
+                      children: [
+                        SearchTrendingReels(),
+                        Gap.h24,
+                        // AppText.medium(
+                        //   "Upcoming Shows",
+                        //   color: AppColors.black,
+                        //   fontSize: 12,
+                        // ),
+                        // Gap.h12,
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

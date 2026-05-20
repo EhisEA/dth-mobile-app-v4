@@ -23,6 +23,22 @@ class SearchHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            height: 36,
+            width: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.greyTint15),
+            ),
+            child: Center(child: SvgPicture.asset(SvgAssets.backArrow)),
+          ),
+        ),
+        Gap.w8,
         Expanded(
           child: AppTextField(
             hint: 'Search contents and events',
@@ -68,11 +84,7 @@ class SearchHeader extends StatelessWidget {
             HapticFeedback.lightImpact();
           },
           behavior: HitTestBehavior.opaque,
-          child: SvgPicture.asset(
-            SvgAssets.support,
-
-            colorFilter: ColorFilter.mode(AppColors.tint15, BlendMode.srcIn),
-          ),
+          child: SvgPicture.asset(SvgAssets.support),
         ),
       ],
     );

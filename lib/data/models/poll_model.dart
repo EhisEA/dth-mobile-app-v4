@@ -81,6 +81,11 @@ class PollModel {
   final String? votedOptionUid;
   final List<PollOptionModel> options;
 
+  /// Single source of truth for "is this poll closed to new votes". Treats the
+  /// boolean flag and the string status as equivalent so a backend that updates
+  /// one but not the other can't accidentally leave the UI in a votable state.
+  bool get isClosed => hasEnded || status.trim().toLowerCase() == "ended";
+
   factory PollModel.fromJson(Map<String, dynamic> json) {
     final optionsRaw = json["options"];
     final options = optionsRaw is List<dynamic>

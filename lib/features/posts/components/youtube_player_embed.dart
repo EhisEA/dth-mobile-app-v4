@@ -32,9 +32,7 @@ class _YoutubePlayerEmbedState extends State<YoutubePlayerEmbed> {
       initialVideoId: id,
       flags: const YoutubePlayerFlags(
         autoPlay: true,
-        // Required for muted-autoplay policy. Player still exposes its mute
-        // toggle so the user can unmute after playback starts.
-        mute: true,
+        mute: false,
         enableCaption: false,
         forceHD: false,
       ),

@@ -2,7 +2,9 @@ import "dart:async";
 
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
+import "package:dth_v4/features/bottomNavBar/bottomsheet/show_phone_verification_sheet.dart";
 import "package:dth_v4/features/bottomNavBar/components/nav_item.dart";
+import "package:dth_v4/features/bottomNavBar/phone_verification_eligibility.dart";
 import "package:dth_v4/features/bottomNavBar/viewmodel/bottom_nav_bar_view_model.dart";
 import "package:dth_v4/features/home/views/home_view.dart";
 import "package:dth_v4/features/profile/profile_view/views/profile_view.dart";
@@ -148,6 +150,7 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
   DateTime? _lastBackPress;
   Timer? _exitTimer;
   static const _exitWindow = Duration(seconds: 2);
+  bool _phoneVerificationSheetShown = false;
 
   void changeTab(int newIndex) {
     final bindings = _resolveBindings();
@@ -191,14 +194,27 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
     super.dispose();
   }
 
+  void _tryShowPhoneVerificationSheet() {
+    if (_phoneVerificationSheetShown || !mounted) return;
+    final user = ref.read(userStateProvider).user.value;
+    if (user == null || !shouldEnforcePhoneVerification(user)) return;
+    _phoneVerificationSheetShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(showPhoneVerificationBottomSheet(context, user: user));
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     final model = ref.read(bottomNavBarViewModel);
     unawaited(
-      Future.microtask(() {
-        model.userState.getUserDetails();
+      Future.microtask(() async {
+        await model.userState.getUserDetails();
+        if (!mounted) return;
         unawaited(model.subscriptionPlansState.fetchPlans());
+        _tryShowPhoneVerificationSheet();
       }),
     );
     _tabController.addListener(() {

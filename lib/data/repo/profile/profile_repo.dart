@@ -7,9 +7,15 @@ abstract class ProfileRepo {
     required String channel,
   });
 
+  Future<ApiResponse<ProfilePhoneSubmitResult>> submitProfilePhone({
+    required String isoCode,
+    required String phone,
+  });
+
   Future<ApiResponse<void>> verifyPhoneOtp({
     required String token,
     required String signature,
+    String? deviceName,
   });
 
   Future<ApiResponse<UserModel>> updateProfile({

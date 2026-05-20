@@ -6,6 +6,7 @@ class Post {
     required this.uid,
     required this.authorName,
     required this.title,
+    this.subtitle,
     this.createdAt,
     required this.description,
     required this.likeCount,
@@ -20,6 +21,11 @@ class Post {
   final String uid;
   final String authorName;
   final String title;
+
+  /// Optional secondary headline (e.g. "Season 4 Grand Finale"). Mirrors
+  /// `TimelinePost.subtitle` from the API.
+  final String? subtitle;
+
   final String? createdAt;
   final String description;
   final int likeCount;
@@ -37,6 +43,7 @@ class Post {
     String? withName,
     String? createdAt,
     String? title,
+    String? subtitle,
     String? description,
     int? likeCount,
     int? commentCount,
@@ -50,6 +57,7 @@ class Post {
       uid: uid,
       authorName: authorName ?? this.authorName,
       title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
       createdAt: createdAt ?? this.createdAt,
       description: description ?? this.description,
       likeCount: likeCount ?? this.likeCount,
@@ -71,6 +79,14 @@ class PostVideo {
   final String? videoUrl;
   final String? provider;
 
-  bool get isYoutube => provider?.trim().toLowerCase() == "youtube";
+  bool get isYoutube {
+    if (provider?.trim().toLowerCase() == "youtube") return true;
+    final u = videoUrl?.trim();
+    if (u == null || u.isEmpty) return false;
+    final host = Uri.tryParse(u)?.host.toLowerCase() ?? "";
+    return host == "youtu.be" ||
+        host.endsWith("youtube.com") ||
+        host.endsWith("youtube-nocookie.com");
+  }
   bool get isPlayable => videoUrl != null && videoUrl!.trim().isNotEmpty;
 }

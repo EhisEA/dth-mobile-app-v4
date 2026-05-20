@@ -1,246 +1,263 @@
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/stories/components/comment_tile.dart";
-import "package:dth_v4/features/stories/components/stats_pill.dart";
-import "package:dth_v4/features/stories/models/stories_mock_data.dart";
+import "package:dth_v4/features/stories/view_model/reel_chat_view_model.dart";
 import "package:dth_v4/widgets/dth_send_button.dart";
-import "package:dth_v4/widgets/text/text.dart";
 import "package:dth_v4/widgets/widgets.dart";
-import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
-import "package:flutter_svg/flutter_svg.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
-class ChatPanel extends StatelessWidget {
+class ChatPanel extends ConsumerStatefulWidget {
   const ChatPanel({
     super.key,
+    required this.reelUid,
+    required this.scrollController,
+    required this.scrollPhysics,
     required this.bottomPad,
     required this.composerController,
-    required this.readMoreTap,
-    this.minHeight = 0,
   });
+
+  final String reelUid;
+  final ScrollController scrollController;
+  final ScrollPhysics scrollPhysics;
 
   final double bottomPad;
   final TextEditingController composerController;
-  final TapGestureRecognizer readMoreTap;
-  final double minHeight;
+  @override
+  ConsumerState<ConsumerStatefulWidget> createState() => _ChatPanelState();
+}
+
+class _ChatPanelState extends ConsumerState<ChatPanel> {
+  final _focus = FocusNode();
+  bool _isTextfieldFocused = false;
+  @override
+  void initState() {
+    super.initState();
+
+    _focus.addListener(() {
+      setState(() {
+        _isTextfieldFocused = _focus.hasFocus;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final vm = ref.watch(reelChatViewModelProvider(widget.reelUid));
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => FocusScope.of(context).unfocus(),
-      child: Material(
-        color: Colors.white,
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: minHeight),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              controller: widget.scrollController,
+              physics: widget.scrollPhysics,
+              slivers: [
+                SliverToBoxAdapter(child: Gap.h2),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverToBoxAdapter(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
                           children: [
                             AppText.medium(
-                              storyTitle,
+                              "Top Comments ",
                               fontSize: 16,
-                              color: AppColors.black,
-                              maxLines: 2,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xff202020),
                             ),
-                            Gap.h6,
-                            Row(
-                              children: [
-                                SvgPicture.asset(
-                                  SvgAssets.primaryLogo,
-                                  width: 14,
-                                  height: 14,
-                                ),
-                                Gap.w6,
-                                SvgPicture.asset(
-                                  SvgAssets.blackLogo,
-                                  width: 65,
-                                  height: 16,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColors.primary,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-
-                                Text.rich(
-                                  TextSpan(
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xff08102F),
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text: " with ",
-                                        style: AppTextStyle.regular.copyWith(
-                                          color: AppColors.blackTint20,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: storyWith,
-                                        style: AppTextStyle.medium.copyWith(
-                                          color: AppColors.black,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Gap.w4,
-                                AppText.regular(
-                                  storyTime,
-                                  fontSize: 10,
-                                  color: AppColors.tint15,
-                                ),
-                              ],
+                            Gap.w4,
+                            AppText.regular(
+                              formatCount(vm.comments.length),
+                              fontSize: 12,
+                              color: AppColors.tint15,
                             ),
-                            Gap.h12,
-                            Text.rich(
-                              TextSpan(
-                                style: AppTextStyle.regular.copyWith(
-                                  color: AppColors.black,
-                                  fontSize: 12,
-                                  height: 1.35,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: storyCaptionPreview(maxChars: 92),
-                                  ),
-                                  TextSpan(
-                                    text: " Read more",
-                                    style: const TextStyle(
-                                      color: Color(0xff6A6A6A),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    recognizer: readMoreTap,
-                                  ),
-                                ],
+                          ],
+                        ),
+                        PopupMenuButton<CommentSort>(
+                          initialValue: vm.sort,
+                          onSelected: vm.setSort,
+                          tooltip: "Sort",
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: CommentSort.latest,
+                              child: Text("Most recent"),
+                            ),
+                            PopupMenuItem(
+                              value: CommentSort.oldest,
+                              child: Text("Oldest"),
+                            ),
+                          ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AppText.regular(
+                                vm.sort == CommentSort.latest
+                                    ? "Most recent"
+                                    : "Oldest",
+                                fontSize: 12,
+                                color: AppColors.tint25,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Gap.h12,
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: StatsPill(
-                                    icon: SvgAssets.favoriteBorder,
-                                    label: formatStoryCount(storyLikes),
-                                  ),
-                                ),
-                                Gap.w8,
-                                const Expanded(
-                                  child: StatsPill(
-                                    iconData: Icons.thumb_down_alt_outlined,
-                                    label: "$storyDislikes",
-                                  ),
-                                ),
-                                Gap.w8,
-                                const Expanded(
-                                  child: StatsPill(
-                                    icon: SvgAssets.sendBorder,
-                                    label: "$storyShares",
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              Gap.w4,
+                              Icon(
+                                Icons.expand_more,
+                                size: 16,
+                                color: AppColors.tint25,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Gap.h16,
-                      Container(
-                        height: 1,
-                        color: AppColors.greyTint20.withValues(alpha: 0.1),
-                      ),
-                      Gap.h20,
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                AppText.medium(
-                                  "Top Comments ",
-                                  fontSize: 16,
-                                  color: AppColors.black,
-                                ),
-                                Gap.w4,
-                                AppText.regular(
-                                  storyCommentCount.toString(),
-                                  fontSize: 12,
-                                  color: AppColors.tint15,
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                AppText.regular(
-                                  "Most recent",
-                                  fontSize: 12,
-                                  color: AppColors.tint25,
-                                ),
-                                Gap.w4,
-                                SvgPicture.asset(
-                                  SvgAssets.downArrow,
-                                  width: 14,
-                                  height: 14,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Gap.h20,
-                      ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: storyMockComments.length,
-                        separatorBuilder: (_, __) => Gap.h16,
-                        itemBuilder: (context, i) {
-                          final c = storyMockComments[i];
-                          return CommentTile(comment: c);
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPad + 12),
-                child: Row(
+                SliverToBoxAdapter(child: Gap.h20),
+                _commentsSliver(vm),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, widget.bottomPad + 12),
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: widget.composerController,
+              builder: (context, value, _) {
+                final hasText = value.text.trim().isNotEmpty;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
                       child: AppTextField(
-                        controller: composerController,
-                        borderRadius: BorderRadius.circular(100),
+                        controller: widget.composerController,
                         hint: "Drop a banger...",
-                        fillColor: const Color(0xffFAFAFA),
+                        borderRadius: BorderRadius.circular(100),
+                        focusNode: _focus,
+                        fillColor: _isTextfieldFocused
+                            ? AppColors.white
+                            : const Color(0xffF4F4F4),
                         hintColor: AppColors.tint15,
-                        showBorder: false,
+                        // showBorder: false,
+                        enabled: !vm.submitting && widget.reelUid.isNotEmpty,
+                        minLines: 1,
+                        maxLines: 5,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
                       ),
                     ),
-                    Gap.w8,
-                    DthSendButton(onTap: () {}),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, anim) => SizeTransition(
+                        sizeFactor: anim,
+                        axis: Axis.horizontal,
+                        axisAlignment: -1,
+                        child: FadeTransition(opacity: anim, child: child),
+                      ),
+                      child: hasText
+                          ? Row(
+                              key: const ValueKey("send"),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Gap.w8,
+                                DthSendButton(
+                                  loading: vm.submitting,
+                                  onTap: () async {
+                                    if (vm.submitting) return;
+                                    final ok = await vm.submit(
+                                      widget.composerController.text,
+                                    );
+                                    if (ok) widget.composerController.clear();
+                                  },
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(key: ValueKey("empty")),
+                    ),
                   ],
-                ),
-              ),
-            ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _commentsSliver(ReelChatViewModel vm) {
+    if (vm.loading && vm.comments.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (vm.error != null && vm.comments.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _CommentsErrorState(
+          message: vm.error!.message,
+          onRetry: vm.refresh,
+        ),
+      );
+    }
+    if (vm.comments.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+          child: Center(
+            child: AppText.regular(
+              "Be the first to drop a banger.",
+              fontSize: 12,
+              color: AppColors.tint15,
+            ),
           ),
         ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      sliver: SliverList.separated(
+        itemCount: vm.comments.length,
+        separatorBuilder: (_, _) => Gap.h16,
+        itemBuilder: (context, i) {
+          final c = vm.comments[i];
+          return CommentTile(
+            comment: c,
+            parent: false,
+            onLike: () => vm.toggleCommentLike(c),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CommentsErrorState extends StatelessWidget {
+  const _CommentsErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Column(
+        children: [
+          AppText.regular(
+            message,
+            fontSize: 12,
+            color: AppColors.blackTint20,
+            textAlign: TextAlign.center,
+          ),
+          Gap.h12,
+          AppButton.primary(text: "Retry", height: 40, press: onRetry),
+        ],
       ),
     );
   }

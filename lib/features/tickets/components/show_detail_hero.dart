@@ -85,20 +85,27 @@ class CircleBlurIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 40×40 visual, 48×48 minimum touch target (matches post detail back control).
     return Material(
       color: Colors.transparent,
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-            child: Container(
-              width: 36,
-              height: 36,
-              alignment: Alignment.center,
-              color: const Color(0xffF7F7F7).withValues(alpha: 0.16),
-              child: child,
+        child: SizedBox(
+          width: kMinInteractiveDimension,
+          height: kMinInteractiveDimension,
+          child: Center(
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  color: const Color(0xffF7F7F7).withValues(alpha: 0.16),
+                  child: child,
+                ),
+              ),
             ),
           ),
         ),

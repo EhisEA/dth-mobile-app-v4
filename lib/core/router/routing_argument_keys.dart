@@ -6,6 +6,11 @@ class RoutingArgumentKey {
   static const String fullName = "fullName";
   static const String imageUrl = "imageUrl";
 
+  /// [StoriesView] — backing reel uid. The reel detail (title, description,
+  /// poster, video, like state, counts) is hydrated from [ReelsCache] —
+  /// populated by the listing screens — and refreshed by the VM.
+  static const String reelUid = "reelUid";
+
   /// [PostDetailView] — uid of the timeline post to load.
   static const String postUid = "postUid";
 

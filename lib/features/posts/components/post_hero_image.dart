@@ -1,5 +1,3 @@
-import "dart:ui";
-
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/views/photo_viewer.dart";
@@ -33,16 +31,6 @@ class _PostHeroImageState extends State<PostHeroImage> {
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  void _step(int delta) {
-    final next = _current + delta;
-    if (next < 0 || next >= widget.urls.length) return;
-    _controller.animateToPage(
-      next,
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOut,
-    );
   }
 
   @override
@@ -105,30 +93,30 @@ class _PostHeroImageState extends State<PostHeroImage> {
                   ),
                 ),
               ),
-              if (isCarousel && _current > 0)
-                Positioned(
-                  left: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _ChevronButton(
-                      icon: Icons.chevron_left_rounded,
-                      onTap: () => _step(-1),
-                    ),
-                  ),
-                ),
-              if (isCarousel && _current < n - 1)
-                Positioned(
-                  right: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _ChevronButton(
-                      icon: Icons.chevron_right_rounded,
-                      onTap: () => _step(1),
-                    ),
-                  ),
-                ),
+              // if (isCarousel && _current > 0)
+              //   Positioned(
+              //     left: 8,
+              //     top: 0,
+              //     bottom: 0,
+              //     child: Center(
+              //       child: _ChevronButton(
+              //         icon: Icons.chevron_left_rounded,
+              //         onTap: () => _step(-1),
+              //       ),
+              //     ),
+              //   ),
+              // if (isCarousel && _current < n - 1)
+              //   Positioned(
+              //     right: 8,
+              //     top: 0,
+              //     bottom: 0,
+              //     child: Center(
+              //       child: _ChevronButton(
+              //         icon: Icons.chevron_right_rounded,
+              //         onTap: () => _step(1),
+              //       ),
+              //     ),
+              //   ),
               // if (isCarousel)
               //   Positioned(
               //     top: 0,
@@ -158,35 +146,6 @@ class _PostHeroImageState extends State<PostHeroImage> {
   }
 }
 
-class _ChevronButton extends StatelessWidget {
-  const _ChevronButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Material(
-          color: Color(0xFF101010).withValues(alpha: 0.4),
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
-            child: SizedBox(
-              width: 36,
-              height: 36,
-              child: Icon(icon, color: Colors.white, size: 22),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PageDots extends StatelessWidget {
   const _PageDots({required this.count, required this.current});
 
@@ -208,6 +167,15 @@ class _PageDots extends StatelessWidget {
             decoration: BoxDecoration(
               color: i == current ? AppColors.primary : Color(0xFFFCFCFC),
               borderRadius: BorderRadius.circular(3),
+              // Drop shadow keeps white inactive dots visible against
+              // light-coloured images.
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff121212).withValues(alpha: 0.35),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
       ],

@@ -12,10 +12,12 @@ class ContestantDashboardTile extends StatelessWidget {
   const ContestantDashboardTile({
     super.key,
     required this.role,
+    this.applicationStatus,
     required this.onTap,
   });
 
   final ParticipationRole role;
+  final ApplicationStatus? applicationStatus;
   final VoidCallback onTap;
 
   static const _title = "Applicant Dashboard";
@@ -34,8 +36,33 @@ class ContestantDashboardTile extends StatelessWidget {
   bool get _showChevron =>
       role == ParticipationRole.user || role == ParticipationRole.unknown;
 
+  (Color, Color) _statusPillColors(String variant) {
+    switch (variant.trim().toLowerCase()) {
+      case "success":
+        return (const Color(0xff008F46), const Color(0xffE5FBF0));
+      case "warning":
+        return (AppColors.secondaryOrange, const Color(0xFFFFF4E5));
+      case "danger":
+      case "error":
+        return (AppColors.redTint35, const Color(0xFFFFF2F1));
+      default:
+        return (AppColors.dthBlue, const Color(0xFFF0F5FF));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final status = applicationStatus;
+    Widget? statusPill;
+    if (!_showChevron && status != null) {
+      final colors = _statusPillColors(status.variant);
+      statusPill = _StatusPill(
+        label: status.label.trim(),
+        foreground: colors.$1,
+        background: colors.$2,
+      );
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -65,18 +92,7 @@ class ContestantDashboardTile extends StatelessWidget {
             ),
           ),
           if (_showChevron) SvgPicture.asset(SvgAssets.rightArrow),
-          if (role == ParticipationRole.applicant)
-            _StatusPill(
-              label: "Applied",
-              foreground: AppColors.dthBlue,
-              background: const Color(0xFFF0F5FF),
-            ),
-          if (role == ParticipationRole.contestant)
-            _StatusPill(
-              label: "Accepted",
-              foreground: const Color(0xff008F46),
-              background: const Color(0xffE5FBF0),
-            ),
+          if (statusPill != null) statusPill,
         ],
       ),
     );
