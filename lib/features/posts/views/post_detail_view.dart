@@ -65,6 +65,14 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // If the post is already cached (e.g. coming from the feed) it's available
+    // on the first build — but `ref.listen` only fires on *changes*, so we'd
+    // miss the initial sync. Schedule it after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final post = ref.read(postDetailViewModelProvider(widget.uid)).post;
+      if (post != null && _syncController(post)) setState(() {});
+    });
   }
 
   void _onScroll() {
@@ -110,15 +118,16 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     _ytListener = null;
   }
 
-  /// Keep [_ytController] in sync with [post]'s video URL. Called inline from
-  /// build — only mutates fields, no setState, so the current build reads the
-  /// updated controller immediately.
-  void _syncController(Post post) {
+  /// Keep [_ytController] in sync with [post]'s video URL. Returns true when
+  /// the controller changed so the caller can `setState` to mount the new one.
+  /// Driven from `initState` (cached-post case) and a `ref.listen` callback
+  /// in build (notifier updates) — never called during the build phase itself.
+  bool _syncController(Post post) {
     final url = post.isVideo && (post.video?.isYoutube ?? false)
         ? post.video?.videoUrl
         : null;
     final newId = url == null ? null : YoutubePlayer.convertUrlToId(url);
-    if (newId == _ytVideoId) return;
+    if (newId == _ytVideoId) return false;
     _detachYtListener();
     _ytController?.dispose();
     _ytVideoId = newId;
@@ -147,6 +156,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     if (c != null) {
       _attachYtListener(c);
     }
+    return true;
   }
 
   void _showComingSoon(String label) {
@@ -165,9 +175,17 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
   @override
   Widget build(BuildContext context) {
+    // React to post changes (initial load, navigated-to a different YT video)
+    // outside of build itself. ChangeNotifierProvider fires this on every
+    // `notifyListeners()`; `_syncController` short-circuits when the video id
+    // hasn't changed, so only an actual URL flip triggers a setState/rebuild.
+    ref.listen(postDetailViewModelProvider(widget.uid), (_, next) {
+      final post = next.post;
+      if (post != null && _syncController(post)) setState(() {});
+    });
+
     final vm = ref.watch(postDetailViewModelProvider(widget.uid));
     final post = vm.post;
-    if (post != null) _syncController(post);
 
     // Cache owns Comment state; watch it so a like-toggle in the thread
     // screen rebuilds the comments list here automatically.
