@@ -60,7 +60,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Gap.h14,
-                  AppHeader(onLiveTap: () {}, onNotificationTap: () {}),
+                  AppHeader(onLiveTap: () {}),
                   Gap.h10,
                   Expanded(
                     child: vm.baseState.when(

@@ -49,6 +49,10 @@ class RoutingArgumentKey {
 
   static const String callbackUrl = "callbackUrl";
 
+  /// [AppWebView] — when false, hides the app-bar action that opens the URL
+  /// in the system browser (e.g. signed support sessions must stay in-app).
+  static const String showOpenInExternalBrowser = "showOpenInExternalBrowser";
+
   /// [ShowView] — full event location line (quick info row).
   static const String eventLocation = "eventLocation";
 

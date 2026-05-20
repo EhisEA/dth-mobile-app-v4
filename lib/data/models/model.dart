@@ -24,5 +24,7 @@ export "event_list_item.dart";
 export "event_seat_type.dart";
 export "purchased_ticket_model.dart";
 export "event_detail_model.dart";
+export "notification_user.dart";
+export "notification_item.dart";
 export "available_ticket_model.dart";
 export "ticket_purchase_line_model.dart";

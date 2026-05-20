@@ -11,6 +11,7 @@ import 'package:dth_v4/features/authentication/views/login_view.dart';
 import 'package:dth_v4/features/authentication/views/verify_otp_view.dart';
 import 'package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart';
 import 'package:dth_v4/features/home/views/home_view.dart';
+import 'package:dth_v4/features/notifications/notifications.dart';
 import 'package:dth_v4/features/posts/views/comment_thread_view.dart';
 import 'package:dth_v4/features/posts/views/post_detail_view.dart';
 import 'package:dth_v4/features/profile/delete_account/views/delete_account_consent_view.dart';
@@ -121,6 +122,10 @@ class AppRouter {
             title: routeArgs[RoutingArgumentKey.title] as String? ?? "",
             callbackUrl:
                 routeArgs[RoutingArgumentKey.callbackUrl] as String? ?? "",
+            showOpenInExternalBrowser:
+                routeArgs[RoutingArgumentKey.showOpenInExternalBrowser]
+                    as bool? ??
+                true,
           ),
         );
       ////////////////APPLICATION VIEW////////////////////
@@ -246,6 +251,13 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: const ApplicantDashboardView(),
+        );
+
+      ////////////////NOTIFICATIONS VIEW////////////////////
+      case NotificationsView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const NotificationsView(),
         );
 
       default:

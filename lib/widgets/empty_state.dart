@@ -151,6 +151,7 @@ class EmptyState extends StatelessWidget {
                     ),
                   ),
                 ],
+                Gap.h32,
               ],
             ),
           ),

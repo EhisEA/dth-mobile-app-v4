@@ -95,4 +95,10 @@ class ApiRoute {
 
   /// SUPPORT
   static String get supportWebSession => "$baseUrl/support/web-session";
+
+  /// NOTIFICATIONS
+  static String get notifications => "$baseUrl/notifications";
+  static String notificationRead(String uid) =>
+      "$baseUrl/notifications/$uid/read";
+  static String get notificationsReadAll => "$baseUrl/notifications/read-all";
 }
