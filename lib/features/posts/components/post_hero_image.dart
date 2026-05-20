@@ -167,6 +167,15 @@ class _PageDots extends StatelessWidget {
             decoration: BoxDecoration(
               color: i == current ? AppColors.primary : Color(0xFFFCFCFC),
               borderRadius: BorderRadius.circular(3),
+              // Drop shadow keeps white inactive dots visible against
+              // light-coloured images.
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff121212).withValues(alpha: 0.35),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
       ],

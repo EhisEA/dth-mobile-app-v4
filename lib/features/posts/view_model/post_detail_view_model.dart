@@ -17,6 +17,7 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
     this._commentsCache,
   ) {
     _refresh();
+    _loadComments();
   }
 
   final String uid;
@@ -53,7 +54,10 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
   bool get submitting => _submitting;
 
   Future<void> refresh() async {
-    await Future.wait([_refresh(), _loadComments()]);
+    // Pull-to-refresh wants fresh data for both — bypass the in-flight guard
+    // on comments. The request-id check inside `_loadComments` discards any
+    // earlier in-flight result so only the latest reload wins.
+    await Future.wait([_refresh(), _loadComments(force: true)]);
   }
 
   Future<void> _refresh() async {
@@ -64,10 +68,6 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
       final raw = await _postRepo.fetchPost(uid);
       _postsCache.upsert(postFromTimelinePost(raw));
       changeBaseState(const ViewModelState.idle());
-      // Kick off comments after we have the post (idempotent if already loaded).
-      if (_commentUids.isEmpty && !_commentsLoading) {
-        await _loadComments();
-      }
     } on ApiFailure catch (e) {
       if (post == null) {
         changeBaseState(ViewModelState.error(e));
@@ -77,12 +77,19 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
-  Future<void> _loadComments() async {
+  // Bumped on every comments-list fetch; lets us discard a stale result if a
+  // newer fetch (e.g. sort change, pull-to-refresh) was kicked off mid-flight.
+  int _commentsRequestId = 0;
+
+  Future<void> _loadComments({bool force = false}) async {
+    if (_commentsLoading && !force) return;
+    final requestId = ++_commentsRequestId;
     _commentsLoading = true;
     _commentsError = null;
     notifyListeners();
     try {
       final result = await _commentRepo.listComments(uid, sort: _sort);
+      if (requestId != _commentsRequestId) return;
       final fresh = result.items.map(commentFromTimelineComment);
       // listComments doesn't reliably return `viewer_reacted` — keep the
       // cached reaction state (set by the toggle endpoint, the only
@@ -93,14 +100,17 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
       _commentUids = comments.map((c) => c.uid).toList();
       _nextCommentCursor = result.nextCursor;
     } on ApiFailure catch (e) {
+      if (requestId != _commentsRequestId) return;
       _commentsError = e;
     } finally {
-      _commentsLoading = false;
-      notifyListeners();
+      if (requestId == _commentsRequestId) {
+        _commentsLoading = false;
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> retryLoadComments() => _loadComments();
+  Future<void> retryLoadComments() => _loadComments(force: true);
 
   Future<void> loadMoreComments() async {
     if (!hasMoreComments || _loadingMoreComments || _commentsLoading) return;
@@ -132,7 +142,9 @@ class PostDetailViewModel extends BaseChangeNotifierViewModel {
     _commentUids = const [];
     _nextCommentCursor = null;
     notifyListeners();
-    await _loadComments();
+    // Force-load so any in-flight fetch with the old sort gets discarded by
+    // the request-id check rather than overwriting our cleared list.
+    await _loadComments(force: true);
   }
 
   /// Posts a top-level comment. Returns true on success so the composer can
