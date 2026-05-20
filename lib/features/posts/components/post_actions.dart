@@ -42,7 +42,7 @@ class PostActions extends StatelessWidget {
                 onTap: onLike,
               ),
               if (showContainer) ...[
-                if (showContainer) Gap.w8 else Gap.w10,
+                Gap.w8,
 
                 Container(width: 1, height: 14, color: const Color(0xffEBEBEB)),
               ],
