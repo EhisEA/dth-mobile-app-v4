@@ -162,13 +162,6 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     return true;
   }
 
-  void _showComingSoon(String label) {
-    DthFlushBar.instance.showGeneric(
-      message: "$label is coming soon.",
-      title: "Heads up",
-    );
-  }
-
   void _openThread(String commentUid) {
     MobileNavigationService.instance.push(
       CommentThreadView.path,
@@ -255,7 +248,14 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                             // media themselves outside the post block.
                             renderMedia: !isImageHero && !isPinnedVideo,
                             onLike: vm.togglePostLike,
-                            onShare: () => _showComingSoon("Share"),
+                            onShare: () => LinkShareHelper.sharePost(
+                              postUid: post.uid,
+                              title: post.title,
+                              description: post.description,
+                              imageUrl: post.imageUrls.isNotEmpty
+                                  ? post.imageUrls.first
+                                  : "",
+                            ),
                             // Only the pinned-video layout has a sticky media
                             // strip above the scroll — that's where the
                             // YouTube-style fade makes sense.

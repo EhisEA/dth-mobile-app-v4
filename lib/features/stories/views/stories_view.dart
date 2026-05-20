@@ -1,5 +1,6 @@
 import "package:dth_v4/core/constants/assets.dart";
 import "package:dth_v4/core/router/router.dart";
+import "package:dth_v4/core/services/services.dart";
 import "package:dth_v4/core/utils/colors.dart";
 import "package:dth_v4/core/utils/format_count.dart";
 import "package:dth_v4/data/data.dart";
@@ -325,8 +326,15 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
                                             ),
                                           ),
                                           _ReelComposerIcon(
-                                            onTap: () =>
-                                                HapticFeedback.lightImpact(),
+                                            onTap: () {
+                                              HapticFeedback.lightImpact();
+                                              LinkShareHelper.shareReel(
+                                                reelUid: widget.reelUid,
+                                                title: reel.description,
+                                                description: reel.description,
+                                                imageUrl: poster,
+                                              );
+                                            },
                                             child: SvgPicture.asset(
                                               SvgAssets.share,
                                               height: 24,

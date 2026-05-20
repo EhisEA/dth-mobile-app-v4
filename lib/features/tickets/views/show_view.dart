@@ -75,7 +75,9 @@ class _ShowViewState extends ConsumerState<ShowView> {
           children: [
             ShowDetailHero(
               imageUrl: "https://picsum.photos/seed/${widget.eventUid}/960/540",
-              onShare: () {},
+              onShare: () => LinkShareHelper.shareEvent(
+                eventUid: widget.eventUid,
+              ),
             ),
             Expanded(
               child: Center(
@@ -155,7 +157,15 @@ class _ShowViewState extends ConsumerState<ShowView> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ShowDetailHero(imageUrl: heroUrl, onShare: () {}),
+              ShowDetailHero(
+                imageUrl: heroUrl,
+                onShare: () => LinkShareHelper.shareEvent(
+                  eventUid: event.uid,
+                  title: event.title,
+                  description: about,
+                  imageUrl: heroUrl,
+                ),
+              ),
               Expanded(
                 child: Transform.translate(
                   offset: const Offset(0, -25),

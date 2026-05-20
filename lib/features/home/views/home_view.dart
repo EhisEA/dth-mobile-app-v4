@@ -252,6 +252,16 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                           onLike: () => unawaited(
                                             vm.togglePostLike(post.uid),
                                           ),
+                                          onShare: () =>
+                                              LinkShareHelper.sharePost(
+                                                postUid: post.uid,
+                                                title: post.title,
+                                                description: post.description,
+                                                imageUrl:
+                                                    post.imageUrls.isNotEmpty
+                                                    ? post.imageUrls.first
+                                                    : "",
+                                              ),
                                           onTap: () => MobileNavigationService
                                               .instance
                                               .push(

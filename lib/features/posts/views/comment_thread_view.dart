@@ -250,6 +250,12 @@ class _ParentActions extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             icon: SvgAssets.share,
             count: comment.shareCount,
+            onTap: () => LinkShareHelper.shareComment(
+              commentUid: comment.uid,
+              title: comment.authorName,
+              description: comment.body,
+              imageUrl: comment.avatarUrl ?? "",
+            ),
           ),
         ),
       ],
@@ -258,16 +264,23 @@ class _ParentActions extends StatelessWidget {
 }
 
 class _ActionChip extends StatelessWidget {
-  const _ActionChip({required this.icon, required this.count, this.padding});
+  const _ActionChip({
+    required this.icon,
+    required this.count,
+    this.padding,
+    this.onTap,
+  });
 
   final String icon;
   final int count;
   final EdgeInsets? padding;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      onTap: onTap,
       child: Container(
         padding: padding,
         child: Row(
