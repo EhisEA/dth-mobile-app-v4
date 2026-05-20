@@ -7,7 +7,7 @@ class EventListItem {
     required this.date,
     required this.time,
     this.featuredImageUrl,
-    this.ticketsCount = "0",
+    this.ticketsCount = 0,
   });
 
   final String uid;
