@@ -6,6 +6,7 @@ import "package:dth_v4/features/posts/components/comment_sort_header.dart";
 import "package:dth_v4/features/posts/components/comment_tile.dart";
 import "package:dth_v4/features/posts/components/post_actions.dart";
 import "package:dth_v4/features/posts/components/post_detail_skeleton.dart";
+import "package:dth_v4/features/posts/components/post_description.dart";
 import "package:dth_v4/features/posts/components/post_header.dart";
 import "package:dth_v4/features/posts/components/post_hero_image.dart";
 import "package:dth_v4/features/posts/components/post_media.dart";
@@ -77,8 +78,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final shifted = (_scrollController.offset - _metaFadeStart)
-        .clamp(0.0, _metaFadeRange);
+    final shifted = (_scrollController.offset - _metaFadeStart).clamp(
+      0.0,
+      _metaFadeRange,
+    );
     final next = shifted / _metaFadeRange;
     // Skip imperceptible deltas so the ValueNotifier doesn't churn every
     // pixel — keeps the Opacity / Transform rebuilds cheap during fast flings.
@@ -435,12 +438,7 @@ class _PostBlock extends StatelessWidget {
         PostDetailsHeader(post: post),
         if (post.description.isNotEmpty) ...[
           Gap.h12,
-          AppText.regular(
-            post.description,
-            fontSize: 12,
-            height: 1.45,
-            color: const Color(0xff202020),
-          ),
+          PostDescription(text: post.description, lineHeight: 1.45),
         ],
       ],
     );
@@ -470,6 +468,7 @@ class _PostBlock extends StatelessWidget {
         Gap.h18,
         PostActions(
           post: post,
+          showContainer: true,
           onLike: onLike,
           onComment: () {},
           onShare: onShare,

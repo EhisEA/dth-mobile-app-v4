@@ -116,7 +116,7 @@ class _FullReelBodyState extends State<FullReelBody> {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  AppColors.black.withValues(alpha: 0.7),
+                  AppColors.mainBlack.withValues(alpha: 0.7),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -241,14 +241,17 @@ class _FullReelBodyState extends State<FullReelBody> {
                   ],
                 ),
               ),
-              Gap.h16,
-              if (widget.hasVideo)
+              if (!widget.hasVideo) ...[Gap.h12],
+              if (widget.hasVideo) ...[
+                Gap.h16,
                 _ReelSeekBar(
                   progress: widget.progress,
                   onSeekStart: widget.onSeekStart,
                   onSeek: widget.onSeek,
                   onSeekEnd: widget.onSeekEnd,
                 ),
+                Gap.h8,
+              ],
             ],
           ),
         ),
@@ -333,15 +336,15 @@ class _ReelSeekBar extends StatelessWidget {
           // so users get a generous scrub area without making the bar
           // visually thicker.
           child: SizedBox(
-            height: 44,
+            height: 4,
             child: Align(
-              alignment: Alignment.bottomCenter,
+              alignment: Alignment.topCenter,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
                   minHeight: 3,
-                  backgroundColor: AppColors.white.withValues(alpha: 0.3),
+                  backgroundColor: AppColors.white,
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     AppColors.primary,
                   ),

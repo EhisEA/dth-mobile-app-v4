@@ -72,7 +72,7 @@ class StoriesBar extends StatelessWidget {
                       left: 12,
                       child: AppText.semiBold(
                         s.label,
-                        fontSize: 10,
+                        fontSize: 9,
                         maxLines: 2,
                         color: AppColors.white,
                         height: 1.2,

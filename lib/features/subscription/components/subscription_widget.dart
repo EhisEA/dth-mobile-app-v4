@@ -101,8 +101,6 @@ class _SubscriptionWidgetState extends ConsumerState<SubscriptionWidget> {
                     HapticFeedback.lightImpact();
                   },
                 ),
-
-                if (index == widget.plans.length - 1) Gap.h(100),
               ],
             );
           },
