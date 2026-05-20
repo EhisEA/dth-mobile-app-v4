@@ -49,10 +49,13 @@ class PosTimelinetHeader extends StatelessWidget {
                         color: AppColors.blackTint20,
                       ),
                       Gap.w2,
-                      AppText.medium(
-                        post.subtitle ?? "General",
-                        fontSize: 12,
-                        color: AppColors.black,
+                      Flexible(
+                        child: AppText.medium(
+                          post.subtitle ?? "General",
+                          fontSize: 12,
+                          maxLines: 1,
+                          color: AppColors.black,
+                        ),
                       ),
                       Gap.w6,
                       AppText.regular(
