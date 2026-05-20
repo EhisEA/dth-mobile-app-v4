@@ -7,3 +7,10 @@ BUNDLE_DISPLAY_NAME=DTH
 
 GOOGLE_IOS_CLIENT_ID=
 REVERSED_CLIENT_ID=
+
+// Branch.io (prod) — TODO: replace with real values
+BRANCH_KEY_LIVE=key_live_mrEidOFck5yM0q7M0MhXMffpxsaKZuSP
+BRANCH_KEY_TEST=key_test_lBAejGAbi3BI5F2K5Kc29olkDrcGYtO3
+BRANCH_UNIVERSAL_LINK_DOMAIN_1=dth-show.app.link
+BRANCH_UNIVERSAL_LINK_DOMAIN_2=dth-show-alternate.app.link
+BRANCH_URI_SCHEME=dth

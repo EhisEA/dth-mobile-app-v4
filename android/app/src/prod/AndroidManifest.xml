@@ -1,0 +1,36 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <!-- Branch.io (prod) -->
+        <meta-data
+            android:name="io.branch.sdk.BranchKey"
+            android:value="key_live_mrEidOFck5yM0q7M0MhXMffpxsaKZuSP" />
+        <meta-data
+            android:name="io.branch.sdk.BranchKey.test"
+            android:value="key_test_lBAejGAbi3BI5F2K5Kc29olkDrcGYtO3" />
+        <meta-data
+            android:name="io.branch.sdk.TestMode"
+            android:value="false" />
+
+        <activity
+            android:name=".MainActivity"
+            tools:node="merge">
+            <!-- Branch App Links (prod) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="dth-show.app.link" />
+                <data android:scheme="https" android:host="dth-show-alternate.app.link" />
+            </intent-filter>
+
+            <!-- Branch URI scheme (prod) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="dth" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

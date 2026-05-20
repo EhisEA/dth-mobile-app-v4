@@ -1,15 +1,38 @@
-class DeepLinkConstant {
-  static const String branchIoCanonicalIdentifier = "flutter/branch";
-  static const String controlParamsKey = "\$uri_redirect_mode";
-  static const String deepLinkTitle = "deep_link_title";
-  static const String deepLinkData = "flutter deep link";
-}
-
-class DeepLinkpath {
-  static const referral = "+referallPath";
-}
-
-class DeepLinkparams {
+/// Branch reserved keys read from incoming session data.
+class BranchSessionKey {
+  static const String clickedBranchLink = "+clicked_branch_link";
   static const String deepLinkPath = "+deep_link_path";
-  static const referralCode = "+referral_code";
+  static const String canonicalIdentifier = "\$canonical_identifier";
+}
+
+/// Branch control-param keys set when creating a link.
+class BranchControlParam {
+  /// Surfaces as [BranchSessionKey.deepLinkPath] on the receiving side.
+  static const String deeplinkPath = "\$deeplink_path";
+}
+
+/// Paths emitted as `+deep_link_path` for each link type. The router matches on these.
+class DeepLinkPaths {
+  static const String referral = "/referral";
+  static const String timeline = "/timeline";
+  static const String comment = "/comment";
+  static const String event = "/event";
+}
+
+/// Custom payload keys carried inside a link's metadata.
+class DeepLinkParams {
+  static const String referralCode = "referral_code";
+  static const String postId = "post_id";
+  static const String commentId = "comment_id";
+  static const String eventId = "event_id";
+}
+
+/// Branch link analytics labels.
+class DeepLinkChannel {
+  static const String app = "app";
+}
+
+class DeepLinkFeature {
+  static const String referral = "referral";
+  static const String sharing = "sharing";
 }

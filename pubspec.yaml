@@ -57,6 +57,7 @@ dependencies:
   # MediaServiceImpl's Permission.photos gate failing on iOS "limited" library).
   image_picker: ^1.1.2
   google_sign_in: ^6.2.1
+  flutter_branch_sdk: ^8.5.0
 
 dev_dependencies:
   flutter_test:

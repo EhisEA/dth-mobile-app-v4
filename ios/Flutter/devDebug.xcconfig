@@ -7,3 +7,10 @@ BUNDLE_DISPLAY_NAME=DTH [dev]
 
 GOOGLE_IOS_CLIENT_ID=402353130555-tnemp3kri0mn4fdvt8bv27r5t3l1la58.apps.googleusercontent.com
 REVERSED_CLIENT_ID=com.googleusercontent.apps.402353130555-tnemp3kri0mn4fdvt8bv27r5t3l1la58
+
+// Branch.io (dev) — TODO: replace with real values
+BRANCH_KEY_LIVE=key_live_lxvJabnsTsrCKlAK9B4fvjepvDfTS7eV
+BRANCH_KEY_TEST=key_test_kyxPmjgwUxCEGotP2GaKFopiBDdML9f4
+BRANCH_UNIVERSAL_LINK_DOMAIN_1=dthdev.app.link
+BRANCH_UNIVERSAL_LINK_DOMAIN_2=dthdev-alternate.app.link
+BRANCH_URI_SCHEME=dthdev
