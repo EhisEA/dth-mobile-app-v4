@@ -190,40 +190,62 @@ class _DescriptionText extends StatelessWidget {
         )..layout();
 
         final readMoreWidth = readMorePainter.width;
-        var end = description.length;
         const ellipsis = "…";
+        final textDirection = Directionality.of(context);
+        final maxWidth = constraints.maxWidth - readMoreWidth;
 
-        while (end > 0) {
+        // Binary-search the largest prefix that fits within two lines once
+        // the ellipsis is appended. The linear walk was O(N) layouts per
+        // tile — long descriptions could trigger 100+ TextPainter.layout
+        // calls on every scroll-triggered relayout. log₂(N) keeps this
+        // bounded to ~10 layouts even for multi-paragraph descriptions.
+        var low = 0;
+        var high = description.length;
+        var bestEnd = 0;
+        while (low <= high) {
+          final mid = (low + high) ~/ 2;
           final candidate =
-              "${description.substring(0, end).trimRight()}$ellipsis";
-          final testPainter = TextPainter(
+              "${description.substring(0, mid).trimRight()}$ellipsis";
+          final fits = !(TextPainter(
             text: TextSpan(text: candidate, style: baseStyle),
             maxLines: 2,
-            textDirection: Directionality.of(context),
-          )..layout(maxWidth: constraints.maxWidth - readMoreWidth);
+            textDirection: textDirection,
+          )..layout(maxWidth: maxWidth)).didExceedMaxLines;
 
-          if (!testPainter.didExceedMaxLines) {
-            return Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(text: candidate, style: baseStyle),
-                  TextSpan(text: " $_readMoreLabel", style: readMoreStyle),
-                ],
-              ),
-            );
+          if (fits) {
+            bestEnd = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
           }
-          end--;
+        }
+
+        if (bestEnd == 0) {
+          // Even an empty + ellipsis doesn't fit — extremely narrow layout.
+          // Fall back to the framework's own truncation.
+          return Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: description, style: baseStyle),
+                TextSpan(text: " $_readMoreLabel", style: readMoreStyle),
+              ],
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          );
         }
 
         return Text.rich(
           TextSpan(
             children: [
-              TextSpan(text: description, style: baseStyle),
+              TextSpan(
+                text:
+                    "${description.substring(0, bestEnd).trimRight()}$ellipsis",
+                style: baseStyle,
+              ),
               TextSpan(text: " $_readMoreLabel", style: readMoreStyle),
             ],
           ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
         );
       },
     );

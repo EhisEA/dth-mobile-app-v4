@@ -322,7 +322,7 @@ class _TicketHomeBody extends StatelessWidget {
                 imageUrl: item.displayImageUrl,
                 title: item.title,
                 descriptionPreview: item.shortDescription,
-                ticketQuantity: int.parse(item.ticketsCount),
+                ticketQuantity: int.tryParse(item.ticketsCount) ?? 0,
                 scheduleLabel: item.dateTimeLine,
                 onReadMore: () => onOpenDescription(item),
                 onViewTickets: () {
