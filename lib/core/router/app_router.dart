@@ -240,11 +240,13 @@ class AppRouter {
             routeArgs[RoutingArgumentKey.yourTicketsArgs]
                 as Map<String, dynamic>? ??
             routeArgs;
-        final purchasedTicket =
-            YourTicketsArgs.fromRouteExtra(ticketsExtra).purchasedTicket;
+        final ticketsArgs = YourTicketsArgs.fromRouteExtra(ticketsExtra);
         return _getPageRoute(
           settings: settings,
-          viewToShow: YourTicketsView(purchasedTicket: purchasedTicket),
+          viewToShow: YourTicketsView(
+            purchasedTicket: ticketsArgs.purchasedTicket,
+            eventUid: ticketsArgs.eventUid,
+          ),
         );
       ////////////////APPLICANT DASHBOARD VIEW////////////////////
       case ApplicantDashboardView.path:

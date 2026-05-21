@@ -1,5 +1,4 @@
 import "dart:async";
-import "dart:io";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/core/services/app_audio_service.dart";
 import "package:dth_v4/data/data.dart";
@@ -11,20 +10,27 @@ import "package:flutter/services.dart";
 import "package:flutter_svg/flutter_svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 import "package:gal/gal.dart";
-import "package:path/path.dart" as path;
-import "package:path_provider/path_provider.dart";
 import "package:screenshot/screenshot.dart";
-import "package:share_plus/share_plus.dart";
 
 class YourTicketsView extends StatefulWidget {
-  const YourTicketsView({super.key, required this.purchasedTicket});
+  const YourTicketsView({
+    super.key,
+    required this.purchasedTicket,
+    this.eventUid = "",
+  });
 
   YourTicketsView.fromArgs({super.key, required YourTicketsArgs args})
-    : purchasedTicket = args.purchasedTicket;
+    : purchasedTicket = args.purchasedTicket,
+      eventUid = args.eventUid;
 
   static const String path = NavigatorRoutes.yourTickets;
 
   final PurchasedTicket purchasedTicket;
+
+  /// Uid of the event this ticket belongs to. Empty when reached via a flow
+  /// that doesn't know it (e.g. older entrypoints); the share action is
+  /// hidden in that case.
+  final String eventUid;
 
   @override
   State<YourTicketsView> createState() => _YourTicketsViewState();
@@ -53,15 +59,6 @@ class _YourTicketsViewState extends State<YourTicketsView> {
     return "dth_ticket_${index + 1}";
   }
 
-  String _shareTextFor(int index) {
-    final item = _ticketItemAt(index);
-    final eventName = item?.eventName.trim();
-    if (eventName != null && eventName.isNotEmpty) {
-      return "My ticket for $eventName";
-    }
-    return "My DTH event ticket";
-  }
-
   Widget _ticketForCapture(int index) {
     final width = MediaQuery.sizeOf(context).width * 0.88;
     return DthTicketCard(
@@ -88,15 +85,6 @@ class _YourTicketsViewState extends State<YourTicketsView> {
       pixelRatio: mediaQuery.devicePixelRatio,
       context: captureContext,
     );
-  }
-
-  Future<File> _writeTicketImage(Uint8List image, int index) async {
-    final directory = await getTemporaryDirectory();
-    final file = File(
-      path.join(directory.path, "${_exportFileName(index)}.png"),
-    );
-    await file.writeAsBytes(image, flush: true);
-    return file;
   }
 
   void _showMessage({
@@ -157,14 +145,15 @@ class _YourTicketsViewState extends State<YourTicketsView> {
   }
 
   Future<void> shareActiveTicket() async {
-    await _runExport((image) async {
-      final imageFile = await _writeTicketImage(image, _activeIndex);
-      final params = ShareParams(
-        files: [XFile(imageFile.path)],
-        text: _shareTextFor(_activeIndex),
-      );
-      await SharePlus.instance.share(params);
-    });
+    if (widget.eventUid.isEmpty) return;
+    final item = _ticketItemAt(_activeIndex);
+    await LinkShareHelper.shareEvent(
+      eventUid: widget.eventUid,
+      title: item?.eventName ?? "",
+      description: item != null
+          ? "${item.date} · ${item.time} · ${item.location}"
+          : "",
+    );
   }
 
   Future<void> _onDownloadTap() async {
@@ -174,7 +163,6 @@ class _YourTicketsViewState extends State<YourTicketsView> {
   }
 
   Future<void> _onShareTap() async {
-    if (_isExporting) return;
     HapticFeedback.lightImpact();
     await shareActiveTicket();
   }
@@ -202,15 +190,19 @@ class _YourTicketsViewState extends State<YourTicketsView> {
       appBar: DthAppBar(
         title: "Your Tickets",
         actions: [
-          // IconButton(
-          //   onPressed: _isExporting ? null : _onShareTap,
-          //   icon: SvgPicture.asset(
-          //     SvgAssets.share,
-          //     width: 20,
-          //     height: 20,
-          //     colorFilter: ColorFilter.mode(AppColors.black, BlendMode.srcIn),
-          //   ),
-          // ),
+          if (widget.eventUid.isNotEmpty)
+            IconButton(
+              onPressed: _onShareTap,
+              icon: SvgPicture.asset(
+                SvgAssets.share,
+                width: 20,
+                height: 20,
+                colorFilter: ColorFilter.mode(
+                  AppColors.black,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
           IconButton(
             onPressed: _isExporting ? null : _onDownloadTap,
             icon: SvgPicture.asset(

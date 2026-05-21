@@ -226,6 +226,7 @@ class _ShowViewState extends ConsumerState<ShowView> {
                                             YourTicketsView.path,
                                             extra: YourTicketsArgs(
                                               purchasedTicket: ticket,
+                                              eventUid: event.uid,
                                             ).toRouteExtra(),
                                           ),
                                     );
