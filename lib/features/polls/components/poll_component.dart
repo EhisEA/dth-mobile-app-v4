@@ -194,16 +194,25 @@ class _PollComponentState extends State<PollComponent> {
           children: [
             Gap.h12,
             Row(
+              // crossAxisAlignment: CrossAxisAlignment.start,
+              // mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 SvgPicture.asset(SvgAssets.primaryLogo, height: 28, width: 28),
-                Gap.w12,
+                Gap.w10,
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      AppText.medium(
+                        poll.title,
+                        fontSize: 14,
+                        height: 1,
+                        color: AppColors.black,
+                      ),
+                      Gap.h4,
                       Row(
                         children: [
-                          SvgPicture.asset(SvgAssets.blackLogo, height: 24),
+                          SvgPicture.asset(SvgAssets.blackLogo, height: 14),
                           Gap.w4,
                           AppText.regular(
                             "with",
@@ -213,38 +222,38 @@ class _PollComponentState extends State<PollComponent> {
                           Gap.w4,
                           AppText.medium(
                             "All Contestants",
-                            fontSize: 12,
+                            fontSize: 10,
                             color: AppColors.black,
                           ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusBg,
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: AppText.medium(
-                              statusText,
-                              fontSize: 10,
-                              color: statusTextColor,
-                            ),
+                          Gap.w4,
+                          AppText.medium(
+                            poll.createdAt,
+                            fontSize: 10,
+                            color: Color(0xff8F8F8F),
                           ),
                         ],
-                      ),
-                      AppText.medium(
-                        poll.endsAt,
-                        fontSize: 12,
-                        color: AppColors.black,
                       ),
                     ],
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: AppText.medium(
+                    statusText,
+                    fontSize: 10,
+                    color: statusTextColor,
+                  ),
+                ),
               ],
             ),
-            Gap.h8,
+            Gap.h10,
             AppText.regular(
               '${poll.question} ${poll.description}'.trim(),
               fontSize: 12,
@@ -396,7 +405,7 @@ class _PollComponentState extends State<PollComponent> {
                 ),
               ],
             ),
-            Gap.h8,
+            Gap.h16,
             Container(
               height: 1,
               width: double.infinity,

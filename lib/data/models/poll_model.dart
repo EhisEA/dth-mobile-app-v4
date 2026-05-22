@@ -55,6 +55,7 @@ class PollOptionModel {
 class PollModel {
   const PollModel({
     required this.uid,
+    required this.title,
     required this.question,
     required this.description,
     required this.totalVotes,
@@ -66,9 +67,11 @@ class PollModel {
     required this.hasVoted,
     required this.votedOptionUid,
     required this.options,
+    required this.createdAt,
   });
 
   final String uid;
+  final String title;
   final String question;
   final String description;
   final int totalVotes;
@@ -77,6 +80,7 @@ class PollModel {
   final bool hasEnded;
   final String timeLeft;
   final String endsAt;
+  final String createdAt;
   final bool hasVoted;
   final String? votedOptionUid;
   final List<PollOptionModel> options;
@@ -100,6 +104,7 @@ class PollModel {
     final votedUidRaw = _pollAsString(json["voted_option_uid"]);
     return PollModel(
       uid: _pollAsString(json["uid"]),
+      title: _pollAsString(json["title"]),
       question: _pollAsString(json["question"]),
       description: _pollAsString(json["description"]),
       totalVotes: _pollAsInt(json["total_votes"]),
@@ -108,6 +113,7 @@ class PollModel {
       hasEnded: _pollAsBool(json["has_ended"]),
       timeLeft: _pollAsString(json["time_left"]),
       endsAt: _pollAsString(json["ends_at"]),
+      createdAt: _pollAsString(json["created_at"]),
       hasVoted: _pollAsBool(json["has_voted"]),
       votedOptionUid: votedUidRaw.isEmpty ? null : votedUidRaw,
       options: options,

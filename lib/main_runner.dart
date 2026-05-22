@@ -38,6 +38,12 @@ Future<void> main() async {
     ],
   );
 
+  // Subscribes to DeepLinkService now so any cold-start link buffered during
+  // [DeepLinkService.initialise] is drained into the router's own queue.
+  // Dispatch is gated on [DeepLinkRouter.instance.notifyAppReady], called by
+  // SplashViewModel once the initial route is in place.
+  DeepLinkRouter.bootstrap(container);
+
   if (!kIsWeb) {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,

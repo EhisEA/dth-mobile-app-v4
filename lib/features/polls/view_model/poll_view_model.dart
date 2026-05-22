@@ -74,6 +74,7 @@ class PollViewModel extends BaseChangeNotifierViewModel {
 
     return PollModel(
       uid: current.uid,
+      title: current.title,
       question: current.question,
       description: current.description,
       totalVotes: newTotal,
@@ -85,6 +86,7 @@ class PollViewModel extends BaseChangeNotifierViewModel {
       hasVoted: true,
       votedOptionUid: optionUid,
       options: projectedOptions,
+      createdAt: current.createdAt,
     );
   }
 

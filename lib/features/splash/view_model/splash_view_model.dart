@@ -1,3 +1,4 @@
+import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/authentication/views/get_started_view.dart";
 import "package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart";
@@ -50,5 +51,10 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
     } else {
       await _navigationService.replace(GetStartedView.path);
     }
+
+    // Splash has placed the initial route on the stack — DeepLinkRouter can
+    // now safely push the link destination on top (or stash it for the auth
+    // flow to consume after login).
+    DeepLinkRouter.instance.notifyAppReady();
   }
 }

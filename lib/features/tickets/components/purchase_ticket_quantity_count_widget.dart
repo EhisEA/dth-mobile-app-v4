@@ -30,8 +30,15 @@ class PurchaseTicketCountWidget extends StatelessWidget {
           backgroundColor: canDecrement ? AppColors.black : AppColors.tint5,
           iconColor: AppColors.white,
         ),
-        SizedBox(
-          width: 28,
+        Container(
+          // height: 28,
+          // width: 28,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.greyTint30),
+            borderRadius: BorderRadius.circular(5),
+          ),
           child: AppText.semiBold(
             "$quantity",
             fontSize: 14,
