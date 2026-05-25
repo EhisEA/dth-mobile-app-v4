@@ -15,12 +15,14 @@ class PurchaseTicketItem extends StatelessWidget {
     required this.quantity,
     required this.onIncrement,
     required this.onDecrement,
+    required this.onQuantityChanged,
   });
 
   final AvailableTicket ticket;
   final int quantity;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final ValueChanged<int> onQuantityChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +70,10 @@ class PurchaseTicketItem extends StatelessWidget {
           Gap.w8,
           PurchaseTicketCountWidget(
             quantity: quantity,
+            maxQuantity: ticket.availableTickets,
             onIncrement: onIncrement,
             onDecrement: onDecrement,
+            onQuantityChanged: onQuantityChanged,
             canIncrement: canIncrement,
           ),
         ],

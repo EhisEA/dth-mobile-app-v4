@@ -46,7 +46,7 @@ class ProfileTlle extends StatelessWidget {
               children: [
                 AppText.medium(title, fontSize: 14, color: AppColors.black),
                 Gap.h2,
-                AppText.regular(
+                AppText.medium(
                   description,
                   fontSize: 12,
                   color: AppColors.tint15,

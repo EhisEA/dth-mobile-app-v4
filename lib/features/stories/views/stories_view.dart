@@ -37,6 +37,7 @@ class StoriesView extends ConsumerStatefulWidget {
 class _StoriesViewState extends ConsumerState<StoriesView> {
   bool _chatOpen = false;
   final TextEditingController _composerController = TextEditingController();
+  final FocusNode _composerFocus = FocusNode();
   final ReelPlayerController _playerController = ReelPlayerController();
 
   /// Single GlobalKey for the reel backdrop — lets Flutter reparent the same
@@ -63,6 +64,7 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
   void dispose() {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     _composerController.dispose();
+    _composerFocus.dispose();
     _playerController.dispose();
     super.dispose();
   }
@@ -109,7 +111,7 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
     if (!mounted) return;
     if (ok) {
       _composerController.clear();
-      FocusScope.of(context).unfocus();
+      _composerFocus.unfocus();
     }
   }
 
@@ -251,6 +253,8 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
                               Expanded(
                                 child: AppTextField(
                                   controller: _composerController,
+                                  focusNode: _composerFocus,
+                                  tapToFocus: false,
                                   fillColor: const Color(
                                     0xffEFEFEF,
                                   ).withValues(alpha: 0.16),
@@ -263,8 +267,9 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
                                   ),
                                   minLines: 1,
                                   maxLines: 5,
-                                  keyboardType: TextInputType.multiline,
-                                  textInputAction: TextInputAction.newline,
+                                  keyboardType: TextInputType.text,
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => _composerFocus.unfocus(),
                                 ),
                               ),
                               AnimatedSwitcher(
