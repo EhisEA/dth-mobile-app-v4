@@ -74,6 +74,8 @@ class PollViewModel extends BaseChangeNotifierViewModel {
 
     return PollModel(
       uid: current.uid,
+      title: current.title,
+      subtitle: current.subtitle,
       question: current.question,
       description: current.description,
       totalVotes: newTotal,
