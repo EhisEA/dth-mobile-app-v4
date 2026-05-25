@@ -30,7 +30,7 @@ class AppHeader extends ConsumerWidget {
               behavior: HitTestBehavior.opaque,
               child: SvgPicture.asset(SvgAssets.search),
             ),
-            Gap.w16,
+            Gap.w18,
             if (appModules.appModules.value?.livestream == true) ...[
               GestureDetector(
                 onTap: () {
@@ -40,7 +40,7 @@ class AppHeader extends ConsumerWidget {
                 behavior: HitTestBehavior.opaque,
                 child: SvgPicture.asset(SvgAssets.live),
               ),
-              Gap.w16,
+              Gap.w18,
             ],
             GestureDetector(
               onTap: () {

@@ -63,7 +63,8 @@ class _PersonalInfomationViewState
     // be empty. Fall back to Nigeria (the app's default — same pick as the
     // create-account form) and then the first available country, so the user
     // can still enter edit mode and choose their own country from the picker.
-    final country = displayCountry ??
+    final country =
+        displayCountry ??
         DthCountry.findByIso(countries, u.isoCode) ??
         DthCountry.findByIso(countries, "NG") ??
         countries.first;
@@ -223,7 +224,7 @@ class _PersonalInfomationViewState
                   color: AppColors.tint15,
                 ),
                 Center(child: ContestantPill(user: u)),
-                // Gap.h24,
+                Gap.h32,
                 AppTextField(
                   key: ValueKey<bool>(_editingProfile),
                   title: "Full Name",

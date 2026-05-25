@@ -8,7 +8,7 @@ import 'package:dth_v4/features/application/views/steps/contact_information_step
 import 'package:dth_v4/features/application/views/steps/personal_information_step.dart';
 import 'package:dth_v4/features/application/views/steps/talent_showcase_step.dart';
 import 'package:dth_v4/features/application/components/application_segmented_progress.dart';
-import 'package:dth_v4/features/search/search.dart';
+import 'package:dth_v4/features/support/support.dart';
 import 'package:dth_v4/widgets/text/textstyles.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -198,7 +198,7 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
     BuildContext context,
     ApplicationProcess process,
   ) {
-    final vm = ref.watch(searchViewModelProvider);
+    final vm = ref.watch(supportSessionViewModelProvider);
     return Loader.page(
       isLoading: vm.supportSessionBusy,
       child: Scaffold(
@@ -250,7 +250,7 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
                       onTap: () async {
                         HapticFeedback.lightImpact();
                         await ref
-                            .read(searchViewModelProvider)
+                            .read(supportSessionViewModelProvider)
                             .requestSupportWebSession();
                       },
                       child: SvgPicture.asset(SvgAssets.support),

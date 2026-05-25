@@ -4,12 +4,13 @@ import "package:dth_v4/features/app_web_view/app_web_view.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
-class SearchViewModel extends BaseChangeNotifierViewModel {
-  SearchViewModel(this._supportRepo);
+/// Shared support web session flow (search, profile, application, etc.).
+class SupportSessionViewModel extends BaseChangeNotifierViewModel {
+  SupportSessionViewModel(this._supportRepo);
 
   final SupportRepo _supportRepo;
 
-  static const String _supportSessionKey = "searchSupportSession";
+  static const String _supportSessionKey = "supportSession";
 
   ViewModelState get supportSessionState =>
       getState(_supportSessionKey) ?? const ViewModelState.idle();
@@ -48,6 +49,7 @@ class SearchViewModel extends BaseChangeNotifierViewModel {
   }
 }
 
-final searchViewModelProvider = ChangeNotifierProvider<SearchViewModel>((ref) {
-  return SearchViewModel(ref.read(supportRepositoryProvider));
-});
+final supportSessionViewModelProvider =
+    ChangeNotifierProvider<SupportSessionViewModel>((ref) {
+      return SupportSessionViewModel(ref.read(supportRepositoryProvider));
+    });
