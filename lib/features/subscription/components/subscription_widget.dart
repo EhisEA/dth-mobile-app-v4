@@ -61,7 +61,7 @@ class _SubscriptionWidgetState extends ConsumerState<SubscriptionWidget> {
     final scrollEndPadding = bottomInset + 70;
 
     SubscriptionModel? activePlan;
-    for (final p in plans) {
+    for (final p in widget.plans) {
       if (p.isActiveSubscription) {
         activePlan = p;
         break;
@@ -101,8 +101,6 @@ class _SubscriptionWidgetState extends ConsumerState<SubscriptionWidget> {
                     HapticFeedback.lightImpact();
                   },
                 ),
-
-                if (index == widget.plans.length - 1) Gap.h(100),
               ],
             );
           },
