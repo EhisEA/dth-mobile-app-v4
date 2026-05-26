@@ -75,18 +75,15 @@ class _YourTicketsViewState extends State<YourTicketsView> {
   Future<Uint8List?> _captureTicket(int index) async {
     final captureContext = context;
     final mediaQuery = MediaQuery.of(captureContext);
+    final width = mediaQuery.size.width * 0.88;
 
-    return _screenshotController.captureFromWidget(
-      MediaQuery(
-        data: mediaQuery,
-        child: Material(
-          color: Colors.transparent,
-          child: _ticketForCapture(index),
-        ),
-      ),
+    // Theme/MediaQuery are applied via [context] inside the screenshot package.
+    return _screenshotController.captureFromLongWidget(
+      Material(color: Colors.transparent, child: _ticketForCapture(index)),
       delay: const Duration(milliseconds: 100),
       pixelRatio: mediaQuery.devicePixelRatio,
       context: captureContext,
+      constraints: BoxConstraints(maxWidth: width),
     );
   }
 
@@ -120,6 +117,11 @@ class _YourTicketsViewState extends State<YourTicketsView> {
     unawaited(AppAudioService.instance.playScreenshotSound());
 
     try {
+      // After navigation/resume the first frame can report loose constraints;
+      // wait for layout before capture so the on-screen card does not overflow.
+      await WidgetsBinding.instance.endOfFrame;
+      await WidgetsBinding.instance.endOfFrame;
+
       final image = await _captureTicket(_activeIndex);
       if (image == null || image.isEmpty) {
         throw Exception("Screenshot capture failed.");
@@ -237,9 +239,14 @@ class _YourTicketsViewState extends State<YourTicketsView> {
                     : null;
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(6, 8, 6, 24),
-                  child: DthTicketCard(
-                    purchasedTicket: purchased,
-                    ticketItem: ticketItem,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return DthTicketCard(
+                        purchasedTicket: purchased,
+                        ticketItem: ticketItem,
+                        maxHeight: constraints.maxHeight,
+                      );
+                    },
                   ),
                 );
               },

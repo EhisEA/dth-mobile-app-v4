@@ -15,16 +15,20 @@ class DthTicketCard extends StatelessWidget {
     this.ticketItem,
     this.forExport = false,
     this.width,
+    this.maxHeight,
   });
 
   final PurchasedTicket purchasedTicket;
   final PurchasedTicketItem? ticketItem;
 
-  /// When true, lays out all content in a fixed-height [Column] for image export
-  /// (no [AspectRatio], no clipping). When false, uses [ListView] inside
-  /// [AspectRatio] so overflowing content scrolls on screen.
+  /// When true, lays out all content in a fixed-height [Column] for image export.
+  /// When false, height follows content up to [maxHeight], then scrolls.
   final bool forExport;
   final double? width;
+
+  /// Max height for on-screen layout (from the [PageView] slot). Avoids relying on
+  /// [LayoutBuilder] constraints during the first frame after navigation/resume.
+  final double? maxHeight;
 
   static const Color _labelColor = Color(0xFFD0C2FF);
   static const Color _valueColor = Color(0xFFFCFCFC);
@@ -68,9 +72,9 @@ class DthTicketCard extends StatelessWidget {
     return [
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           SvgPicture.asset(SvgAssets.dthText, fit: BoxFit.contain),
-          const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -158,19 +162,38 @@ class DthTicketCard extends StatelessWidget {
       );
     }
 
-    return AspectRatio(
-      aspectRatio: 0.56,
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        clipBehavior: Clip.antiAlias,
-        decoration: decoration,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          physics: const BouncingScrollPhysics(),
-          children: content,
+    final resolvedMaxHeight = _resolveMaxHeight(context);
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: resolvedMaxHeight),
+        child: DecoratedBox(
+          decoration: decoration,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            clipBehavior: Clip.hardEdge,
+            child: ListView(
+              shrinkWrap: true,
+              primary: false,
+              padding: const EdgeInsets.all(32),
+              physics: const BouncingScrollPhysics(),
+              children: content,
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  double _resolveMaxHeight(BuildContext context) {
+    final explicit = maxHeight;
+    if (explicit != null && explicit.isFinite && explicit > 0) {
+      return explicit;
+    }
+
+    final mediaQuery = MediaQuery.sizeOf(context);
+    return mediaQuery.height * 0.72;
   }
 }
 
