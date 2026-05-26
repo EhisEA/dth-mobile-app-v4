@@ -32,14 +32,30 @@ class ProfileRepoImpl implements ProfileRepo {
   }
 
   @override
+  Future<ApiResponse<ProfilePhoneSubmitResult>> submitProfilePhone({
+    required String isoCode,
+    required String phone,
+  }) async {
+    final response = await _networkService.post(
+      ApiRoute.profilePhone,
+      data: {"iso_code": isoCode, "phone": phone},
+    );
+    final root = response.data as Map<String, dynamic>;
+    return ApiResponse(data: ProfilePhoneSubmitResult.fromResponseRoot(root));
+  }
+
+  @override
   Future<ApiResponse<void>> verifyPhoneOtp({
     required String token,
     required String signature,
+    String? deviceName,
   }) async {
-    await _networkService.post(
-      ApiRoute.profilePhoneVerifyOtp,
-      data: {"token": token, "signature": signature},
-    );
+    final payload = <String, dynamic>{"token": token, "signature": signature};
+    final dn = deviceName?.trim();
+    if (dn != null && dn.isNotEmpty) {
+      payload["device_name"] = dn;
+    }
+    await _networkService.post(ApiRoute.profilePhoneVerifyOtp, data: payload);
     return const ApiResponse();
   }
 

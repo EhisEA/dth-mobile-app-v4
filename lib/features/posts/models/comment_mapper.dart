@@ -19,3 +19,25 @@ Comment commentFromTimelineComment(TimelineComment c) {
     parentUid: c.parentId,
   );
 }
+
+/// Returns [fresh] but with each entry's `viewerReacted` swapped to whatever
+/// [lookup] currently has cached for that uid (when present).
+///
+/// `listComments` / `listReplies` don't reliably echo `viewer_reacted` for
+/// the current user — the field is omitted on some payload shapes, which
+/// our parser turns into `false`. Taking the server's value verbatim
+/// clobbers the reaction state we already confirmed via the toggle
+/// endpoint (the only authoritative source). Symptom: like a reply, leave
+/// the screen, come back — the heart goes grey while the count stays
+/// correct. Apply this when ingesting list responses into the cache.
+List<Comment> mergeViewerReacted(
+  Iterable<Comment> fresh,
+  Comment? Function(String uid) lookup,
+) {
+  return fresh.map((c) {
+    final prev = lookup(c.uid);
+    if (prev == null) return c;
+    if (prev.viewerReacted == c.viewerReacted) return c;
+    return c.copyWith(viewerReacted: prev.viewerReacted);
+  }).toList();
+}

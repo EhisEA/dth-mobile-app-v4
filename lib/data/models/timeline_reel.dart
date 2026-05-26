@@ -39,6 +39,7 @@ class TimelineReel {
     this.media,
     required this.counts,
     required this.createdAt,
+    this.viewerReacted = false,
   });
 
   final String uid;
@@ -50,6 +51,7 @@ class TimelineReel {
   final TimelineReelMedia? media;
   final TimelinePostCounts counts;
   final String createdAt;
+  final bool viewerReacted;
 
   factory TimelineReel.fromJson(Map<String, dynamic> json) {
     final mediaRaw = json["media"];
@@ -78,6 +80,7 @@ class TimelineReel {
       media: media,
       counts: counts,
       createdAt: _reelString(json["created_at"]) ?? "",
+      viewerReacted: json["viewer_reacted"] == true,
     );
   }
 }

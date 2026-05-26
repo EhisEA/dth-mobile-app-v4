@@ -8,6 +8,8 @@ class AppModulesModel {
     required this.poll,
     required this.judges,
     required this.subscription,
+    required this.reel,
+    required this.googleLoginEnabled,
     required this.navigation,
   });
 
@@ -19,6 +21,13 @@ class AppModulesModel {
   final bool poll;
   final bool judges;
   final bool subscription;
+  final bool reel;
+
+  /// Server-side kill switch for the "Sign in with Google" button. Lets us
+  /// hide the OAuth path without shipping a new build (e.g. while Apple
+  /// review is pending or the provider is down).
+  final bool googleLoginEnabled;
+
   // Ordered list of tabs to render in the bottom nav. Driving this from
   // the server means we can ship/hide tabs without releasing a new build.
   final List<AppModuleNavItem> navigation;
@@ -43,6 +52,8 @@ class AppModulesModel {
       poll: json["poll"] == true,
       judges: json["judges"] == true,
       subscription: json["subscription"] == true,
+      reel: json["reel"] != false,
+      googleLoginEnabled: json["google_login_enabled"] == true,
       navigation: nav,
     );
   }
@@ -56,6 +67,8 @@ class AppModulesModel {
     "poll": poll,
     "judges": judges,
     "subscription": subscription,
+    "reel": reel,
+    "google_login_enabled": googleLoginEnabled,
     "navigation": navigation.map((n) => n.toJson()).toList(),
   };
 }

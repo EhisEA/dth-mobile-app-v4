@@ -12,6 +12,11 @@ import "package:flutter_utils/flutter_utils.dart";
 Future<void> showLogoutConfirmationSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
+    // Present at the root so the sheet sits above the app's bottom
+    // navigation bar (the profile screen lives inside a nested Navigator;
+    // without this the sheet is z-ordered under the bottom nav and the
+    // action buttons get clipped on shorter devices).
+    useRootNavigator: true,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -49,10 +54,13 @@ class _LogoutConfirmationBodyState
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
+    // SafeArea already pads the system bottom inset; the previous code added
+    // `MediaQuery.paddingOf(context).bottom` on top of that, which stacked an
+    // extra ~34px (iPhone home indicator) / nav-bar height (Android) of dead
+    // space below the buttons.
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 16 + bottom),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

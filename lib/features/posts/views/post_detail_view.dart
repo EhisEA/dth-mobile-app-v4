@@ -15,6 +15,7 @@ import "package:dth_v4/features/posts/view_model/comments_cache.dart";
 import "package:dth_v4/features/posts/view_model/post_detail_view_model.dart";
 import "package:dth_v4/features/posts/views/comment_thread_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -39,37 +40,105 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
   // entire screen.
   YoutubePlayerController? _ytController;
   String? _ytVideoId;
-  // Until the IFrame player calls back as "ready", we overlay a black mask
-  // with our own spinner — otherwise YouTube's own iframe loading chrome
-  // (logo + branding) flashes for a beat before our control bar takes over.
-  bool _ytReady = false;
+
+  /// Latches true on the first `isReady` event for the current controller.
+  /// `youtube_player_flutter` momentarily drops `isReady` back to false when
+  /// the video ends and its replay overlay appears — without this latch our
+  /// loading mask would reappear on top of the replay/retry button.
+  bool _hasBeenReady = false;
+  VoidCallback? _ytListener;
+
+  /// YouTube-style metadata collapse: as the comments list scrolls down past
+  /// the pinned video, [_metaProgress] ramps 0 → 1 between [_metaFadeStart]
+  /// and [_metaFadeStart] + [_metaFadeRange] pixels of scroll. The leading
+  /// dead-zone keeps the header at full opacity while the meta block is
+  /// still mostly on-screen; the fade only kicks in once the user is
+  /// actually pushing it out of view.
+  final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<double> _metaProgress = ValueNotifier<double>(0);
+  static const double _metaFadeStart = 80;
+  static const double _metaFadeRange = 160;
+  static const double _videoLiftPx = 6;
+  static const double _metaSlidePx = 16;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    // If the post is already cached (e.g. coming from the feed) it's available
+    // on the first build — but `ref.listen` only fires on *changes*, so we'd
+    // miss the initial sync. Schedule it after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final post = ref.read(postDetailViewModelProvider(widget.uid)).post;
+      if (post != null && _syncController(post)) setState(() {});
+    });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final shifted = (_scrollController.offset - _metaFadeStart)
+        .clamp(0.0, _metaFadeRange);
+    final next = shifted / _metaFadeRange;
+    // Skip imperceptible deltas so the ValueNotifier doesn't churn every
+    // pixel — keeps the Opacity / Transform rebuilds cheap during fast flings.
+    if ((next - _metaProgress.value).abs() < 0.005) return;
+    _metaProgress.value = next;
+  }
 
   @override
   void dispose() {
+    _detachYtListener();
     _ytController?.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _metaProgress.dispose();
+    // [_TransparentBackAppBar] uses SystemUiOverlayStyle.light; without a
+    // reset, that style outlives this route because home uses no AppBar.
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     super.dispose();
   }
 
-  /// Keep [_ytController] in sync with [post]'s video URL. Called inline from
-  /// build — only mutates fields, no setState, so the current build reads the
-  /// updated controller immediately.
-  void _syncController(Post post) {
+  void _attachYtListener(YoutubePlayerController c) {
+    void listener() {
+      if (_hasBeenReady) return;
+      if (c.value.isReady && mounted) {
+        setState(() => _hasBeenReady = true);
+      }
+    }
+
+    _ytListener = listener;
+    c.addListener(listener);
+  }
+
+  void _detachYtListener() {
+    if (_ytListener != null && _ytController != null) {
+      _ytController!.removeListener(_ytListener!);
+    }
+    _ytListener = null;
+  }
+
+  /// Keep [_ytController] in sync with [post]'s video URL. Returns true when
+  /// the controller changed so the caller can `setState` to mount the new one.
+  /// Driven from `initState` (cached-post case) and a `ref.listen` callback
+  /// in build (notifier updates) — never called during the build phase itself.
+  bool _syncController(Post post) {
     final url = post.isVideo && (post.video?.isYoutube ?? false)
         ? post.video?.videoUrl
         : null;
     final newId = url == null ? null : YoutubePlayer.convertUrlToId(url);
-    if (newId == _ytVideoId) return;
+    if (newId == _ytVideoId) return false;
+    _detachYtListener();
     _ytController?.dispose();
     _ytVideoId = newId;
-    _ytReady = false;
+    _hasBeenReady = false;
     _ytController = newId == null
         ? null
         : YoutubePlayerController(
             initialVideoId: newId,
             flags: const YoutubePlayerFlags(
               autoPlay: true,
-              mute: true,
+              mute: false,
 
               // enableCaption: false,
               // forceHD: false,
@@ -83,6 +152,11 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
               // loop: true,
             ),
           );
+    final c = _ytController;
+    if (c != null) {
+      _attachYtListener(c);
+    }
+    return true;
   }
 
   void _showComingSoon(String label) {
@@ -101,9 +175,17 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
   @override
   Widget build(BuildContext context) {
+    // React to post changes (initial load, navigated-to a different YT video)
+    // outside of build itself. ChangeNotifierProvider fires this on every
+    // `notifyListeners()`; `_syncController` short-circuits when the video id
+    // hasn't changed, so only an actual URL flip triggers a setState/rebuild.
+    ref.listen(postDetailViewModelProvider(widget.uid), (_, next) {
+      final post = next.post;
+      if (post != null && _syncController(post)) setState(() {});
+    });
+
     final vm = ref.watch(postDetailViewModelProvider(widget.uid));
     final post = vm.post;
-    if (post != null) _syncController(post);
 
     // Cache owns Comment state; watch it so a like-toggle in the thread
     // screen rebuilds the comments list here automatically.
@@ -150,6 +232,9 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       return false;
                     },
                     child: ListView(
+                      controller: _scrollController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.zero,
                       children: [
@@ -168,6 +253,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                             renderMedia: !isImageHero && !isPinnedVideo,
                             onLike: vm.togglePostLike,
                             onShare: () => _showComingSoon("Share"),
+                            // Only the pinned-video layout has a sticky media
+                            // strip above the scroll — that's where the
+                            // YouTube-style fade makes sense.
+                            metaProgress: isPinnedVideo ? _metaProgress : null,
                           ),
                         ),
                         Padding(
@@ -200,41 +289,64 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
           // Strip the default top overlay row (video title, share, "more").
           // We only want our control bar at the bottom and the video itself.
           topActions: const [],
-          onReady: () {
-            if (mounted) setState(() => _ytReady = true);
-          },
         ),
-        builder: (context, player) => buildScaffold(
-          // Full-bleed pinned video — flush to top under the transparent
-          // app bar / status bar, no rounded corners. Loading mask stacks
-          // on top until `onReady` fires.
-          Container(
-            color: Colors.black,
-            padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  player,
-                  if (!_ytReady)
-                    const ColoredBox(
-                      color: Colors.black,
-                      child: Center(
-                        child: SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
+        builder: (context, player) => ListenableBuilder(
+          listenable: controller,
+          builder: (context, _) {
+            final v = controller.value;
+            // Latched: once the player has been ready, never show the mask
+            // again. The package briefly flips `isReady` back to false during
+            // end-of-video transitions, and we don't want our spinner to
+            // come back on top of YT's retry / replay overlay.
+            final showLoadingMask = !_hasBeenReady && !v.hasError;
+            return buildScaffold(
+              // Outer ColoredBox stays at the layout-allocated slot so the
+              // 6px lift doesn't reveal the (light) scaffold colour beneath
+              // the video — the bottom strip that briefly appears as the
+              // inner Container translates upward stays black.
+              ColoredBox(
+                color: Colors.black,
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _metaProgress,
+                  builder: (context, t, child) {
+                    return Transform.translate(
+                      offset: Offset(0, -t * _videoLiftPx),
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    color: Colors.black,
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.paddingOf(context).top,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          player,
+                          if (showLoadingMask)
+                            const ColoredBox(
+                              color: Colors.black,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                ],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       );
     }
@@ -302,6 +414,7 @@ class _PostBlock extends StatelessWidget {
     required this.onLike,
     required this.onShare,
     this.renderMedia = true,
+    this.metaProgress,
   });
 
   final Post post;
@@ -309,12 +422,16 @@ class _PostBlock extends StatelessWidget {
   final VoidCallback onShare;
   final bool renderMedia;
 
+  /// When non-null, the header + description section fades and slides upward
+  /// as the value moves 0 → 1. Drives the YouTube-style metadata collapse
+  /// when there's a pinned video above the scroll. Actions stay visible.
+  final ValueListenable<double>? metaProgress;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final headerAndDescription = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (renderMedia) ...[PostMedia(post: post), Gap.h16],
         PostDetailsHeader(post: post),
         if (post.description.isNotEmpty) ...[
           Gap.h12,
@@ -325,6 +442,31 @@ class _PostBlock extends StatelessWidget {
             color: const Color(0xff202020),
           ),
         ],
+      ],
+    );
+
+    final progress = metaProgress;
+    final meta = progress == null
+        ? headerAndDescription
+        : ValueListenableBuilder<double>(
+            valueListenable: progress,
+            builder: (context, t, child) {
+              return Opacity(
+                opacity: (1 - t).clamp(0.0, 1.0),
+                child: Transform.translate(
+                  offset: Offset(0, -t * _PostDetailViewState._metaSlidePx),
+                  child: child,
+                ),
+              );
+            },
+            child: headerAndDescription,
+          );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (renderMedia) ...[PostMedia(post: post), Gap.h16],
+        meta,
         Gap.h18,
         PostActions(
           post: post,

@@ -11,6 +11,8 @@ class UserModel {
     required this.emailVerifiedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.eligible = false,
+    this.applicationStatus,
   });
 
   final String uid;
@@ -24,6 +26,12 @@ class UserModel {
   final String emailVerifiedAt;
   final String createdAt;
   final String updatedAt;
+
+  /// When true, the applicant dashboard entry may be shown on profile.
+  final bool eligible;
+
+  /// Profile `application_status` (e.g. variant + label from GET /profile).
+  final ApplicationStatus? applicationStatus;
 
   /// Parsed [participationType.name] as [ParticipationRole].
   ParticipationRole get participationRole =>
@@ -47,7 +55,15 @@ class UserModel {
       emailVerifiedAt: _stringField(json['email_verified_at']),
       createdAt: _stringField(json['created_at']),
       updatedAt: _stringField(json['updated_at']),
+      eligible: _boolField(json['eligible']),
+      applicationStatus: _parseApplicationStatus(json['application_status']),
     );
+  }
+
+  static ApplicationStatus? _parseApplicationStatus(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final status = ApplicationStatus.fromJson(json);
+    return status.isEmpty ? null : status;
   }
 
   static String _stringField(Object? value) {
@@ -79,6 +95,9 @@ class UserModel {
       'email_verified_at': emailVerifiedAt,
       'created_at': createdAt,
       'updated_at': updatedAt,
+      'eligible': eligible,
+      if (applicationStatus != null)
+        'application_status': applicationStatus!.toJson(),
     };
   }
 
@@ -94,6 +113,9 @@ class UserModel {
     String? emailVerifiedAt,
     String? createdAt,
     String? updatedAt,
+    bool? eligible,
+    ApplicationStatus? applicationStatus,
+    bool clearApplicationStatus = false,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -107,6 +129,10 @@ class UserModel {
       emailVerifiedAt: emailVerifiedAt ?? this.emailVerifiedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      eligible: eligible ?? this.eligible,
+      applicationStatus: clearApplicationStatus
+          ? null
+          : (applicationStatus ?? this.applicationStatus),
     );
   }
 
@@ -125,7 +151,9 @@ class UserModel {
         other.participationType.id == participationType.id &&
         other.emailVerifiedAt == emailVerifiedAt &&
         other.createdAt == createdAt &&
-        other.updatedAt == updatedAt;
+        other.updatedAt == updatedAt &&
+        other.eligible == eligible &&
+        other.applicationStatus == applicationStatus;
   }
 
   @override
@@ -142,12 +170,47 @@ class UserModel {
     emailVerifiedAt,
     createdAt,
     updatedAt,
+    eligible,
+    applicationStatus,
   );
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus)';
   }
+}
+
+/// `application_status` on profile user payload.
+class ApplicationStatus {
+  const ApplicationStatus({required this.variant, required this.label});
+
+  final String variant;
+  final String label;
+
+  bool get isEmpty => label.trim().isEmpty;
+
+  factory ApplicationStatus.fromJson(Map<String, dynamic> json) {
+    return ApplicationStatus(
+      variant: UserModel._stringField(json['variant']),
+      label: UserModel._stringField(json['label']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'variant': variant, 'label': label};
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ApplicationStatus &&
+        other.variant == variant &&
+        other.label == label;
+  }
+
+  @override
+  int get hashCode => Object.hash(variant, label);
+
+  @override
+  String toString() => 'ApplicationStatus(variant: $variant, label: $label)';
 }
 
 /// API values for [ParticipationType.name] on `GET /auth/user`.

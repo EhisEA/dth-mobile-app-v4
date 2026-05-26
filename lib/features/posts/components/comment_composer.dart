@@ -28,13 +28,19 @@ class _CommentComposerState extends State<CommentComposer> {
   final _controller = TextEditingController();
   final _focus = FocusNode();
   bool _hasText = false;
-
+  bool _isTextfieldFocused = false;
   @override
   void initState() {
     super.initState();
     _controller.addListener(() {
       final has = _controller.text.trim().isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
+    });
+
+    _focus.addListener(() {
+      setState(() {
+        _isTextfieldFocused = _focus.hasFocus;
+      });
     });
   }
 
@@ -116,6 +122,10 @@ class _CommentComposerState extends State<CommentComposer> {
                   enabled: !widget.submitting,
                   minLines: 1,
                   maxLines: 4,
+                  borderRadius: BorderRadius.circular(100),
+                  fillColor: _isTextfieldFocused
+                      ? AppColors.white
+                      : const Color(0xffF4F4F4),
                   // textInputAction: TextInputAction.newline,
                   hint: replyTo == null
                       ? "Drop a banger..."

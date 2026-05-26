@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dth_v4/core/core.dart';
+import 'package:dth_v4/data/state/app_modules_state.dart';
 import 'package:dth_v4/features/app_web_view/app_web_view.dart';
 import 'package:dth_v4/features/authentication/view_model/get_started_view_model.dart';
 import 'package:dth_v4/features/authentication/views/create_account_view.dart';
@@ -93,6 +94,12 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
   @override
   Widget build(BuildContext context) {
     final model = ref.watch(getStartedViewModelProvider);
+    final googleEnabled = ref
+            .watch(appModulesStateProvider)
+            .appModules
+            .value
+            ?.googleLoginEnabled ==
+        true;
     final theme = Theme.of(context);
     final bodyColor = AppColors.white;
     const linkColor = AppColors.primary;
@@ -193,16 +200,18 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
                       );
                     },
                   ),
-                  Gap.h12,
-                  AppButton.onBorder(
-                    text: 'Continue with Google',
-                    textColor: AppColors.white,
-                    borderColor: AppColors.primary,
-                    prefixIcon: svgIcon(SvgAssets.googleLogo),
-                    isLoading: model.isBaseBusy,
-                    enabled: !model.isBaseBusy,
-                    press: _onGooglePressed,
-                  ),
+                  if (googleEnabled) ...[
+                    Gap.h12,
+                    AppButton.onBorder(
+                      text: 'Continue with Google',
+                      textColor: AppColors.white,
+                      borderColor: AppColors.primary,
+                      prefixIcon: svgIcon(SvgAssets.googleLogo),
+                      isLoading: model.isBaseBusy,
+                      enabled: !model.isBaseBusy,
+                      press: _onGooglePressed,
+                    ),
+                  ],
                   // Gap.h12,
                   // AppButton.onBorder(
                   //   text: 'Continue with Apple',

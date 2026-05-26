@@ -54,6 +54,7 @@ class TimelinePost {
   const TimelinePost({
     required this.uid,
     required this.title,
+    this.subtitle,
     required this.description,
     required this.type,
     required this.authorName,
@@ -68,6 +69,11 @@ class TimelinePost {
 
   final String uid;
   final String title;
+
+  /// Optional secondary headline (e.g. "Season 4 Grand Finale"). Always
+  /// present in the API contract but frequently `null` in practice.
+  final String? subtitle;
+
   final String? authorName;
   final String description;
   final String type;
@@ -109,12 +115,11 @@ class TimelinePost {
     return TimelinePost(
       uid: _timelineString(json["uid"]) ?? "",
       title: _timelineString(json["title"]) ?? "",
+      subtitle: _timelineString(json["subtitle"]),
       description: _timelineString(json["description"]) ?? "",
       type: _timelineString(json["type"]) ?? "",
       videoType: _timelineString(json["video_type"]),
-      videoLink: _timelineString(json["video_link"]) != null
-          ? "https://www.youtube.com/watch?v=APVtmOAaM_8"
-          : null,
+      videoLink: _timelineString(json["video_link"]),
       authorName: _timelineString(json["author_name"]),
       videoThumbnail: _timelineString(json["video_thumbnail"]),
       media: media,

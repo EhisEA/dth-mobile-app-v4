@@ -74,6 +74,12 @@ class _PollComponentState extends State<PollComponent> {
   }
 
   void _celebrate(String optionUid) {
+    // Safety net for ended polls — `PollOptionTile.enabled` already blocks the
+    // tap, but skipping the confetti + vote dispatch here avoids any race
+    // (e.g. the poll flips to closed between build and tap).
+    final current = widget.pollListenable.value;
+    if (current == null || current.isClosed || current.hasVoted) return;
+
     HapticFeedback.mediumImpact();
     widget.onVoteTap(optionUid);
 
@@ -160,7 +166,7 @@ class _PollComponentState extends State<PollComponent> {
       builder: (context, poll, child) {
         if (poll == null) return const SizedBox.shrink();
 
-        final canVote = !poll.hasEnded && !poll.hasVoted && !widget.isVoteBusy;
+        final canVote = !poll.isClosed && !poll.hasVoted && !widget.isVoteBusy;
         final hasVoted = poll.hasVoted;
         final options = poll.options
             .map(
@@ -175,12 +181,11 @@ class _PollComponentState extends State<PollComponent> {
             )
             .toList();
 
-        final hasEnded = poll.hasEnded || poll.status.toLowerCase() == "ended";
-        final statusText = hasEnded ? "Ended" : poll.timeLeft;
-        final statusBg = hasEnded
+        final statusText = poll.isClosed ? "Ended" : poll.timeLeft;
+        final statusBg = poll.isClosed
             ? AppColors.redTint35.withValues(alpha: 0.08)
             : AppColors.dth100;
-        final statusTextColor = hasEnded
+        final statusTextColor = poll.isClosed
             ? AppColors.redTint35
             : AppColors.secondaryBlue;
 
@@ -193,36 +198,46 @@ class _PollComponentState extends State<PollComponent> {
                 SvgPicture.asset(SvgAssets.primaryLogo, height: 28, width: 28),
                 Gap.w12,
                 Expanded(
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SvgPicture.asset(SvgAssets.blackLogo, height: 24),
-                      Gap.w4,
-                      AppText.regular(
-                        "with",
-                        fontSize: 10,
-                        color: AppColors.blackTint20,
+                      Row(
+                        children: [
+                          SvgPicture.asset(SvgAssets.blackLogo, height: 24),
+                          Gap.w4,
+                          AppText.regular(
+                            "with",
+                            fontSize: 10,
+                            color: AppColors.blackTint20,
+                          ),
+                          Gap.w4,
+                          AppText.medium(
+                            "All Contestants",
+                            fontSize: 12,
+                            color: AppColors.black,
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusBg,
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: AppText.medium(
+                              statusText,
+                              fontSize: 10,
+                              color: statusTextColor,
+                            ),
+                          ),
+                        ],
                       ),
-                      Gap.w4,
                       AppText.medium(
-                        "All Contestants",
+                        poll.endsAt,
                         fontSize: 12,
                         color: AppColors.black,
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusBg,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: AppText.medium(
-                          statusText,
-                          fontSize: 10,
-                          color: statusTextColor,
-                        ),
                       ),
                     ],
                   ),
@@ -382,6 +397,14 @@ class _PollComponentState extends State<PollComponent> {
               ],
             ),
             Gap.h8,
+            Container(
+              height: 1,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Color(0xffF7F7F7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ],
         );
       },

@@ -49,6 +49,7 @@ class ApiRoute {
 
   ///PROFILE
   static String get user => "$baseUrl/profile";
+  static String get profilePhone => "$baseUrl/profile/phone";
   static String get profilePhoneSendOtp => "$baseUrl/profile/phone/send-otp";
   static String get profilePhoneVerifyOtp =>
       "$baseUrl/profile/phone/verify-otp";
@@ -71,6 +72,14 @@ class ApiRoute {
   static String timelineCommentReact(String uid) =>
       "$baseUrl/timeline-posts/comments/$uid/react";
   static String get timelineReels => "$baseUrl/timeline-reels";
+  static String timelineReelDetail(String uid) =>
+      "$baseUrl/timeline-reels/$uid";
+  static String timelineReelReact(String uid) =>
+      "$baseUrl/timeline-reels/$uid/react";
+  static String timelineReelComments(String uid) =>
+      "$baseUrl/timeline-reels/$uid/comments";
+  static String timelineReelCommentReact(String uid) =>
+      "$baseUrl/timeline-reels/comments/$uid/react";
 
   ///POLLS
   static String get polls => "$baseUrl/polls";
@@ -83,4 +92,7 @@ class ApiRoute {
   static String eventAvailableTickets(String eventUid) =>
       "$baseUrl/events/$eventUid/available-tickets";
   static String get ticketsPurchase => "$baseUrl/tickets/purchase";
+
+  /// SUPPORT
+  static String get supportWebSession => "$baseUrl/support/web-session";
 }

@@ -44,6 +44,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     return ValueListenableBuilder<UserModel?>(
       valueListenable: userState.user,
       builder: (context, user, _) {
+        final appModules = ref.watch(appModulesStateProvider);
+        final modulesPayload = appModules.appModules.value;
+        final hideApplicantDashboardTile =
+            user?.participationRole == ParticipationRole.user &&
+            modulesPayload?.application == false;
+        final showApplicantDashboardTile =
+            (user?.eligible ?? false) && !hideApplicantDashboardTile;
         final role = user?.participationRole ?? ParticipationRole.user;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -83,8 +90,8 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         color: AppColors.tint15,
                       ),
                       ContestantPill(user: user),
-                      if (user?.participationRole ==
-                          ParticipationRole.user) ...[
+                      if (user?.participationRole == ParticipationRole.user &&
+                          appModules.appModules.value?.application == true) ...[
                         Gap.h32,
                         ApplicationWidget(
                           participationRole:
@@ -101,37 +108,25 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         color: AppColors.tint15,
                       ),
                       Gap.h24,
-                      ContestantDashboardTile(
-                        role: user?.participationRole ?? ParticipationRole.user,
-                        onTap: () {
-                          _navigationService.navigateTo(
-                            ApplicantDashboardView.path,
-                          );
-                        },
-                      ),
-                      Gap.h32,
+                      if (!showApplicantDashboardTile)
+                        const SizedBox.shrink()
+                      else ...[
+                        ContestantDashboardTile(
+                          role: role,
+                          applicationStatus: user?.applicationStatus,
+                          onTap: () {
+                            _navigationService.navigateTo(
+                              ApplicantDashboardView.path,
+                            );
+                          },
+                        ),
+                        Gap.h32,
+                      ],
                       ProfileTlle(
                         title: "Personal Information",
                         description: "Update your profile information",
                         icon: SvgAssets.personal,
                         showRightArrow: false,
-                        widget: user != null && !user.isPhoneVerified
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: const Color(0xffFFF2F1),
-                                ),
-                                child: AppText.regular(
-                                  "Need Attention",
-                                  fontSize: 10,
-                                  color: AppColors.redTint35,
-                                ),
-                              )
-                            : null,
                         onTap: () {
                           if (user == null) return;
                           _navigationService.navigateTo(
