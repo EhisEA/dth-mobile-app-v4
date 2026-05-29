@@ -25,7 +25,7 @@ class PosTimelinetHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppText.semiBold(
+                  AppText.medium(
                     post.title,
                     fontSize: 14,
                     color: AppColors.black,

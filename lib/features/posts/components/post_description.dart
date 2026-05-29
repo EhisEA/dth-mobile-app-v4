@@ -67,7 +67,6 @@ class _PostDescriptionState extends State<PostDescription> {
     fontSize: 12,
     height: widget.lineHeight,
     color: widget.linkColor,
-    fontWeight: FontWeight.w600,
   );
 
   @override
