@@ -17,6 +17,7 @@ export "user_model.dart";
 export "subscription_model.dart";
 export "subscription_purchase_init.dart";
 export "support_web_session.dart";
+export "livestream_model.dart";
 export "timeline_comment.dart";
 export "timeline_post.dart";
 export "timeline_reel.dart";

@@ -1,5 +1,6 @@
 import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/data/state/app_modules_state.dart';
+import 'package:dth_v4/features/livestream/view_model/active_livestream_provider.dart';
 import 'package:dth_v4/features/notifications/notifications.dart';
 import 'package:dth_v4/features/search/search.dart';
 import 'package:flutter/material.dart';
@@ -22,14 +23,14 @@ class AppHeader extends ConsumerWidget {
         Image.asset(ImageAssets.logo2, height: 32, width: 110),
         Row(
           children: [
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                navigationService.navigateTo(SearchView.path);
-              },
-              behavior: HitTestBehavior.opaque,
-              child: SvgPicture.asset(SvgAssets.search),
-            ),
+            // GestureDetector(
+            //   onTap: () {
+            //     HapticFeedback.lightImpact();
+            //     navigationService.navigateTo(SearchView.path);
+            //   },
+            //   behavior: HitTestBehavior.opaque,
+            //   child: SvgPicture.asset(SvgAssets.search),
+            // ),
             Gap.w16,
             if (appModules.appModules.value?.livestream == true) ...[
               GestureDetector(
@@ -38,7 +39,16 @@ class AppHeader extends ConsumerWidget {
                   HapticFeedback.lightImpact();
                 },
                 behavior: HitTestBehavior.opaque,
-                child: SvgPicture.asset(SvgAssets.live),
+                // Icon mirrors whatever the active-livestream pre-fetch
+                // resolved to: the "live" variant when a stream is up,
+                // the neutral variant when none / loading / errored. Reads
+                // off the same cached provider as [LivestreamBanner] —
+                // no extra HTTP.
+                child: SvgPicture.asset(
+                  ref.watch(activeLivestreamProvider).value != null
+                      ? SvgAssets.livestreamLives
+                      : SvgAssets.livestream,
+                ),
               ),
               Gap.w16,
             ],

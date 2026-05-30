@@ -11,6 +11,7 @@ import 'package:dth_v4/features/authentication/views/login_view.dart';
 import 'package:dth_v4/features/authentication/views/verify_otp_view.dart';
 import 'package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart';
 import 'package:dth_v4/features/home/views/home_view.dart';
+import 'package:dth_v4/features/livestream/views/livestream_view.dart';
 import 'package:dth_v4/features/notifications/notifications.dart';
 import 'package:dth_v4/features/posts/views/comment_thread_view.dart';
 import 'package:dth_v4/features/posts/views/post_detail_view.dart';
@@ -260,6 +261,15 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: const NotificationsView(),
+        );
+
+      ////////////////LIVESTREAM VIEW////////////////////
+      case LivestreamView.path:
+        final uid =
+            routeArgs[RoutingArgumentKey.livestreamUid] as String? ?? "";
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: LivestreamView(uid: uid),
         );
 
       default:

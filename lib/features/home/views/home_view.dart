@@ -5,6 +5,10 @@ import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/application/views/application_view.dart";
 import "package:dth_v4/features/application_dashboard/applicant_dashboard.dart";
 import "package:dth_v4/features/home/home.dart";
+import "package:dth_v4/features/livestream/components/livestream_banner.dart";
+import "package:dth_v4/features/livestream/view_model/active_livestream_provider.dart";
+import "package:dth_v4/features/livestream/view_model/livestreams_cache.dart";
+import "package:dth_v4/features/livestream/views/livestream_view.dart";
 import "package:dth_v4/features/posts/posts.dart";
 import "package:dth_v4/features/stories/stories.dart";
 import "package:dth_v4/features/polls/polls.dart";
@@ -32,7 +36,49 @@ class _HomeViewState extends ConsumerState<HomeView> {
       unawaited(
         ref.read(applicantDashboardViewModelProvider).prefetchForHomeUser(),
       );
+      // Warm the active-livestream cache. The icon tap then reads the
+      // resolved state synchronously — no HTTP roundtrip on tap.
+      ref.read(activeLivestreamProvider);
     });
+  }
+
+  /// Reads the pre-fetched active-livestream state and routes off the
+  /// cached AsyncValue. Never issues a fresh HTTP call from the tap path:
+  /// - loading  → flushbar ("still checking")
+  /// - error    → flushbar (the error message)
+  /// - null     → flushbar ("no active livestream")
+  /// - present  → upsert into [livestreamsCacheProvider] for instant
+  ///              render, then navigate.
+  void _onLiveTap() {
+    final state = ref.read(activeLivestreamProvider);
+    state.when(
+      loading: () => DthFlushBar.instance.showGeneric(
+        title: "Live",
+        message: "Checking for an active livestream…",
+      ),
+      error: (err, _) => DthFlushBar.instance.showError(
+        title: "Live",
+        message: err is ApiFailure
+            ? err.message
+            : "Could not check livestream right now.",
+      ),
+      data: (stream) {
+        if (stream == null) {
+          DthFlushBar.instance.showGeneric(
+            title: "Live",
+            message: "There's no active livestream right now.",
+          );
+          return;
+        }
+        ref.read(livestreamsCacheProvider).upsert(stream);
+        unawaited(
+          MobileNavigationService.instance.navigateTo(
+            LivestreamView.path,
+            extra: {RoutingArgumentKey.livestreamUid: stream.uid},
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -60,7 +106,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Gap.h14,
-                  AppHeader(onLiveTap: () {}),
+                  AppHeader(onLiveTap: _onLiveTap),
                   Gap.h10,
                   Expanded(
                     child: vm.baseState.when(
@@ -118,6 +164,27 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           child: CustomScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             slivers: [
+                              // Active-livestream banner. Reads the cached
+                              // active-livestream state (warmed in initState)
+                              // so it renders synchronously off whatever the
+                              // pre-fetch resolved to — no tap-time HTTP.
+                              SliverToBoxAdapter(
+                                child: () {
+                                  final live = ref
+                                      .watch(activeLivestreamProvider)
+                                      .value;
+                                  if (live == null) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: LivestreamBanner(
+                                      stream: live,
+                                      onTap: _onLiveTap,
+                                    ),
+                                  );
+                                }(),
+                              ),
                               SliverToBoxAdapter(
                                 child:
                                     vm.stories.isEmpty ||

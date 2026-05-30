@@ -57,4 +57,8 @@ class NavigatorRoutes {
   ////////////////NOTIFICATIONS////////////////////
   ///
   static const String notifications = "/notifications";
+
+  ////////////////LIVESTREAM////////////////////
+  ///
+  static const String livestream = "/livestream";
 }

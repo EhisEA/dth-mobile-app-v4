@@ -92,7 +92,8 @@ class SvgAssets {
       "$svgPath/bottomNavBar/profile_filled.svg";
 
   /////////////////////HOME//////////////////////
-  static const String live = "$svgPath/home/live.svg";
+  static const String livestreamLives = "$svgPath/home/livestream_live.svg";
+  static const String livestream = "$svgPath/home/livestream.svg";
   static const String phoneVerify = "$svgPath/home/phone_verify.svg";
   static const String notification = "$svgPath/home/notification.svg";
   static const String greyLogo = "$svgPath/home/grey_logo.svg";

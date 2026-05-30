@@ -17,6 +17,9 @@ class RoutingArgumentKey {
   /// [CommentThreadView] — uid of the parent comment to load.
   static const String commentUid = "commentUid";
 
+  /// [LivestreamView] — uid of the active livestream the home pre-check returned.
+  static const String livestreamUid = "livestreamUid";
+
   /// `"login"` or `"register"` for [VerifyOtpView] / [VerifyOtpViewModel].
   static const String otpFlow = "otpFlow";
 
