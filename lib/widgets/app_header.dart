@@ -50,7 +50,7 @@ class AppHeader extends ConsumerWidget {
                       : SvgAssets.livestream,
                 ),
               ),
-              Gap.w16,
+              Gap.w18,
             ],
             GestureDetector(
               onTap: () {

@@ -136,6 +136,7 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
                         hint: "Drop a banger...",
                         borderRadius: BorderRadius.circular(100),
                         focusNode: _focus,
+                        tapToFocus: false,
                         fillColor: _isTextfieldFocused
                             ? AppColors.white
                             : const Color(0xffF4F4F4),
@@ -144,8 +145,9 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
                         enabled: !vm.submitting && widget.reelUid.isNotEmpty,
                         minLines: 1,
                         maxLines: 5,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
+                        keyboardType: TextInputType.text,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _focus.unfocus(),
                       ),
                     ),
                     AnimatedSwitcher(

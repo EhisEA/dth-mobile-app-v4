@@ -47,6 +47,10 @@ class AppTextField extends StatefulWidget {
   final BoxConstraints? prefixIconConstraints;
   final BoxConstraints? suffixIconConstraints;
 
+  /// When true (default), tapping the field chrome requests focus. Set false
+  /// for composers where the outer [GestureDetector] can refocus after Done.
+  final bool tapToFocus;
+
   AppTextField({
     super.key,
     this.hint,
@@ -88,6 +92,7 @@ class AppTextField extends StatefulWidget {
     this.textInputAction,
     this.prefixIconConstraints,
     this.suffixIconConstraints,
+    this.tapToFocus = true,
   }) : focusNode = focusNode ?? FocusNode(),
        formState =
            formState ??
@@ -125,142 +130,143 @@ class _AppTextFieldState extends State<AppTextField> {
         return ValueListenableBuilder<String?>(
           valueListenable: errorState,
           builder: (context, errorMessage, _) {
+            final field = Column(
+              children: [
+                Container(
+                  padding:
+                      widget.padding ??
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  alignment: Alignment.center,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        widget.borderRadius ?? BorderRadius.circular(12),
+                    color: widget.fillColor ?? AppColors.white,
+                    border: Border.all(
+                      color: widget.showBorder
+                          ? hasFocus
+                                ? (errorMessage == null
+                                      ? AppColors.primary
+                                      : Colors.red)
+                                : (widget.inActiveBorderColor ??
+                                      const Color(0xffEDEDED))
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.title != null) ...[
+                        AppText.regular(
+                          widget.title!,
+                          fontSize: widget.titleSize ?? 10,
+                          letterSpacing: -0.2,
+                          color: widget.titleColor ?? AppColors.black,
+                        ),
+                      ],
+                      SizedBox(
+                        height: widget.height,
+                        child: TextFormField(
+                          textCapitalization: widget.textCapitalization,
+                          focusNode: widget.focusNode,
+                          maxLength: widget.maxLength,
+                          maxLines: widget.maxLines,
+                          minLines: widget.minLines,
+                          readOnly: widget.readOnly,
+                          style:
+                              widget.style ??
+                              AppTextStyle.regular.copyWith(
+                                color: AppColors.black,
+                                fontSize: 14,
+                              ),
+                          controller: widget.controller,
+                          inputFormatters: widget.formatter,
+                          textInputAction: widget.textInputAction,
+                          onFieldSubmitted: widget.onSubmitted,
+                          validator: (value) {
+                            String? error;
+                            if (widget.validator != null) {
+                              error = widget.validator!(value ?? '');
+                            }
+                            final captured = error;
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!mounted) return;
+                              errorState.value = captured;
+                            });
+                            return error;
+                          },
+                          keyboardType: widget.keyboardType,
+                          obscureText: obscure,
+                          enabled: widget.enabled,
+                          onChanged: widget.onChanged,
+                          decoration: InputDecoration(
+                            contentPadding: widget.contentPadding,
+                            errorStyle: const TextStyle(fontSize: 0),
+                            prefixIconConstraints: widget.prefixIconConstraints,
+                            suffixIconConstraints:
+                                widget.suffixIconConstraints ??
+                                const BoxConstraints(maxHeight: 40),
+                            enabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            focusedErrorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            prefix: widget.prefix,
+                            prefixIcon: widget.prefixIcon,
+                            suffixIcon: widget.suffixIcon,
+                            isDense: true,
+                            hintText: widget.hint,
+                            hintStyle:
+                                widget.hintStyle ??
+                                AppTextStyle.regular.copyWith(
+                                  color:
+                                      widget.hintColor ??
+                                      const Color(0xffB5B5B5),
+                                  fontSize: 13,
+                                  letterSpacing: -0.2,
+                                ),
+                            enabled: widget.enabled,
+                          ),
+                        ),
+                      ),
+
+                      widget.bottomIcon ?? const SizedBox.shrink(),
+                    ],
+                  ),
+                ),
+                if (errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      children: [
+                        Gap.w6,
+                        AppText.regular(
+                          errorMessage.isEmpty
+                              ? errorMessage
+                              : errorMessage.capitalizeFirstLetter(),
+                          fontSize: 12,
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+
+            if (!widget.tapToFocus && widget.onTap == null) {
+              return field;
+            }
+
             return GestureDetector(
               onTap: () {
                 if (widget.onTap != null) {
                   widget.onTap!();
-                } else {
+                } else if (widget.tapToFocus) {
                   FocusScope.of(context).requestFocus(widget.focusNode);
                 }
               },
-
               behavior: HitTestBehavior.opaque,
-              child: Column(
-                children: [
-                  Container(
-                    padding:
-                        widget.padding ??
-                        const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                    alignment: Alignment.center,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius:
-                          widget.borderRadius ?? BorderRadius.circular(12),
-                      color: widget.fillColor ?? AppColors.white,
-                      border: Border.all(
-                        color: widget.showBorder
-                            ? hasFocus
-                                  ? (errorMessage == null
-                                        ? AppColors.primary
-                                        : Colors.red)
-                                  : (widget.inActiveBorderColor ??
-                                        const Color(0xffEDEDED))
-                            : Colors.transparent,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (widget.title != null) ...[
-                          AppText.regular(
-                            widget.title!,
-                            fontSize: widget.titleSize ?? 10,
-                            letterSpacing: -0.2,
-                            color: widget.titleColor ?? AppColors.black,
-                          ),
-                        ],
-                        SizedBox(
-                          height: widget.height,
-                          child: TextFormField(
-                            textCapitalization: widget.textCapitalization,
-                            focusNode: widget.focusNode,
-                            maxLength: widget.maxLength,
-                            maxLines: widget.maxLines,
-                            minLines: widget.minLines,
-                            readOnly: widget.readOnly,
-                            style:
-                                widget.style ??
-                                AppTextStyle.regular.copyWith(
-                                  color: AppColors.black,
-                                  fontSize: 14,
-                                ),
-                            controller: widget.controller,
-                            inputFormatters: widget.formatter,
-                            textInputAction: widget.textInputAction,
-                            onFieldSubmitted: widget.onSubmitted,
-                            validator: (value) {
-                              String? error;
-                              if (widget.validator != null) {
-                                error = widget.validator!(value ?? '');
-                              }
-                              final captured = error;
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (!mounted) return;
-                                errorState.value = captured;
-                              });
-                              return error;
-                            },
-                            keyboardType: widget.keyboardType,
-                            obscureText: obscure,
-                            enabled: widget.enabled,
-                            onChanged: widget.onChanged,
-                            decoration: InputDecoration(
-                              contentPadding: widget.contentPadding,
-                              errorStyle: const TextStyle(fontSize: 0),
-                              prefixIconConstraints:
-                                  widget.prefixIconConstraints,
-                              suffixIconConstraints:
-                                  widget.suffixIconConstraints ??
-                                  const BoxConstraints(maxHeight: 40),
-                              enabledBorder: InputBorder.none,
-                              errorBorder: InputBorder.none,
-                              focusedErrorBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              prefix: widget.prefix,
-                              prefixIcon: widget.prefixIcon,
-                              suffixIcon: widget.suffixIcon,
-                              isDense: true,
-                              hintText: widget.hint,
-                              hintStyle:
-                                  widget.hintStyle ??
-                                  AppTextStyle.regular.copyWith(
-                                    color:
-                                        widget.hintColor ??
-                                        const Color(0xffB5B5B5),
-                                    fontSize: 13,
-                                    letterSpacing: -0.2,
-                                  ),
-                              enabled: widget.enabled,
-                            ),
-                          ),
-                        ),
-
-                        widget.bottomIcon ?? const SizedBox.shrink(),
-                      ],
-                    ),
-                  ),
-                  if (errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Row(
-                        children: [
-                          Gap.w6,
-                          AppText.regular(
-                            errorMessage.isEmpty
-                                ? errorMessage
-                                : errorMessage.capitalizeFirstLetter(),
-                            fontSize: 12,
-                            color: Colors.red,
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
+              child: field,
             );
           },
         );

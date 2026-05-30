@@ -56,6 +56,7 @@ class PollModel {
   const PollModel({
     required this.uid,
     required this.title,
+    required this.subtitle,
     required this.question,
     required this.description,
     required this.totalVotes,
@@ -72,6 +73,7 @@ class PollModel {
 
   final String uid;
   final String title;
+  final String subtitle;
   final String question;
   final String description;
   final int totalVotes;
@@ -105,6 +107,7 @@ class PollModel {
     return PollModel(
       uid: _pollAsString(json["uid"]),
       title: _pollAsString(json["title"]),
+      subtitle: _pollAsString(json["subtitle"]),
       question: _pollAsString(json["question"]),
       description: _pollAsString(json["description"]),
       totalVotes: _pollAsInt(json["total_votes"]),

@@ -194,11 +194,10 @@ class _PollComponentState extends State<PollComponent> {
           children: [
             Gap.h12,
             Row(
-              // crossAxisAlignment: CrossAxisAlignment.start,
-              // mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SvgPicture.asset(SvgAssets.primaryLogo, height: 28, width: 28),
-                Gap.w10,
+                Gap.w8,
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,12 +210,32 @@ class _PollComponentState extends State<PollComponent> {
                       ),
                       Gap.h4,
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          SvgPicture.asset(SvgAssets.blackLogo, height: 14),
+                          AppText.medium(
+                            poll.title,
+                            fontSize: 14,
+                            height: 0,
+                            color: AppColors.black,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          SvgPicture.asset(
+                            SvgAssets.blackLogo,
+                            height: 16,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.primary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
                           Gap.w4,
                           AppText.regular(
                             "with",
                             fontSize: 10,
+                            height: 0,
+
                             color: AppColors.blackTint20,
                           ),
                           Gap.w4,

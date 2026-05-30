@@ -2,7 +2,7 @@ import "dart:async";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/search/components/search_header.dart";
 import "package:dth_v4/features/search/components/search_trending_reels.dart";
-import "package:dth_v4/features/search/view_model/search_view_model.dart";
+import "package:dth_v4/features/support/support.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
@@ -36,7 +36,7 @@ class _SearchViewState extends ConsumerState<SearchView> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = ref.watch(searchViewModelProvider);
+    final vm = ref.watch(supportSessionViewModelProvider);
     return Loader.page(
       isLoading: vm.supportSessionBusy,
       child: GestureDetector(
@@ -57,7 +57,7 @@ class _SearchViewState extends ConsumerState<SearchView> {
                     focusNode: _searchFocus,
                     onSupportTap: () => unawaited(
                       ref
-                          .read(searchViewModelProvider)
+                          .read(supportSessionViewModelProvider)
                           .requestSupportWebSession(),
                     ),
                   ),

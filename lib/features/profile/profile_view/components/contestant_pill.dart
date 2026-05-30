@@ -54,7 +54,7 @@ class ContestantPill extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [Gap.h16, pill, Gap.h32],
+      children: [Gap.h16, pill],
     );
   }
 }

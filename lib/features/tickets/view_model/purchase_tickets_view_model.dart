@@ -90,6 +90,23 @@ class PurchaseTicketsViewModel extends BaseChangeNotifierViewModel {
     notifyListeners();
   }
 
+  void setQuantity(String ticketUid, int quantity) {
+    final ticket = _ticketByUid(ticketUid);
+    if (ticket == null) return;
+
+    var next = quantity < 0 ? 0 : quantity;
+    if (ticket.availableTickets > 0 && next > ticket.availableTickets) {
+      next = ticket.availableTickets;
+    }
+
+    if (next <= 0) {
+      _quantities.remove(ticketUid);
+    } else {
+      _quantities[ticketUid] = next;
+    }
+    notifyListeners();
+  }
+
   void _pruneQuantities() {
     final validUids = _tickets.map((t) => t.uid).toSet();
     _quantities.removeWhere((uid, _) => !validUids.contains(uid));

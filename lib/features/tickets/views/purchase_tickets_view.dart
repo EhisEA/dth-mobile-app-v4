@@ -114,6 +114,8 @@ class _PurchaseTicketsViewState extends ConsumerState<PurchaseTicketsView> {
                               quantity: quantity,
                               onIncrement: () => vm.increment(ticket.uid),
                               onDecrement: () => vm.decrement(ticket.uid),
+                              onQuantityChanged: (value) =>
+                                  vm.setQuantity(ticket.uid, value),
                             );
                           },
                         ),
