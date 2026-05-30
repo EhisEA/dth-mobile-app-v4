@@ -14,3 +14,4 @@ export "events/events.dart";
 export "tickets/tickets.dart";
 export "support/support.dart";
 export "notifications/notifications.dart";
+export "shares/shares.dart";

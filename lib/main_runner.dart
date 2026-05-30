@@ -2,6 +2,7 @@ import "dart:async";
 
 import "package:dth_v4/app/app.dart";
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/data/data.dart";
 import "package:dth_v4/flavor/flavor_config.dart";
 import "package:firebase_core/firebase_core.dart";
 import "package:firebase_messaging/firebase_messaging.dart";
@@ -43,6 +44,12 @@ Future<void> main() async {
   // Dispatch is gated on [DeepLinkRouter.instance.notifyAppReady], called by
   // SplashViewModel once the initial route is in place.
   DeepLinkRouter.bootstrap(container);
+
+  // Lets [LinkShareHelper] report shares to `POST /shares` after the share
+  // sheet is presented, keeping each model's `counts.shares` in sync.
+  LinkShareHelper.bootstrap(
+    container.read(sharesRepositoryProvider).recordShare,
+  );
 
   if (!kIsWeb) {
     await SystemChrome.setPreferredOrientations([

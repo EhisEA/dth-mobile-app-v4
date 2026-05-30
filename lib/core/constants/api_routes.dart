@@ -105,6 +105,9 @@ class ApiRoute {
   /// SUPPORT
   static String get supportWebSession => "$baseUrl/support/web-session";
 
+  /// SHARES
+  static String get shares => "$baseUrl/shares";
+
   /// NOTIFICATIONS
   static String get notifications => "$baseUrl/notifications";
   static String notificationRead(String uid) =>

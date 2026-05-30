@@ -208,18 +208,7 @@ class _PollComponentState extends State<PollComponent> {
                         height: 1,
                         color: AppColors.black,
                       ),
-                      Gap.h4,
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          AppText.medium(
-                            poll.title,
-                            fontSize: 14,
-                            height: 0,
-                            color: AppColors.black,
-                          ),
-                        ],
-                      ),
+                      Gap.h2,
                       Row(
                         children: [
                           SvgPicture.asset(
