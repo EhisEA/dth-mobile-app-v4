@@ -36,7 +36,9 @@ class AppButton extends StatelessWidget {
     this.subtitleFontSize,
     this.fontSize,
     this.shrinkWrap = false,
+    this.subtitleDirection,
   });
+
   AppButton.primary({
     super.key,
     this.text,
@@ -66,6 +68,7 @@ class AppButton extends StatelessWidget {
     this.subtitleFontSize,
     this.fontSize,
     this.shrinkWrap = false,
+    this.subtitleDirection,
   }) : color = AppColors.primary,
        disableBorderColor = disableBorderColor ?? const Color(0xFFDBDBDB),
        disableBGColor =
@@ -103,6 +106,7 @@ class AppButton extends StatelessWidget {
     this.subtitleFontSize,
     this.fontSize,
     this.shrinkWrap = false,
+    this.subtitleDirection,
   }) : // color = AppColors.primaryColor .withValues(alpha:0.25),
        disableBorderColor = disableBorderColor ?? const Color(0xFFDBDBDB),
        disableBGColor =
@@ -144,6 +148,7 @@ class AppButton extends StatelessWidget {
     this.subtitleFontSize,
     this.fontSize,
     this.shrinkWrap = false,
+    this.subtitleDirection,
   });
   //  borderColor = AppColors.primary;
 
@@ -175,6 +180,7 @@ class AppButton extends StatelessWidget {
   final Color? disableSubtitleColor;
   final double? subtitleFontSize;
   final double? fontSize;
+  final Axis? subtitleDirection;
 
   /// When true, horizontal size follows label (plus icons); [width] may stay null.
   final bool shrinkWrap;
@@ -199,21 +205,25 @@ class AppButton extends StatelessWidget {
         disableSubtitleColor ??
         (disableTextColor ?? AppColors.white).withValues(alpha: 0.72);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        title,
-        AppText.regular(
-          sub,
-          fontSize: subtitleFontSize ?? 10,
-          fontWeight: FontWeight.w400,
-          height: 0,
-          color: enabled ? subEnabled : subDisabled,
-          centered: true,
-        ),
-      ],
-    );
+    final children = [
+      title,
+      Gap.w4,
+      AppText.regular(
+        sub,
+        fontSize: subtitleFontSize ?? 10,
+        fontWeight: FontWeight.w400,
+        height: 0,
+        color: enabled ? subEnabled : subDisabled,
+        centered: true,
+      ),
+    ];
+    return subtitleDirection != Axis.horizontal
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: children,
+          )
+        : Row(children: children);
   }
 
   @override
