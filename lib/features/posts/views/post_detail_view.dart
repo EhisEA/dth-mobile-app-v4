@@ -14,6 +14,7 @@ import "package:dth_v4/features/posts/models/comment.dart";
 import "package:dth_v4/features/posts/models/post.dart";
 import "package:dth_v4/features/posts/view_model/comments_cache.dart";
 import "package:dth_v4/features/posts/view_model/post_detail_view_model.dart";
+import "package:dth_v4/features/posts/view_model/posts_cache.dart";
 import "package:dth_v4/features/posts/views/comment_thread_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/foundation.dart";
@@ -255,6 +256,16 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                               imageUrl: post.imageUrls.isNotEmpty
                                   ? post.imageUrls.first
                                   : "",
+                              onShared: () {
+                                final cache = ref.read(postsCacheProvider);
+                                final current = cache.get(post.uid);
+                                if (current == null) return;
+                                cache.upsert(
+                                  current.copyWith(
+                                    shareCount: current.shareCount + 1,
+                                  ),
+                                );
+                              },
                             ),
                             // Only the pinned-video layout has a sticky media
                             // strip above the scroll — that's where the

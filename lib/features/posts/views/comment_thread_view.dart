@@ -189,7 +189,11 @@ class _ParentCommentBlock extends StatelessWidget {
           color: AppColors.blackTint20,
         ),
         Gap.h12,
-        _ParentActions(comment: comment, onLike: vm.toggleParentLike),
+        _ParentActions(
+          comment: comment,
+          onLike: vm.toggleParentLike,
+          onShared: () => vm.bumpShareCount(comment.uid),
+        ),
       ],
     );
   }
@@ -206,10 +210,15 @@ class _ParentCommentBlock extends StatelessWidget {
 }
 
 class _ParentActions extends StatelessWidget {
-  const _ParentActions({required this.comment, required this.onLike});
+  const _ParentActions({
+    required this.comment,
+    required this.onLike,
+    required this.onShared,
+  });
 
   final Comment comment;
   final VoidCallback onLike;
+  final VoidCallback onShared;
 
   @override
   Widget build(BuildContext context) {
@@ -255,6 +264,7 @@ class _ParentActions extends StatelessWidget {
               title: comment.authorName,
               description: comment.body,
               imageUrl: comment.avatarUrl ?? "",
+              onShared: onShared,
             ),
           ),
         ),

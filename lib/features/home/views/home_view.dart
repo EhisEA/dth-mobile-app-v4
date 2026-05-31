@@ -45,6 +45,15 @@ class _HomeViewState extends ConsumerState<HomeView> {
     });
   }
 
+  /// Optimistic +1 on a post's share count after a completed share. Reads the
+  /// freshest post from the cache so a concurrent like/refresh isn't clobbered.
+  void _bumpPostShareCount(String uid) {
+    final cache = ref.read(postsCacheProvider);
+    final current = cache.get(uid);
+    if (current == null) return;
+    cache.upsert(current.copyWith(shareCount: current.shareCount + 1));
+  }
+
   /// Reads the pre-fetched active-livestream state and routes off the
   /// cached AsyncValue. Never issues a fresh HTTP call from the tap path:
   /// - loading  → flushbar ("still checking")
@@ -331,6 +340,10 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                                     post.imageUrls.isNotEmpty
                                                     ? post.imageUrls.first
                                                     : "",
+                                                onShared: () =>
+                                                    _bumpPostShareCount(
+                                                      post.uid,
+                                                    ),
                                               ),
                                           onTap: () => MobileNavigationService
                                               .instance

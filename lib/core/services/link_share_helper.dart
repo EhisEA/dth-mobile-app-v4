@@ -2,6 +2,7 @@ import "dart:async";
 
 import "package:dth_v4/core/services/deep_link_service.dart";
 import "package:dth_v4/widgets/widgets.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter_utils/flutter_utils.dart";
 import "package:share_plus/share_plus.dart";
 
@@ -51,6 +52,7 @@ class LinkShareHelper {
     String title = "",
     String description = "",
     String imageUrl = "",
+    VoidCallback? onShared,
   }) {
     return _shareWith(
       () => DeepLinkService.instance.createTimelineLink(
@@ -62,6 +64,7 @@ class LinkShareHelper {
       subject: title,
       modelType: ShareModelType.post,
       modelId: postUid,
+      onShared: onShared,
     );
   }
 
@@ -70,6 +73,7 @@ class LinkShareHelper {
     String title = "",
     String description = "",
     String imageUrl = "",
+    VoidCallback? onShared,
   }) {
     return _shareWith(
       () => DeepLinkService.instance.createCommentLink(
@@ -81,6 +85,7 @@ class LinkShareHelper {
       subject: title,
       modelType: ShareModelType.comment,
       modelId: commentUid,
+      onShared: onShared,
     );
   }
 
@@ -144,6 +149,7 @@ class LinkShareHelper {
     required String subject,
     String? modelType,
     String? modelId,
+    VoidCallback? onShared,
   }) async {
     try {
       final url = await createLink();
@@ -155,10 +161,15 @@ class LinkShareHelper {
         );
         return;
       }
-      await SharePlus.instance.share(
+      final result = await SharePlus.instance.share(
         ShareParams(text: url, subject: subject.isEmpty ? null : subject),
       );
-      _recordShare(modelType, modelId);
+      // Only count a share the user actually completed — dismissing the sheet
+      // (or an unavailable target) shouldn't bump the count or hit the API.
+      if (result.status == ShareResultStatus.success) {
+        _recordShare(modelType, modelId);
+        onShared?.call();
+      }
     } catch (err, st) {
       _logger.e("Share failed: $err\n$st");
       DthFlushBar.instance.showError(

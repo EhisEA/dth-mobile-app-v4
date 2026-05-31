@@ -135,6 +135,17 @@ class CommentThreadViewModel extends BaseChangeNotifierViewModel {
     );
   }
 
+  /// Optimistic +1 on a comment's share count after a completed share. Routes
+  /// through the cache so post-detail reflects it too. Reads the freshest copy
+  /// so a concurrent like/refresh isn't clobbered.
+  void bumpShareCount(String uid) {
+    final current = _commentsCache.get(uid);
+    if (current == null) return;
+    _commentsCache.upsert(
+      current.copyWith(shareCount: current.shareCount + 1),
+    );
+  }
+
   /// Optimistic like on the parent comment. Routes through the cache so the
   /// post-detail screen reflects the new state when the user pops back.
   Future<void> toggleParentLike() async {
