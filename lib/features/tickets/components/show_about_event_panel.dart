@@ -31,7 +31,8 @@ class ShowAboutEventPanel extends StatelessWidget {
         children: [
           AppText.semiBold(
             "About Event ",
-            fontSize: 14,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
             color: AppColors.black,
           ),
           Gap.h12,

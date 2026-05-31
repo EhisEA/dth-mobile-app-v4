@@ -94,6 +94,7 @@ class _TicketViewState extends ConsumerState<TicketView> {
                 child: AppText.regular(
                   "Don’t miss out — get your tickets and join the show live.",
                   fontSize: 14,
+                  fontWeight: FontWeight.w400,
                   color: AppColors.paleLavender,
                 ),
               ),
