@@ -93,6 +93,13 @@ class ReelPlayerController extends ChangeNotifier {
   }
 
   /// Resets state when the backing media changes (new reel uid / source).
+  ///
+  /// Deliberately does NOT call [notifyListeners]: its only caller is
+  /// [ReelBackdropMedia.didUpdateWidget], which runs during the build phase —
+  /// notifying there would mark a listening [AnimatedBuilder] dirty mid-build
+  /// and throw. The surrounding widget is already rebuilding, so it picks up
+  /// these reset values without a notification, and the new player pushes fresh
+  /// state via its own listener once it initializes.
   void reset() {
     _isPlaying = false;
     _progress = 0;
@@ -100,6 +107,5 @@ class ReelPlayerController extends ChangeNotifier {
     _isScrubbing = false;
     _toggleHandler = null;
     _seekHandler = null;
-    notifyListeners();
   }
 }

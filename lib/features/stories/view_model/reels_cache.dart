@@ -33,6 +33,16 @@ class ReelsCache extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// Stores reel data without touching [orderedReels]. Used by the reel pager
+  /// ([ReelsFeedViewModel]), which owns its own swipe order — so paging in more
+  /// reels here doesn't reorder the home/search listing under the user.
+  void cacheAll(Iterable<TimelineReel> reels) {
+    for (final r in reels) {
+      _byUid[r.uid] = r;
+    }
+    notifyListeners();
+  }
 }
 
 final reelsCacheProvider = ChangeNotifierProvider<ReelsCache>((ref) {
