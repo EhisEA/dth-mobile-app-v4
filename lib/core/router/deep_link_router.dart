@@ -59,6 +59,7 @@ class DeepLinkRouter {
     if (_ready) return;
     _ready = true;
     final pending = _queued;
+    _logger.i("App ready. Queued deep link? ${pending != null}");
     if (pending != null) {
       _queued = null;
       _handle(pending);
@@ -66,13 +67,16 @@ class DeepLinkRouter {
   }
 
   void _handle(DeepLink link) {
+    _logger.i("_handle: path=${link.path} ready=$_ready");
     if (!_ready) {
+      _logger.i("Deep link queued until app ready: path=${link.path}");
       _queued = link;
       return;
     }
 
     final isAuthed = _container.read(localCacheProvider).getToken() != null;
     final requiresAuth = _requiresAuth(link.path);
+    _logger.i("_handle gates: requiresAuth=$requiresAuth isAuthed=$isAuthed");
 
     if (requiresAuth && !isAuthed) {
       _logger.i("Stashing deep link until auth: path=${link.path}");
@@ -83,14 +87,37 @@ class DeepLinkRouter {
     dispatch(link);
   }
 
+  /// Replays a link that was stashed in [pendingDeepLinkProvider] while the
+  /// user was logged out. Called when the authenticated shell (home) opens —
+  /// reaching home guarantees the user is authed, so the link's auth gate is
+  /// already satisfied. Reads-and-clears so the link dispatches at most once;
+  /// a no-op when nothing is pending.
+  void consumePendingLink() {
+    final pending = _container.read(pendingDeepLinkProvider);
+    _logger.i("consumePendingLink called. pending? ${pending != null}");
+    if (pending == null) return;
+    _container.read(pendingDeepLinkProvider.notifier).state = null;
+    _logger.i("Consuming stashed deep link post-auth: path=${pending.path}");
+    dispatch(pending);
+  }
+
   /// Routes a link to its destination view. Public so the auth flow can call
   /// it after consuming [pendingDeepLinkProvider] post-login.
   Future<void> dispatch(DeepLink link) async {
     _logger.i("Dispatching deep link path=${link.path} data=${link.data}");
+    try {
+      await _dispatch(link);
+    } catch (err, st) {
+      _logger.e("Deep link dispatch/push failed: $err\n$st");
+    }
+  }
+
+  Future<void> _dispatch(DeepLink link) async {
     switch (link.path) {
       case DeepLinkPaths.timeline:
         final uid = link.data[DeepLinkParams.postId] as String?;
         if (uid == null || uid.isEmpty) return _warnMissing(link, "postId");
+        _logger.i("Pushing postDetail uid=$uid navState=${_nav.navigatorKey.currentState != null}");
         await _nav.push(
           NavigatorRoutes.postDetail,
           extra: {RoutingArgumentKey.postUid: uid},

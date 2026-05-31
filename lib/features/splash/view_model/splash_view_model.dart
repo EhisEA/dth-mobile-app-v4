@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/authentication/views/get_started_view.dart";
@@ -46,10 +48,16 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
 
     final bool isLoggedIn = _localCache.getToken() != null;
 
+    // NOT awaited: `replace` -> `pushReplacementNamed` returns a Future that
+    // only completes when the destination route is *popped*. Since these are
+    // root routes that never get popped, awaiting here would strand
+    // `notifyAppReady()` below for the entire session — leaving deep links
+    // queued forever. The navigation side-effect happens synchronously, so the
+    // route is on the stack by the time we notify.
     if (isLoggedIn) {
-      await _navigationService.replace(BottomNavBar.path);
+      unawaited(_navigationService.replace(BottomNavBar.path));
     } else {
-      await _navigationService.replace(GetStartedView.path);
+      unawaited(_navigationService.replace(GetStartedView.path));
     }
 
     // Splash has placed the initial route on the stack — DeepLinkRouter can

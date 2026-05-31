@@ -39,6 +39,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
       // Warm the active-livestream cache. The icon tap then reads the
       // resolved state synchronously — no HTTP roundtrip on tap.
       ref.read(activeLivestreamProvider);
+      // Replay any deep link that arrived while logged out. Reaching home
+      // means the user is authed, so the link's auth gate is now satisfied.
+      DeepLinkRouter.instance.consumePendingLink();
     });
   }
 

@@ -1,7 +1,15 @@
 /// Branch reserved keys read from incoming session data.
 class BranchSessionKey {
   static const String clickedBranchLink = "+clicked_branch_link";
+
+  /// Branch's resolved deep-link path. Populated from the link's
+  /// [BranchControlParam.deeplinkPath] — but not always present in the
+  /// session payload, so parsing falls back to [deeplinkPathParam].
   static const String deepLinkPath = "+deep_link_path";
+
+  /// The raw `$deeplink_path` control param echoed back in the session. Used
+  /// as a fallback when [deepLinkPath] is absent.
+  static const String deeplinkPathParam = "\$deeplink_path";
   static const String canonicalIdentifier = "\$canonical_identifier";
 }
 

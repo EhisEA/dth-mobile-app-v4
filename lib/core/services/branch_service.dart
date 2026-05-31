@@ -29,12 +29,14 @@ class BranchService implements DeepLinkSource {
 
   void _handleSession(Map<dynamic, dynamic> data) {
     if (data[BranchSessionKey.clickedBranchLink] != true) return;
-    _controller.add(
-      DeepLink(
-        path: data[BranchSessionKey.deepLinkPath] as String?,
-        data: data,
-      ),
-    );
+    // Branch's resolved `+deep_link_path` isn't always present in the session
+    // payload (some links only echo back the `$deeplink_path` control param),
+    // so fall back to that before giving up on a path.
+    final path =
+        (data[BranchSessionKey.deepLinkPath] ??
+                data[BranchSessionKey.deeplinkPathParam])
+            as String?;
+    _controller.add(DeepLink(path: path, data: data));
   }
 
   @override
