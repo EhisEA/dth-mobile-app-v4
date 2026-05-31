@@ -138,7 +138,7 @@ class _TicketHomeBody extends StatelessWidget {
       builder: (context, bookedItems, _) {
         final bothBusy = vm.upcomingState.isBusy && vm.bookedState.isBusy;
         if (bothBusy) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return const TicketHomeSkeleton();
         }
 
         final unifiedEmpty =
@@ -152,7 +152,7 @@ class _TicketHomeBody extends StatelessWidget {
 
         final showUpcomingBlock =
             vm.upcomingState.isBusy ||
-            vm.upcomingState.isError ||
+            // vm.upcomingState.isError ||
             (vm.upcomingState.isIdle && vm.upcomingPreview.isNotEmpty);
 
         return RefreshIndicator(
@@ -225,15 +225,23 @@ class _TicketHomeBody extends StatelessWidget {
   List<Widget> _upcomingSectionBody(BuildContext context) {
     return vm.upcomingState.maybeWhen(
       busy: () => [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Center(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-            ),
-          ),
+        Builder(
+          builder: (context) {
+            final cardWidth = context.width * 0.7;
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 16),
+              child: Row(
+                children: List.generate(
+                  3,
+                  (index) => Padding(
+                    padding: EdgeInsets.only(right: index == 2 ? 0 : 12),
+                    child: UpcomingShowCardSkeleton(width: cardWidth),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ],
       error: (failure) => const <Widget>[],
@@ -288,14 +296,11 @@ class _TicketHomeBody extends StatelessWidget {
   ) {
     return vm.bookedState.maybeWhen(
       busy: () => [
-        const Padding(
-          padding: EdgeInsets.only(left: 16, right: 16, top: 32),
-          child: Center(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-            ),
+        ...List.generate(
+          3,
+          (index) => Padding(
+            padding: EdgeInsets.only(bottom: index == 2 ? 0 : 20),
+            child: const BookedShowItemSkeleton(),
           ),
         ),
       ],
@@ -304,7 +309,7 @@ class _TicketHomeBody extends StatelessWidget {
         TicketEmptyState(
           title: "Could not load booked shows",
           subtitle: failure.message,
-          onRetry: () => unawaited(vm.retryBooked()),
+          onRetry: () => unawaited(vm.refresh()),
         ),
       ],
       idle: () {
