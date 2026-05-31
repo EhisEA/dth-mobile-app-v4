@@ -48,18 +48,7 @@ class ShowDetailHero extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CircleBlurIconButton(
-                  onTap: onBack ?? () => Navigator.of(context).maybePop(),
-                  child: SvgPicture.asset(
-                    SvgAssets.backArrow,
-                    width: 20,
-                    height: 20,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
+                ShowDetailBackButton(onBack: onBack),
                 CircleBlurIconButton(
                   onTap: onShare ?? () {},
                   child: SvgPicture.asset(SvgAssets.share),
@@ -68,6 +57,26 @@ class ShowDetailHero extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Blurred circular back control for show detail hero, skeleton, and error.
+class ShowDetailBackButton extends StatelessWidget {
+  const ShowDetailBackButton({super.key, this.onBack});
+
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleBlurIconButton(
+      onTap: onBack ?? () => Navigator.of(context).maybePop(),
+      child: SvgPicture.asset(
+        SvgAssets.backArrow,
+        width: 20,
+        height: 20,
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
       ),
     );
   }

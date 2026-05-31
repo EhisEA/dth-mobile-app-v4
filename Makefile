@@ -5,6 +5,7 @@ DEFINES_DEV := --dart-define-from-file=config/dev.json
 DEFINES_PROD := --dart-define-from-file=config/prod.json
 
 .PHONY: \
+	setup-ios \
 	run-dev run-prod \
 	build-apk-dev build-apk-prod \
 	build-aab-dev build-aab-prod \
@@ -13,6 +14,9 @@ DEFINES_PROD := --dart-define-from-file=config/prod.json
 	analyze-app \
 	run-app build-apk build-aab build-ios build-ipa build-app-split \
 	clean-get
+
+setup-ios:
+	./scripts/setup_ios.sh
 
 run-dev:
 	$(FLUTTER) run --flavor dev -t $(MAIN_DEV) $(DEFINES_DEV)
