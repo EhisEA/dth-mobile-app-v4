@@ -1,0 +1,87 @@
+{
+  "project_info": {
+    "project_number": "983718236250",
+    "project_id": "dth-65e72",
+    "storage_bucket": "dth-65e72.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983718236250:android:eef3905ec0e657cd66c863",
+        "android_client_info": {
+          "package_name": "com.dth.dth"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "983718236250-ind22dp932fm27o5qfnt8tlnfcqn0se5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dth.dth",
+            "certificate_hash": "a54160e33bdba5214c7ce21cd457755403cd99d9"
+          }
+        },
+        {
+          "client_id": "983718236250-kj5c5dr0bb1eqiulr1iq2b4evfpk0vrc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dth.dth",
+            "certificate_hash": "6a946d8c091de3806ada31a4f163d95c1ff7004e"
+          }
+        },
+        {
+          "client_id": "983718236250-q21s6gd898709kvaumvog77il1sho66u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dth.dth",
+            "certificate_hash": "9d56ad1de1ee1104924a66fdd71c0fc4b49bfe7e"
+          }
+        },
+        {
+          "client_id": "983718236250-r0tq4m08jidhrdot70bnqmu3ppjddk67.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dth.dth",
+            "certificate_hash": "9637909a0f6a030829223ac36555471b071db2a9"
+          }
+        },
+        {
+          "client_id": "983718236250-u39cubnalvp1h4l5nfkghrevmbvpa3ub.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dth.dth",
+            "certificate_hash": "7c051fb1da7d1b05ca14fe956112a7234870a493"
+          }
+        },
+        {
+          "client_id": "983718236250-lfuuet6kvg84g2hg4rt5mmje75r18ssl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDW8QEvXdB2Nre7muJurynlqEDXb5sXofU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "983718236250-lfuuet6kvg84g2hg4rt5mmje75r18ssl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "983718236250-bcnqerhm519i665dmenescqucbphp8r3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.dth.dthapp",
+                "app_store_id": "1624305734"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

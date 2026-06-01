@@ -5,8 +5,8 @@ ASSET_PREFIX=prod
 BUNDLE_NAME=DTH
 BUNDLE_DISPLAY_NAME=DTH
 
-GOOGLE_IOS_CLIENT_ID=
-REVERSED_CLIENT_ID=
+GOOGLE_IOS_CLIENT_ID=983718236250-bcnqerhm519i665dmenescqucbphp8r3.apps.googleusercontent.com
+REVERSED_CLIENT_ID=com.googleusercontent.apps.983718236250-bcnqerhm519i665dmenescqucbphp8r3
 
 // Branch.io (prod) — TODO: replace with real values
 BRANCH_KEY_LIVE=key_live_mrEidOFck5yM0q7M0MhXMffpxsaKZuSP
