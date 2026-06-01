@@ -3,7 +3,19 @@ import "package:dth_v4/features/splash/views/splash_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter_utils/flutter_utils.dart";
+
+/// Dismisses the keyboard when the user taps outside inputs. Skips taps that
+/// land on an editable so we do not unfocus-then-refocus (keyboard flicker).
+void _unfocusOnPointerDownOutsideTextInput(PointerDownEvent event) {
+  final hit = HitTestResult();
+  WidgetsBinding.instance.hitTestInView(hit, event.position, event.viewId);
+  for (final entry in hit.path) {
+    if (entry.target is RenderEditable) return;
+  }
+  FocusManager.instance.primaryFocus?.unfocus();
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -48,7 +60,7 @@ class MyApp extends StatelessWidget {
         // players (e.g. YouTube) and can break their play/pause controls.
         return Listener(
           behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          onPointerDown: _unfocusOnPointerDownOutsideTextInput,
           child: child,
         );
       },

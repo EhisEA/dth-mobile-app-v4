@@ -2,7 +2,6 @@ import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/data/state/app_modules_state.dart';
 import 'package:dth_v4/features/livestream/view_model/active_livestream_provider.dart';
 import 'package:dth_v4/features/notifications/notifications.dart';
-import 'package:dth_v4/features/search/search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

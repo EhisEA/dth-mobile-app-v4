@@ -45,7 +45,8 @@ class CommentTile extends StatelessWidget {
                   Flexible(
                     child: AppText.medium(
                       comment.authorName.isEmpty ? "User" : comment.authorName,
-                      fontSize: 12,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.black,
                       maxLines: 1,
                     ),
@@ -62,8 +63,9 @@ class CommentTile extends StatelessWidget {
               AppText.regular(
                 comment.body,
                 fontSize: 12,
+                fontWeight: FontWeight.w400,
                 height: 1.4,
-                color: AppColors.mainBlack,
+                color: AppColors.black,
               ),
               Gap.h8,
               Row(

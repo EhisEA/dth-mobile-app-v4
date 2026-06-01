@@ -46,6 +46,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       child: ValueListenableBuilder<UserModel?>(
         valueListenable: userState.user,
         builder: (context, user, _) {
+          final appVersion = AppInfo.getAppVersionSync();
           final appModules = ref.watch(appModulesStateProvider);
           final modulesPayload = appModules.appModules.value;
           final hideApplicantDashboardTile =
@@ -257,6 +258,23 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                               DeleteAccountConsentView.path,
                             );
                           },
+                        ),
+                        Gap.h30,
+                        AppText.regular(
+                          "APP VERSION",
+                          fontSize: 10,
+                          centered: true,
+                          color: Color(0xFFC7C7C7),
+                        ),
+                        AppText(
+                          appVersion,
+                          baseStyle: const TextStyle(
+                            fontFamily: AppFontFamily.hanson,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFC7C7C7),
+                          ),
+                          centered: true,
                         ),
                         Gap.h30,
                         Gap.h30,
