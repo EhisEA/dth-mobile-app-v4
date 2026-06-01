@@ -35,19 +35,11 @@ class ShowScrollHintPill extends StatelessWidget {
           child: Text.rich(
             TextSpan(
               children: [
-                TextSpan(
-                  text: "Continue reading",
-                  style: AppTextStyle.regular.copyWith(
-                    fontSize: 12,
-                    color: AppColors.primary,
-                    letterSpacing: -0.2,
-                  ),
-                ),
                 WidgetSpan(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.only(right: 6),
                     child: SvgPicture.asset(
-                      SvgAssets.downArrow,
+                      SvgAssets.streamlineTickets,
                       height: 12,
                       width: 12,
                       colorFilter: ColorFilter.mode(
@@ -55,6 +47,14 @@ class ShowScrollHintPill extends StatelessWidget {
                         BlendMode.srcIn,
                       ),
                     ),
+                  ),
+                ),
+                TextSpan(
+                  text: "Scroll to tickets",
+                  style: AppTextStyle.medium.copyWith(
+                    fontSize: 12,
+                    color: AppColors.primary,
+                    letterSpacing: -0.2,
                   ),
                 ),
               ],

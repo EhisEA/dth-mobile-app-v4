@@ -152,6 +152,7 @@ class SvgAssets {
       "$svgPath/tickets/ticket_empty_state.svg";
   static const String dthText = "$svgPath/tickets/dth_text.svg";
   static const String ticketTitle = "$svgPath/tickets/ticket_title.svg";
+  static const String streamlineTickets = "$svgPath/tickets/streamline_tickets.svg";
 
   /////////////////////SUBSCRIPTION//////////////////////
   ///
