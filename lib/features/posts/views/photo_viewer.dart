@@ -83,7 +83,9 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer>
     for (final c in _transformControllers) {
       c.dispose();
     }
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    // Status bar reverts via the AnnotatedRegion(light) below being removed,
+    // which falls back to the app's root baseline. An imperative reset here
+    // would race that teardown and leave the bar stuck.
     super.dispose();
   }
 

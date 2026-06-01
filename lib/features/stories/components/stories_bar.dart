@@ -26,10 +26,10 @@ class StoriesBar extends StatelessWidget {
             onTap: () => onStoryTap?.call(s),
             behavior: HitTestBehavior.opaque,
             child: SizedBox(
-              width: 104,
+              width: 112,
               child: Container(
-                width: 104,
-                height: 157,
+                width: 112,
+                height: 167,
                 clipBehavior: Clip.hardEdge,
                 decoration: BoxDecoration(
                   color: Colors.red,
@@ -39,8 +39,8 @@ class StoriesBar extends StatelessWidget {
                   children: [
                     CachedNetworkImage(
                       imageUrl: s.imageUrl,
-                      height: 157,
-                      width: 104,
+                      height: 167,
+                      width: 112,
                       fit: BoxFit.cover,
                       errorWidget: (_, __, ___) => ColoredBox(
                         color: AppColors.baseShimmer(context),

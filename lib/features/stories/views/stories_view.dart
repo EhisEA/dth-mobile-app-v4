@@ -37,16 +37,19 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Dark media → light status bar icons (matches post detail).
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
       // Fill the pager below the opened reel + obtain the pagination cursor.
       ref.read(reelsFeedViewModelProvider(widget.reelUid)).ensureLoaded();
     });
   }
 
+  // Status-bar style is handled purely by the AnnotatedRegion below (light icons
+  // over the dark reel), which reverts to the app's root baseline on pop. No
+  // imperative SystemChrome calls here — those race with the AnnotatedRegion
+  // during the pop animation and leave the bar stuck (worse under video, which
+  // drives constant frames).
+
   @override
   void dispose() {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     _pageController.dispose();
     super.dispose();
   }
@@ -66,9 +69,12 @@ class _StoriesViewState extends ConsumerState<StoriesView> {
     );
 
     if (uids.isEmpty) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return const AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Center(child: CircularProgressIndicator(color: Colors.white)),
+        ),
       );
     }
 

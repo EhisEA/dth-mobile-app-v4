@@ -20,7 +20,7 @@ class BranchService implements DeepLinkSource {
   @override
   Future<void> initialise({bool enableLogging = false}) async {
     await FlutterBranchSdk.init(enableLogging: enableLogging);
-    FlutterBranchSdk.validateSDKIntegration();
+    // FlutterBranchSdk.validateSDKIntegration();
     _sub = FlutterBranchSdk.listSession().listen(
       _handleSession,
       onError: (Object err) => _logger.e("Branch listSession error: $err"),

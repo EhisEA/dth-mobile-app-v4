@@ -32,7 +32,7 @@ class PostCard extends StatelessWidget {
         children: [
           PosTimelinetHeader(post: post),
           if (post.description.isNotEmpty) ...[
-            Gap.h12,
+            Gap.h4,
             PostDescription(text: post.description),
           ],
           Gap.h12,

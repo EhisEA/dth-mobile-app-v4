@@ -97,9 +97,11 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _metaProgress.dispose();
-    // [_TransparentBackAppBar] uses SystemUiOverlayStyle.light; without a
-    // reset, that style outlives this route because home uses no AppBar.
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    // No imperative status-bar reset here — each AppBar declares its own style
+    // (DthAppBar -> theme dark, _TransparentBackAppBar -> light) and the home
+    // shell's AnnotatedRegion(dark) reverts the bar on pop. An imperative reset
+    // would race those declarative styles during the pop animation and leave
+    // the bar stuck (the bug this screen used to show after YouTube fullscreen).
     super.dispose();
   }
 
@@ -296,6 +298,31 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     final controller = _ytController;
     if (controller != null) {
       return YoutubePlayerBuilder(
+        // youtube_player_flutter's default fullscreen callbacks reconfigure
+        // SystemChrome (orientation + overlays) but never restore the
+        // status-bar STYLE on exit, so the bar is left with the player's
+        // default (dark icons over black) and that wrong style leaks back to
+        // the timeline. Drive the transitions explicitly and re-assert the
+        // post's light status bar (pinned video sits behind the transparent
+        // light app bar) + lock back to portrait on exit.
+        onEnterFullScreen: () {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+          SystemChrome.setPreferredOrientations(const [
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]);
+        },
+        onExitFullScreen: () {
+          SystemChrome.setEnabledSystemUIMode(
+            SystemUiMode.manual,
+            overlays: SystemUiOverlay.values,
+          );
+          SystemChrome.setPreferredOrientations(const [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+        },
         player: YoutubePlayer(
           controller: controller,
           showVideoProgressIndicator: true,

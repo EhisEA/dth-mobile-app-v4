@@ -282,23 +282,30 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
             if (_tabController.index >= bindings.length) {
               _tabController.index = 0;
             }
-            return PopScope(
-              canPop: false,
-              onPopInvokedWithResult: _onPopInvoked,
-              child: PersistentTabView.custom(
-                context,
-                backgroundColor: Colors.transparent,
-                controller: _tabController,
-                handleAndroidBackButtonPress: false,
-                screens: [
-                  for (final b in bindings)
-                    CustomNavBarScreen(screen: b.screen),
-                ],
-                confineToSafeArea: false,
-                navBarHeight: 84,
-                itemCount: bindings.length,
-                bottomScreenMargin: 0,
-                customWidget: _buildCustomNavBar(bindings),
+            // Declares the home shell's status-bar style (dark icons over the
+            // light tabs). Because the shell owns it, popping back from a dark
+            // screen (reels, photo viewer) reverts here automatically instead of
+            // leaving the bar stuck on the previous screen's style.
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle.dark,
+              child: PopScope(
+                canPop: false,
+                onPopInvokedWithResult: _onPopInvoked,
+                child: PersistentTabView.custom(
+                  context,
+                  backgroundColor: Colors.transparent,
+                  controller: _tabController,
+                  handleAndroidBackButtonPress: false,
+                  screens: [
+                    for (final b in bindings)
+                      CustomNavBarScreen(screen: b.screen),
+                  ],
+                  confineToSafeArea: false,
+                  navBarHeight: 84,
+                  itemCount: bindings.length,
+                  bottomScreenMargin: 0,
+                  customWidget: _buildCustomNavBar(bindings),
+                ),
               ),
             );
           },
