@@ -17,6 +17,7 @@ import "package:dth_v4/features/tickets/views/purchase_tickets_view.dart";
 import "package:dth_v4/features/tickets/views/your_tickets_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
@@ -37,13 +38,16 @@ class ShowView extends ConsumerStatefulWidget {
 }
 
 class _ShowViewState extends ConsumerState<ShowView> {
-  /// How close to [ScrollPosition.maxScrollExtent] counts as "at the bottom".
-  static const double _scrollBottomTolerancePx = 24;
+  /// How close the first purchased-ticket block must be to the viewport edge to count as reached.
+  static const double _firstTicketRevealTolerancePx = 40;
 
   /// Scrolls event details + purchased tickets; buy CTA is pinned below this.
   late final ScrollController _scrollController;
 
-  /// Whether the floating "Continue reading" pill is visible.
+  /// Anchors visibility checks for [ShowPurchasedTicketsSection].
+  final GlobalKey _purchasedTicketsSectionKey = GlobalKey();
+
+  /// Whether the floating "View your tickets" scroll-hint pill is visible.
   bool _showScrollHint = false;
 
   @override
@@ -59,49 +63,70 @@ class _ShowViewState extends ConsumerState<ShowView> {
     super.dispose();
   }
 
-  /// True when the user has scrolled to (or near) the purchased-tickets section.
-  bool _isAtScrollBottom() {
-    // Not laid out yet — treat as bottom so the pill does not flash on first frame.
-    //NB: hasClients on a ScrollController means the controller is currently attached to at least one scrollable widget (e.g. ListView, SingleChildScrollView).
-    if (!_scrollController.hasClients) return true;
-    final position = _scrollController.position;
-    // All content fits on screen; nothing to scroll.
-    if (position.maxScrollExtent <= 0) return true;
-    return position.pixels >=
-        position.maxScrollExtent - _scrollBottomTolerancePx;
+  // True when the user has scrolled far enough that purchased tickets are on screen.
+  bool _hasScrolledToFirstPurchasedTicket() {
+    // Need the section widget and a live scroll position before we can measure.
+    final sectionContext = _purchasedTicketsSectionKey.currentContext;
+    // hasClients means the ScrollController is attached to a scrollable widget right now
+    if (sectionContext == null || !_scrollController.hasClients) {
+      return false;
+    }
+
+    final box = sectionContext.findRenderObject() as RenderBox?;
+    // Section not laid out yet — treat as not reached so the pill can show after paint.
+    // If we can’t measure the purchased-tickets block yet, treat it as not reached and don’t hide the pill based on bad data.
+    // we can measure the purchased-tickets block after layout has run, event is loaded, section is laid out and GlobalKey is
+    // attached i.e _purchasedTicketsSectionKey.currentContext is non-null (the section widget exists).
+    if (box == null || !box.hasSize || !box.attached) return false;
+
+    // The scrollable ancestor of purchased tickets (our SingleChildScrollView).
+    final viewport = RenderAbstractViewport.maybeOf(box);
+    if (viewport == null) return false;
+
+    // How far we must scroll before the top of purchased tickets enters the viewport.
+
+    // getOffsetToReveal: scroll offset needed to bring [box] into view.
+    // alignment 0 = align the top of the section with the top of the viewport.
+    final reveal = viewport.getOffsetToReveal(box, 0);
+    final targetScroll = reveal.offset;
+
+    // Current scroll vs target: at or past target means purchased tickets are on screen.
+    // Subtract tolerance so we hide the pill slightly before a perfect pixel match.
+    return _scrollController.position.pixels >=
+        targetScroll - _firstTicketRevealTolerancePx;
   }
 
-  // called every time the user scrolls (or when scroll position changes programmatically, e.g. after tapping the pill).
+  // Called every time the user scrolls (or when scroll position changes, e.g. after tapping the pill).
   void _onScroll() => _syncScrollHintVisibility();
 
-  /// Shows the hint when there are purchased tickets and content below the fold.
+  // Show or hide the "View your tickets" pill based on scroll and purchased tickets.
   void _syncScrollHintVisibility({EventDetail? event}) {
     if (!mounted) return;
 
-    // getting event from the view model or passing it in as an argument
+    // Get event from the view model, or use the one passed in after layout.
     final detail =
         event ?? ref.read(eventDetailViewModelProvider(widget.eventUid)).event;
-    // checking if the event has purchased tickets and if the user is not at the scroll bottom
+    // Show pill only when there are tickets and the section is still below the fold.
     final next =
         detail != null &&
         detail.purchasedTickets.isNotEmpty &&
-        !_isAtScrollBottom();
-    // updating the state if the hint should be shown or not
+        !_hasScrolledToFirstPurchasedTicket();
+    // Scroll back up → section off-screen again → pill comes back.
     if (next != _showScrollHint) {
       setState(() => _showScrollHint = next);
     }
-
-    // On every scroll, decide “purchased tickets exist and user hasn’t scrolled down far enough”; if that yes/no changed, show or hide the pill.
   }
 
-  /// Pill tap: scroll to purchased tickets (buy button stays pinned below).
-  void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
+  // Pill tap: scroll to purchased tickets; buy button stays pinned below.
+  void _scrollToFirstPurchasedTicket() {
+    final sectionContext = _purchasedTicketsSectionKey.currentContext;
+    if (sectionContext == null) return;
     unawaited(
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+      Scrollable.ensureVisible(
+        sectionContext,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOut,
+        alignment: 0,
       ),
     );
   }
@@ -196,9 +221,8 @@ class _ShowViewState extends ConsumerState<ShowView> {
               : "—";
 
           // Sync the scroll hint after layout, not during build():
-          // _isAtScrollBottom() needs scroll metrics (pixels, maxScrollExtent) from the
-          // SingleChildScrollView, which exist only once layout has run. In build() the
-          // view is not measured yet, and setState is not allowed.
+          // _hasScrolledToFirstPurchasedTicket() needs the purchased-tickets section laid out.
+          // In build() the section is not measured yet, and setState is not allowed.
           // addPostFrameCallback runs after build → layout → paint, so we can read scroll
           // position and show/hide the pill safely (e.g. first open or new tickets).
 
@@ -281,6 +305,7 @@ class _ShowViewState extends ConsumerState<ShowView> {
                                     if (hasPurchasedTickets) ...[
                                       Gap.h24,
                                       ShowPurchasedTicketsSection(
+                                        key: _purchasedTicketsSectionKey,
                                         tickets: event.purchasedTickets,
                                         descriptionFallback:
                                             event.shortDescription
@@ -304,7 +329,7 @@ class _ShowViewState extends ConsumerState<ShowView> {
                                   ],
                                 ),
                               ),
-                              // Floated above scroll content; hidden at scroll bottom.
+                              // Floated above scroll content; hidden while first ticket is in view.
                               if (hasPurchasedTickets && _showScrollHint)
                                 Positioned(
                                   left: 0,
@@ -312,7 +337,7 @@ class _ShowViewState extends ConsumerState<ShowView> {
                                   bottom: 8,
                                   child: Center(
                                     child: ShowScrollHintPill(
-                                      onTap: _scrollToBottom,
+                                      onTap: _scrollToFirstPurchasedTicket,
                                     ),
                                   ),
                                 ),
