@@ -46,5 +46,11 @@
     ]
 }
 
+// flutter build apk --flavor prod -t lib/main_prod.dart --dart-define-from-file=config/prod.json
+// flutter build appbundle --flavor prod -t lib/main_prod.dart --dart-define-from-file=config/prod.json
+// flutter build ios --flavor prod -t lib/main_prod.dart --dart-define-from-file=config/prod.json
+// flutter build ipa --flavor prod -t lib/main_prod.dart --dart-define-from-file=config/prod.json
+//shorebird release ios --flavor prod -t lib/main_prod.dart --dart-define-from-file=config/prod.json
+
 // flutter build ios -t lib/main_dev.dart --flavor dev --dart-define-from-file=config/dev.json
 // flutter build apk -t lib/main_dev.dart --flavor dev --dart-define-from-file=config/dev.json

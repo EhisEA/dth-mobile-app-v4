@@ -91,6 +91,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Opt out of iPad multitasking (Split View/Slide Over). Required so the
+	     3 orientations above are accepted on iPad; multitasking would demand all
+	     four including PortraitUpsideDown. The app is phone-first and runs full
+	     screen on iPad, matching iPhone behavior. -->
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>branch_key</key>
 	<dict>
 		<key>live</key>
