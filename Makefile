@@ -1,4 +1,6 @@
 FLUTTER := fvm flutter
+# Shorebird bundles its own Flutter, so it is invoked directly (not via fvm).
+SHOREBIRD := shorebird
 MAIN_DEV := lib/main_dev.dart
 MAIN_PROD := lib/main_prod.dart
 DEFINES_DEV := --dart-define-from-file=config/dev.json
@@ -13,6 +15,11 @@ DEFINES_PROD := --dart-define-from-file=config/prod.json
 	build-ipa-dev build-ipa-prod \
 	analyze-app \
 	run-app build-apk build-aab build-ios build-ipa build-app-split \
+	shorebird-release-ios-dev shorebird-release-ios-prod \
+	shorebird-release-android-dev shorebird-release-android-prod \
+	shorebird-patch-ios-dev shorebird-patch-ios-prod \
+	shorebird-patch-android-dev shorebird-patch-android-prod \
+	shorebird-release shorebird-patch \
 	clean-get
 
 setup-ios:
@@ -110,6 +117,65 @@ build-app-split:
 	esac; \
 	echo "Building split APK with flavor: $$FLAVOR and target: $$TARGET"; \
 	$(FLUTTER) build apk --flavor $$FLAVOR -t $$TARGET $$DEFINES --obfuscate --split-debug-info=build/app/outputs/symbols
+
+# --- Shorebird (code push) ---
+# `--flavor`/`--target` are Shorebird options and stay before `--`; everything
+# after `--` (the dart-defines) is forwarded to the underlying `flutter build`.
+# A patch MUST use the same target + defines as the release it patches.
+
+shorebird-release-ios-dev:
+	$(SHOREBIRD) release ios --flavor dev --target $(MAIN_DEV) $(DEFINES_DEV)
+
+shorebird-release-ios-prod:
+	$(SHOREBIRD) release ios --flavor prod --target $(MAIN_PROD) $(DEFINES_PROD)
+
+shorebird-release-android-dev:
+	$(SHOREBIRD) release android --flavor dev --target $(MAIN_DEV) $(DEFINES_DEV)
+
+shorebird-release-android-prod:
+	$(SHOREBIRD) release android --flavor prod --target $(MAIN_PROD) $(DEFINES_PROD)
+
+shorebird-patch-ios-dev:
+	$(SHOREBIRD) patch ios --flavor dev --target $(MAIN_DEV) $(DEFINES_DEV)
+
+shorebird-patch-ios-prod:
+	$(SHOREBIRD) patch ios --flavor prod --target $(MAIN_PROD) $(DEFINES_PROD)
+
+shorebird-patch-android-dev:
+	$(SHOREBIRD) patch android --flavor dev --target $(MAIN_DEV) $(DEFINES_DEV)
+
+shorebird-patch-android-prod:
+	$(SHOREBIRD) patch android --flavor prod --target $(MAIN_PROD) $(DEFINES_PROD)
+
+shorebird-release:
+	@read -p "Enter PLATFORM (ios or android): " PLATFORM; \
+	read -p "Enter FLAVOR (dev or prod): " FLAVOR; \
+	case $$FLAVOR in \
+		dev) TARGET="$(MAIN_DEV)"; DEFINES="$(DEFINES_DEV)" ;; \
+		prod) TARGET="$(MAIN_PROD)"; DEFINES="$(DEFINES_PROD)" ;; \
+		*) echo "Invalid flavor '$$FLAVOR'. Use dev or prod."; exit 1 ;; \
+	esac; \
+	case $$PLATFORM in \
+		ios|android) ;; \
+		*) echo "Invalid platform '$$PLATFORM'. Use ios or android."; exit 1 ;; \
+	esac; \
+	echo "Shorebird release $$PLATFORM with flavor: $$FLAVOR and target: $$TARGET"; \
+	$(SHOREBIRD) release $$PLATFORM --flavor $$FLAVOR --target $$TARGET $(DEFINES)
+
+shorebird-patch:
+	@read -p "Enter PLATFORM (ios or android): " PLATFORM; \
+	read -p "Enter FLAVOR (dev or prod): " FLAVOR; \
+	case $$FLAVOR in \
+		dev) TARGET="$(MAIN_DEV)"; DEFINES="$(DEFINES_DEV)" ;; \
+		prod) TARGET="$(MAIN_PROD)"; DEFINES="$(DEFINES_PROD)" ;; \
+		*) echo "Invalid flavor '$$FLAVOR'. Use dev or prod."; exit 1 ;; \
+	esac; \
+	case $$PLATFORM in \
+		ios|android) ;; \
+		*) echo "Invalid platform '$$PLATFORM'. Use ios or android."; exit 1 ;; \
+	esac; \
+	echo "Shorebird patch $$PLATFORM with flavor: $$FLAVOR and target: $$TARGET"; \
+	$(SHOREBIRD) patch $$PLATFORM --flavor $$FLAVOR --target $$TARGET $(DEFINES)
 
 clean-get:
 	$(FLUTTER) clean && $(FLUTTER) pub get
