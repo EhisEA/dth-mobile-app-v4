@@ -3,6 +3,7 @@ import "dart:ui" show ImageFilter;
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/models/post.dart";
+import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter_svg/svg.dart";
 
@@ -73,8 +74,7 @@ class _VideoBlock extends StatelessWidget {
                     : CachedNetworkImage(
                         imageUrl: thumbnailUrl,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            ColoredBox(color: AppColors.baseShimmer(context)),
+                        placeholder: (context, url) => const ShimmerBox(),
                       ),
                 Container(
                   decoration: BoxDecoration(
@@ -213,8 +213,7 @@ class _ImageGalleryBlock extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
-      placeholder: (context, url) =>
-          ColoredBox(color: AppColors.baseShimmer(context)),
+      placeholder: (context, url) => const ShimmerBox(),
       errorWidget: (context, url, error) => ColoredBox(
         color: AppColors.baseShimmer(context),
         child: Icon(Icons.broken_image_outlined, color: AppColors.tint15),

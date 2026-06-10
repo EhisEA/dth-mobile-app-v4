@@ -1,6 +1,7 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/views/photo_viewer.dart";
+import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 
 class PostHeroImage extends StatefulWidget {
@@ -61,8 +62,7 @@ class _PostHeroImageState extends State<PostHeroImage> {
                   child: CachedNetworkImage(
                     imageUrl: urls[i],
                     fit: BoxFit.cover,
-                    placeholder: (context, _) =>
-                        ColoredBox(color: AppColors.baseShimmer(context)),
+                    placeholder: (context, _) => const ShimmerBox(),
                     errorWidget: (context, _, _) => ColoredBox(
                       color: AppColors.baseShimmer(context),
                       child: Icon(

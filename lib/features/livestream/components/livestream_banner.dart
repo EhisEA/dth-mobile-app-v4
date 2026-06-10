@@ -47,8 +47,10 @@ class LivestreamBanner extends StatelessWidget {
                     CachedNetworkImage(
                       imageUrl: thumb,
                       fit: BoxFit.cover,
-                      placeholder: (_, _) =>
-                          const ColoredBox(color: Color(0xff222222)),
+                      placeholder: (_, _) => const ShimmerBox(
+                        baseColor: Color(0xff222222),
+                        highlightColor: Color(0xff3A3A3A),
+                      ),
                       errorWidget: (_, _, _) =>
                           const ColoredBox(color: Color(0xff222222)),
                     )
