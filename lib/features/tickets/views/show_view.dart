@@ -251,144 +251,194 @@ class _ShowViewState extends ConsumerState<ShowView> {
             });
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          // Hero height — kept in sync with ShowDetailHero (0.45 of screen).
+          final heroHeight = context.height * 0.45;
+          // Fixed strip of the hero that always stays visible at the very top.
+          // The scroll region sits below it, so the sheet can never cover it —
+          // this is what caps coverage at 85% of the screen.
+          final heroPeekHeight = context.height * 0.15;
+          // Transparent gap inside the scroll view: reveals the rest of the hero
+          // at rest, then scrolls away until the sheet locks against the strip
+          // above. 25px overlap tucks the rounded sheet under the hero's seam.
+          final sheetTopGap = heroHeight - heroPeekHeight - 25;
+
+          return Stack(
             children: [
-              ShowDetailHero(imageUrl: heroUrl, onShare: () {}),
-              Expanded(
-                child: Transform.translate(
-                  offset: const Offset(0, -25),
-                  child: Container(
-                    clipBehavior: Clip.hardEdge,
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Scrollable body; buy CTA is outside so it is always visible.
-                        Expanded(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              SingleChildScrollView(
-                                controller: _scrollController,
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  20,
-                                  16,
-                                  20,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ShowStatusChip(
-                                      label: _statusChipLabel(event),
-                                    ),
-                                    Gap.h16,
-                                    AppText.medium(
-                                      event.title,
-                                      fontSize: 18,
-                                      color: AppColors.black,
-                                      maxLines: 2,
-                                      letterSpacing: -0.4,
-                                    ),
-                                    Gap.h4,
-                                    ShowEventQuickInfoRow(
-                                      location: event.location,
-                                      dateTimeLine: event.dateTimeLine,
-                                    ),
-                                    Gap.h16,
-                                    ShowAboutEventPanel(
-                                      aboutBody: about,
-                                      detailDate: detailDate,
-                                      detailTime: detailTime,
-                                      detailVenue: detailVenue,
-                                    ),
-                                    if (hasPurchasedTickets) ...[
-                                      Gap.h24,
-                                      ShowPurchasedTicketsSection(
-                                        key: _purchasedTicketsSectionKey,
-                                        tickets: event.purchasedTickets,
-                                        descriptionFallback:
-                                            event.shortDescription
-                                                .trim()
-                                                .isNotEmpty
-                                            ? event.shortDescription
-                                            : about,
-                                        onViewTickets: (ticket) {
-                                          unawaited(
-                                            MobileNavigationService.instance
-                                                .navigateTo(
-                                                  YourTicketsView.path,
-                                                  extra: YourTicketsArgs(
-                                                    purchasedTicket: ticket,
-                                                  ).toRouteExtra(),
-                                                ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              // Floated above scroll content; hidden while first ticket is in view.
-                              if (hasPurchasedTickets && _showScrollHint)
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 8,
-                                  child: Center(
-                                    child: ShowScrollHintPill(
-                                      onTap: _scrollToFirstPurchasedTicket,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        // Pinned purchase action — does not move with scroll.
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                          child: ShowBuyTicket(
-                            mainLabel: hasPurchasedTickets
-                                ? "Buy more tickets"
-                                : "Buy ticket now",
-                            availabilityLabel:
-                                "(${event.availableTicketsCount} available)",
-                            onPressed: () {
-                              final eventUid = event.uid;
-                              unawaited(
-                                MobileNavigationService.instance.navigateTo(
-                                  PurchaseTicketsView.path,
-                                  extra: {
-                                    RoutingArgumentKey.eventUid: eventUid,
-                                    RoutingArgumentKey
-                                        .onPurchaseSuccess: () async {
-                                      await ref
-                                          .read(
-                                            eventDetailViewModelProvider(
-                                              eventUid,
-                                            ),
-                                          )
-                                          .refresh();
-                                      await ref
-                                          .read(eventsStateProvider)
-                                          .fetchBookedEvents();
-                                    },
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+              // Back layer: hero image pinned to the top; the sheet scrolls over it.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: ShowDetailHero(
+                  imageUrl: heroUrl,
+                  onShare: () => unawaited(
+                    LinkShareHelper.shareEvent(
+                      eventUid: event.uid,
+                      title: event.title,
+                      description: event.dateTimeLine,
+                      imageUrl: event.heroImageUrl,
                     ),
                   ),
                 ),
+              ),
+              // Front layer: scrollable details sheet + pinned buy CTA.
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Transparent strip reserving the top 15% for the hero. Empty so
+                  // taps fall through to the hero's back/share controls behind it.
+                  SizedBox(height: heroPeekHeight),
+                  // Scrollable body; buy CTA is outside so it is always visible.
+                  Expanded(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Rounds the region's top edge so that once the sheet
+                        // locks at 15%, content scrolls under the rounded corners
+                        // (the inner-scrolling illusion). Matches the sheet's own
+                        // radius, so the two align as it slides up and locks.
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(24),
+                          ),
+                          child: SingleChildScrollView(
+                            controller: _scrollController,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Reveals the lower hero; scrolls away until the
+                                // sheet locks at the top of this 85% region.
+                                SizedBox(height: sheetTopGap),
+                                Container(
+                                  clipBehavior: Clip.hardEdge,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(24),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    20,
+                                    16,
+                                    20,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ShowStatusChip(
+                                        label: _statusChipLabel(event),
+                                      ),
+                                      Gap.h16,
+                                      AppText.medium(
+                                        event.title,
+                                        fontSize: 18,
+                                        color: AppColors.black,
+                                        maxLines: 2,
+                                        letterSpacing: -0.4,
+                                      ),
+                                      Gap.h4,
+                                      ShowEventQuickInfoRow(
+                                        location: event.location,
+                                        dateTimeLine: event.dateTimeLine,
+                                      ),
+                                      Gap.h16,
+                                      ShowAboutEventPanel(
+                                        aboutBody: about,
+                                        detailDate: detailDate,
+                                        detailTime: detailTime,
+                                        detailVenue: detailVenue,
+                                      ),
+                                      if (hasPurchasedTickets) ...[
+                                        Gap.h24,
+                                        ShowPurchasedTicketsSection(
+                                          key: _purchasedTicketsSectionKey,
+                                          tickets: event.purchasedTickets,
+                                          descriptionFallback:
+                                              event.shortDescription
+                                                  .trim()
+                                                  .isNotEmpty
+                                              ? event.shortDescription
+                                              : about,
+                                          onViewTickets: (ticket) {
+                                            unawaited(
+                                              MobileNavigationService.instance
+                                                  .navigateTo(
+                                                    YourTicketsView.path,
+                                                    extra: YourTicketsArgs(
+                                                      purchasedTicket: ticket,
+                                                    ).toRouteExtra(),
+                                                  ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Floated above scroll content; hidden while first ticket is in view.
+                        if (hasPurchasedTickets && _showScrollHint)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 8,
+                            child: Center(
+                              child: ShowScrollHintPill(
+                                onTap: _scrollToFirstPurchasedTicket,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Pinned purchase action — opaque so the hero never shows behind it.
+                  ColoredBox(
+                    color: AppColors.white,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        4,
+                        16,
+                        (16 + MediaQuery.of(context).padding.bottom) > 0
+                            ? MediaQuery.of(context).padding.bottom
+                            : 16,
+                      ),
+                      child: ShowBuyTicket(
+                        mainLabel: hasPurchasedTickets
+                            ? "Buy more tickets"
+                            : "Buy ticket now",
+                        availabilityLabel:
+                            "(${event.availableTicketsCount} available)",
+                        onPressed: () {
+                          final eventUid = event.uid;
+                          unawaited(
+                            MobileNavigationService.instance.navigateTo(
+                              PurchaseTicketsView.path,
+                              extra: {
+                                RoutingArgumentKey.eventUid: eventUid,
+                                RoutingArgumentKey.onPurchaseSuccess: () async {
+                                  await ref
+                                      .read(
+                                        eventDetailViewModelProvider(eventUid),
+                                      )
+                                      .refresh();
+                                  await ref
+                                      .read(eventsStateProvider)
+                                      .fetchBookedEvents();
+                                },
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
