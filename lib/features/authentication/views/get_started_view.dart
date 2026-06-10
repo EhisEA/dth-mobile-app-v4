@@ -94,7 +94,8 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
   @override
   Widget build(BuildContext context) {
     final model = ref.watch(getStartedViewModelProvider);
-    final googleEnabled = ref
+    final googleEnabled =
+        ref
             .watch(appModulesStateProvider)
             .appModules
             .value
@@ -163,6 +164,7 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
                   AppText.bold(
                     'Welcome to DTH 5',
                     fontSize: 28,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xffC2FFE0),
                     letterSpacing: -0.4,
                   ),
@@ -194,6 +196,8 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
                   AppButton.primary(
                     text: 'Continue with email',
                     enabled: !model.isBaseBusy,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 16,
                     press: () {
                       MobileNavigationService.instance.push(
                         CreateAccountView.path,
@@ -204,6 +208,8 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
                     Gap.h12,
                     AppButton.onBorder(
                       text: 'Continue with Google',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
                       textColor: AppColors.white,
                       borderColor: AppColors.primary,
                       prefixIcon: svgIcon(SvgAssets.googleLogo),

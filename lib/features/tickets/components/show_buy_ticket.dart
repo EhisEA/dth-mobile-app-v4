@@ -22,6 +22,7 @@ class ShowBuyTicket extends StatelessWidget {
       subtitle: availabilityLabel,
       subtitleDirection: Axis.horizontal,
       subtitleFontSize: 10,
+      fontSize: 16,
       fontWeight: FontWeight.w500,
       subtitleColor: AppColors.white.withValues(alpha: 0.92),
       press: onPressed,

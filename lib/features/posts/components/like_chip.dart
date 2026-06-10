@@ -184,7 +184,7 @@ class _LikeChipState extends State<LikeChip> with TickerProviderStateMixin {
                                 height: s,
                                 width: s,
                                 colorFilter: ColorFilter.mode(
-                                  widget.inactiveColor ?? AppColors.blackTint20,
+                                  widget.inactiveColor ?? Color(0XFF454545),
                                   BlendMode.srcIn,
                                 ),
                               ),

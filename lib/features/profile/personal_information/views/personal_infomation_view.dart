@@ -213,15 +213,15 @@ class _PersonalInfomationViewState
                 AppText.semiBold(
                   u.fullName,
                   centered: true,
-                  fontSize: 18,
+                  fontSize: 20,
                   color: AppColors.mainBlack,
                 ),
                 Gap.h2,
                 AppText.regular(
                   u.email,
                   centered: true,
-                  fontSize: 12,
-                  color: AppColors.tint15,
+                  fontSize: 14,
+                  color: AppColors.blackTint20,
                 ),
                 Center(child: ContestantPill(user: u)),
                 Gap.h32,
@@ -260,7 +260,7 @@ class _PersonalInfomationViewState
                 Gap.h12,
                 PhoneNumberCountryInput(
                   key: ValueKey<bool>(_editingProfile),
-                  readOnly: !_editingProfile,
+                  readOnly: true, //!_editingProfile,
                   controller: _editingProfile ? _phoneController : null,
                   focusNode: _editingProfile ? _phoneFocus : null,
                   initialNationalDigits: _editingProfile ? null : u.phoneNumber,
@@ -270,15 +270,16 @@ class _PersonalInfomationViewState
                   textInputAction: _editingProfile
                       ? TextInputAction.done
                       : TextInputAction.done,
-                  onCountryTap: _editingProfile
-                      ? () {
-                          showCountryPickerBottomSheet(
-                            context,
-                            initialCountry: _editCountry ?? displayCountry,
-                            onSelected: (c) => setState(() => _editCountry = c),
-                          );
-                        }
-                      : null,
+                  onCountryTap: null,
+                  //  _editingProfile
+                  // ? () {
+                  // showCountryPickerBottomSheet(
+                  //   context,
+                  //   initialCountry: _editCountry ?? displayCountry,
+                  //   onSelected: (c) => setState(() => _editCountry = c),
+                  // );
+                  //   }
+                  // : null,
                   onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   validator: _editingProfile
                       ? (v) => validateNationalPhone(v, _editCountry)

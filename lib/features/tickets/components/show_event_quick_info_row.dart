@@ -29,7 +29,7 @@ class ShowEventQuickInfoRow extends StatelessWidget {
         Flexible(
           child: AppText.regular(
             location,
-            fontSize: 12,
+            fontSize: 14,
             color: AppColors.blackTint20,
             maxLines: 1,
           ),
@@ -49,7 +49,7 @@ class ShowEventQuickInfoRow extends StatelessWidget {
             Gap.w4,
             AppText.regular(
               dateTimeLine,
-              fontSize: 12,
+              fontSize: 14,
               color: AppColors.blackTint20,
             ),
           ],

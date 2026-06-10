@@ -290,12 +290,12 @@ class _PhoneNumberCountryInputState extends State<PhoneNumberCountryInput> {
                                   color: AppColors.greyTint30,
                                 ),
                               ),
-                            Gap.w6,
-                            AppText.regular(
-                              widget.displayCountry?.dialCode ?? "",
-                              fontSize: 14,
-                              color: AppColors.black,
-                            ),
+                            Gap.w4,
+                            // AppText.regular(
+                            //   widget.displayCountry?.dialCode ?? "",
+                            //   fontSize: 14,
+                            //   color: AppColors.black,
+                            // ),
                             if (showChevron) ...[
                               Gap.w4,
                               SvgPicture.asset(

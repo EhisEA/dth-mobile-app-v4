@@ -30,15 +30,12 @@ class CommentSortHeader extends StatelessWidget {
           children: [
             AppText.semiBold(
               title,
-              fontSize: 14,
-              color: AppColors.mainBlack,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0XFF202020),
             ),
             Gap.w8,
-            AppText.regular(
-              "$count",
-              fontSize: 12,
-              color: AppColors.blackTint20,
-            ),
+            AppText.regular("$count", fontSize: 12, color: Color(0XFF8F8F8F)),
           ],
         ),
         PopupMenuButton<CommentSort>(
@@ -46,7 +43,10 @@ class CommentSortHeader extends StatelessWidget {
           onSelected: onSortChanged,
           tooltip: "Sort",
           itemBuilder: (_) => const [
-            PopupMenuItem(value: CommentSort.latest, child: Text("Most recent")),
+            PopupMenuItem(
+              value: CommentSort.latest,
+              child: Text("Most recent"),
+            ),
             PopupMenuItem(value: CommentSort.oldest, child: Text("Oldest")),
           ],
           child: Row(
@@ -55,9 +55,11 @@ class CommentSortHeader extends StatelessWidget {
               AppText.regular(
                 sort == CommentSort.latest ? "Most recent" : "Oldest",
                 fontSize: 12,
-                color: AppColors.mainBlack,
+                fontWeight: FontWeight.w400,
+                color: Color(0XFF454545),
               ),
-              const Icon(Icons.expand_more, size: 18),
+              Gap.w2,
+              const Icon(Icons.expand_more, size: 14, color: Color(0XFF454545)),
             ],
           ),
         ),

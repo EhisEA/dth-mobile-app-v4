@@ -44,12 +44,12 @@ class ProfileTlle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.regular(title, fontSize: 14, color: AppColors.black),
-                Gap.h2,
+                AppText.regular(title, fontSize: 16, color: AppColors.black),
+                // Gap.h2,
                 AppText.regular(
                   description,
-                  fontSize: 12,
-                  color: AppColors.tint15,
+                  fontSize: 14,
+                  color: AppColors.blackTint20,
                 ),
               ],
             ),

@@ -326,6 +326,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
         player: YoutubePlayer(
           controller: controller,
           showVideoProgressIndicator: true,
+          thumbnail: SizedBox.shrink(),
           aspectRatio: 16 / 9,
           // Strip the default top overlay row (video title, share, "more").
           // We only want our control bar at the bottom and the video itself.

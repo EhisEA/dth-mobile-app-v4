@@ -106,8 +106,8 @@ class SubscriptionPlanCard extends StatelessWidget {
                       ),
                       AppText.regular(
                         periodSuffix,
-                        fontSize: 12,
-                        color: AppColors.tint15,
+                        fontSize: 14,
+                        color: AppColors.blackTint20,
                       ),
                     ],
                   ),
@@ -170,6 +170,7 @@ class SubscriptionPlanCard extends StatelessWidget {
                 ),
               ),
             ),
+            Gap.h12,
           ],
         ),
       ),

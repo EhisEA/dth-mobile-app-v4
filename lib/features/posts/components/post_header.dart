@@ -27,25 +27,18 @@ class PosTimelinetHeader extends StatelessWidget {
                 children: [
                   AppText.medium(
                     post.title,
-                    fontSize: 14,
+                    fontSize: 16,
+                    maxLines: 1,
                     color: AppColors.black,
                   ),
                   // Gap.h2,
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SvgPicture.asset(
-                        SvgAssets.blackLogo,
-                        height: 16,
-                        colorFilter: ColorFilter.mode(
-                          AppColors.primary,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      Gap.w2,
                       AppText.regular(
-                        "with",
-                        fontSize: 10,
+                        "Featuring",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
                         color: AppColors.blackTint20,
                       ),
                       Gap.w2,
@@ -60,7 +53,7 @@ class PosTimelinetHeader extends StatelessWidget {
                       Gap.w6,
                       AppText.regular(
                         post.createdAt ?? "",
-                        fontSize: 10,
+                        fontSize: 12,
                         color: _muted,
                       ),
                     ],
@@ -90,7 +83,7 @@ class PostDetailsHeader extends StatelessWidget {
         AppText.medium(
           post.title,
           color: AppColors.black,
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
         Gap.h4,
@@ -113,14 +106,14 @@ class PostDetailsHeader extends StatelessWidget {
                   ),
                   Gap.w2,
                   AppText.medium(
-                    "with",
-                    fontSize: 10,
+                    "Featuring",
+                    fontSize: 12,
                     color: AppColors.blackTint20,
                   ),
                   Gap.w2,
                   Flexible(
                     child: AppText.semiBold(
-                      post.subtitle ?? "General",
+                      post.subtitle ?? "General" * 3,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: AppColors.black,
@@ -130,10 +123,21 @@ class PostDetailsHeader extends StatelessWidget {
                   Gap.w4,
                   AppText.medium(
                     post.createdAt ?? "",
-                    fontSize: 10,
-                    color: _muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.blackTint20,
                     maxLines: 1,
                   ),
+                  if (post.viewCount > 0) ...[
+                    Gap.w4,
+                    AppText.medium(
+                      "${post.viewCount} views",
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.blackTint20,
+                      maxLines: 1,
+                    ),
+                  ],
                 ],
               ),
             ),

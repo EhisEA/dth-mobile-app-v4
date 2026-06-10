@@ -15,7 +15,7 @@ class StoriesBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 157,
+      height: 180,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: stories.length,
@@ -25,67 +25,65 @@ class StoriesBar extends StatelessWidget {
           return GestureDetector(
             onTap: () => onStoryTap?.call(s),
             behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              width: 112,
-              child: Container(
-                width: 112,
-                height: 167,
-                clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Stack(
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: s.imageUrl,
-                      height: 167,
-                      width: 112,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => ColoredBox(
-                        color: AppColors.baseShimmer(context),
-                        child: Icon(
-                          Icons.image_outlined,
-                          color: AppColors.tint15,
-                        ),
+            child: Container(
+              height: 180,
+              width: 118,
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Stack(
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: s.imageUrl,
+                    height: 180,
+                    width: 137,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => ColoredBox(
+                      color: AppColors.baseShimmer(context),
+                      child: Icon(
+                        Icons.image_outlined,
+                        color: AppColors.tint15,
                       ),
-                      placeholder: (_, ___) =>
-                          ColoredBox(color: AppColors.baseShimmer(context)),
                     ),
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xff121212).withValues(alpha: 0.0),
-                              const Color(0xff121212),
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
+                    placeholder: (_, ___) =>
+                        ColoredBox(color: AppColors.baseShimmer(context)),
+                  ),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xff121212).withValues(alpha: 0.0),
+                            const Color(0xff121212),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
                         ),
                       ),
                     ),
-                    Positioned(
-                      bottom: 12,
-                      right: 12,
-                      left: 12,
-                      child: AppText.semiBold(
-                        s.label,
-                        fontSize: 9,
-                        maxLines: 2,
-                        color: AppColors.white,
-                        height: 1.2,
-                        // centered: true,
-                      ),
+                  ),
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    left: 12,
+                    child: AppText.semiBold(
+                      s.label,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      maxLines: 2,
+                      color: AppColors.white,
+                      height: 1.2,
+                      // centered: true,
                     ),
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: SvgPicture.asset(SvgAssets.homeStar),
-                    ),
-                  ],
-                ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: SvgPicture.asset(SvgAssets.homeStar),
+                  ),
+                ],
               ),
             ),
           );

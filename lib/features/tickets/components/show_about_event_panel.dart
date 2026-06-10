@@ -31,14 +31,14 @@ class ShowAboutEventPanel extends StatelessWidget {
         children: [
           AppText.semiBold(
             "About Event ",
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: AppColors.black,
           ),
-          Gap.h12,
+          Gap.h6,
           AppText.regular(
             aboutBody,
-            fontSize: 12,
+            fontSize: 14,
             color: AppColors.paleLavender,
             height: 1.45,
             multiText: true,
@@ -75,11 +75,11 @@ class _DetailCell extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText.medium(label, fontSize: 12, color: AppColors.black),
+        AppText.medium(label, fontSize: 14, color: AppColors.black),
         Gap.h4,
         AppText.regular(
           value,
-          fontSize: 12,
+          fontSize: 14,
           color: AppColors.paleLavender,
           maxLines: 4,
           multiText: true,

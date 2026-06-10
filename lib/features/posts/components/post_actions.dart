@@ -37,8 +37,12 @@ class PostActions extends StatelessWidget {
           child: Row(
             children: [
               LikeChip(
+                inactiveColor: Color(0XFF454545),
                 liked: post.viewerReacted,
                 count: post.likeCount,
+                countColor: Color(0XFF454545),
+                iconSize: 17,
+                fontSize: 12,
                 onTap: onLike,
               ),
               if (showContainer) ...[
@@ -51,6 +55,7 @@ class PostActions extends StatelessWidget {
               _ActionChip(
                 icon: SvgAssets.messagesBorder,
                 count: post.commentCount,
+                tint: Color(0XFF454545),
                 onTap: onComment,
               ),
             ],
@@ -100,10 +105,10 @@ class _ActionChip extends StatelessWidget {
         children: [
           SvgPicture.asset(
             icon,
-            height: 14,
-            width: 14,
+            height: 16,
+            width: 16,
             colorFilter: ColorFilter.mode(
-              tint ?? AppColors.blackTint20,
+              tint ?? Color(0XFF454545),
               BlendMode.srcIn,
             ),
           ),
@@ -111,7 +116,7 @@ class _ActionChip extends StatelessWidget {
           AppText.medium(
             formatCount(count),
             fontSize: 12,
-            color: AppColors.tint25,
+            color: Color(0XFF454545),
           ),
         ],
       ),

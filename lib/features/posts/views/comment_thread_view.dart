@@ -93,7 +93,7 @@ class CommentThreadView extends ConsumerWidget {
                           padding: const EdgeInsets.only(bottom: 20),
                           child: CommentTile(
                             comment: r,
-                            
+
                             onLike: () => vm.toggleReplyLike(r),
                           ),
                         ),
@@ -142,23 +142,21 @@ class _ParentCommentBlock extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Column(
                     children: [
-                      Flexible(
-                        child: AppText.semiBold(
-                          comment.authorName.isEmpty
-                              ? "User"
-                              : comment.authorName,
-                          fontSize: 14,
-                          color: AppColors.mainBlack,
-                          maxLines: 1,
-                        ),
+                      AppText.semiBold(
+                        comment.authorName.isEmpty
+                            ? "User"
+                            : comment.authorName,
+                        fontSize: 16,
+                        color: AppColors.black,
+                        maxLines: 1,
                       ),
-                      Gap.w8,
+                      // Gap.h4,
                       AppText.regular(
                         comment.timeAgo,
-                        fontSize: 11,
-                        color: AppColors.blackTint20,
+                        fontSize: 12,
+                        color: Color(0XFF6A6A6A),
                       ),
                     ],
                   ),
@@ -178,15 +176,38 @@ class _ParentCommentBlock extends StatelessWidget {
         Gap.h12,
         AppText.regular(
           comment.body,
-          fontSize: 13,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
           height: 1.5,
           color: const Color(0xff202020),
         ),
         Gap.h12,
-        AppText.regular(
-          _postedLine(comment),
-          fontSize: 11,
-          color: AppColors.blackTint20,
+        Row(
+          children: [
+            AppText.regular(
+              _postedLine(comment),
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Color(0XFF8F8F8F),
+            ),
+            Gap.w4,
+            Container(
+              margin: const EdgeInsets.only(top: 2),
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Color(0XFFEBEBEB),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+            Gap.w4,
+            AppText.regular(
+              _formatCount(comment.viewCount),
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Color(0XFF8F8F8F),
+            ),
+          ],
         ),
         Gap.h12,
         _ParentActions(
@@ -224,48 +245,36 @@ class _ParentActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          // padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F7F7),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              LikeChip(
-                padding: EdgeInsets.fromLTRB(12, 10, 10, 10),
-
-                liked: comment.viewerReacted,
-                count: comment.likeCount,
-                onTap: onLike,
-              ),
-              Container(width: 1, height: 14, color: const Color(0xffEBEBEB)),
-              _ActionChip(
-                icon: SvgAssets.messagesBorder,
-                count: comment.replyCount,
-                padding: EdgeInsets.fromLTRB(10, 6, 12, 6),
-                // onTap: onComment,
-              ),
-            ],
-          ),
-        ),
-        Gap.w10,
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F7F7),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: _ActionChip(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            icon: SvgAssets.share,
-            count: comment.shareCount,
-            onTap: () => LinkShareHelper.shareComment(
-              commentUid: comment.uid,
-              title: comment.authorName,
-              description: comment.body,
-              imageUrl: comment.avatarUrl ?? "",
-              onShared: onShared,
+        Row(
+          children: [
+            LikeChip(
+              padding: EdgeInsets.fromLTRB(12, 10, 10, 10),
+              liked: comment.viewerReacted,
+              count: comment.likeCount,
+              inactiveColor: Color(0XFF454545),
+              countColor: Color(0XFF454545),
+              iconSize: 17,
+              fontSize: 12,
+              onTap: onLike,
             ),
+            _ActionChip(
+              icon: SvgAssets.messagesBorder,
+              count: comment.replyCount,
+              padding: EdgeInsets.fromLTRB(10, 6, 12, 6),
+              // onTap: onComment,
+            ),
+          ],
+        ),
+        _ActionChip(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+          icon: SvgAssets.share,
+          count: comment.shareCount,
+          onTap: () => LinkShareHelper.shareComment(
+            commentUid: comment.uid,
+            title: comment.authorName,
+            description: comment.body,
+            imageUrl: comment.avatarUrl ?? "",
+            onShared: onShared,
           ),
         ),
       ],
@@ -298,18 +307,15 @@ class _ActionChip extends StatelessWidget {
           children: [
             SvgPicture.asset(
               icon,
-              height: 14,
-              width: 14,
-              colorFilter: ColorFilter.mode(
-                AppColors.blackTint20,
-                BlendMode.srcIn,
-              ),
+              height: 16,
+              width: 16,
+              colorFilter: ColorFilter.mode(Color(0XFF454545), BlendMode.srcIn),
             ),
             Gap.w4,
             AppText.medium(
               formatCount(count),
               fontSize: 12,
-              color: AppColors.tint25,
+              color: Color(0XFF454545),
             ),
           ],
         ),

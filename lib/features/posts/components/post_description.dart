@@ -13,10 +13,14 @@ class PostDescription extends StatefulWidget {
     this.bodyColor = const Color(0xff202020),
     this.linkColor = const Color(0xff6A6A6A),
     this.lineHeight = 1.4,
+    this.shouldReadMoreAction = true,
   });
 
   final String text;
   final VoidCallback? onReadMore;
+
+  /// Whether to make the read more action happen on tap or not
+  final bool shouldReadMoreAction;
   final Color bodyColor;
   final Color linkColor;
   final double lineHeight;
@@ -58,13 +62,15 @@ class _PostDescriptionState extends State<PostDescription> {
   }
 
   TextStyle get _bodyStyle => AppTextStyle.regular.copyWith(
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
     height: widget.lineHeight,
     color: widget.bodyColor,
   );
 
   TextStyle get _linkStyle => AppTextStyle.regular.copyWith(
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
     height: widget.lineHeight,
     color: widget.linkColor,
   );
@@ -139,7 +145,7 @@ class _PostDescriptionState extends State<PostDescription> {
               TextSpan(
                 text: linkText,
                 style: _linkStyle,
-                recognizer: _toggleTap,
+                recognizer: widget.shouldReadMoreAction ? _toggleTap : null,
               ),
             ],
           ),

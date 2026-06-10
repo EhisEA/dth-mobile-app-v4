@@ -38,7 +38,8 @@ class ShowView extends ConsumerStatefulWidget {
 }
 
 class _ShowViewState extends ConsumerState<ShowView> {
-  /// How close the first purchased-ticket block must be to the viewport edge to count as reached.
+  /// How much of the purchased-tickets section must be on screen before it
+  /// counts as "seen" and the scroll-hint pill is hidden.
   static const double _firstTicketRevealTolerancePx = 40;
 
   /// Scrolls event details + purchased tickets; buy CTA is pinned below this.
@@ -83,17 +84,22 @@ class _ShowViewState extends ConsumerState<ShowView> {
     final viewport = RenderAbstractViewport.maybeOf(box);
     if (viewport == null) return false;
 
-    // How far we must scroll before the top of purchased tickets enters the viewport.
+    final position = _scrollController.position;
 
     // getOffsetToReveal: scroll offset needed to bring [box] into view.
     // alignment 0 = align the top of the section with the top of the viewport.
-    final reveal = viewport.getOffsetToReveal(box, 0);
-    final targetScroll = reveal.offset;
+    final revealOffset = viewport.getOffsetToReveal(box, 0).offset;
 
-    // Current scroll vs target: at or past target means purchased tickets are on screen.
-    // Subtract tolerance so we hide the pill slightly before a perfect pixel match.
-    return _scrollController.position.pixels >=
-        targetScroll - _firstTicketRevealTolerancePx;
+    // The section's top edge enters the viewport from the bottom once we've
+    // scrolled to (revealOffset - viewportDimension). We don't want to wait for
+    // it to reach the *top* of the viewport — as soon as the user can see it,
+    // the pill is redundant. Add the tolerance so a meaningful slice of the
+    // section is on screen before we hide the pill.
+    final seenThreshold =
+        revealOffset -
+        position.viewportDimension +
+        _firstTicketRevealTolerancePx;
+    return position.pixels >= seenThreshold;
   }
 
   // Called every time the user scrolls (or when scroll position changes, e.g. after tapping the pill).
@@ -285,7 +291,7 @@ class _ShowViewState extends ConsumerState<ShowView> {
                                     Gap.h16,
                                     AppText.medium(
                                       event.title,
-                                      fontSize: 16,
+                                      fontSize: 18,
                                       color: AppColors.black,
                                       maxLines: 2,
                                       letterSpacing: -0.4,

@@ -33,7 +33,10 @@ class PostCard extends StatelessWidget {
           PosTimelinetHeader(post: post),
           if (post.description.isNotEmpty) ...[
             Gap.h4,
-            PostDescription(text: post.description),
+            PostDescription(
+              text: post.description,
+              shouldReadMoreAction: false,
+            ),
           ],
           Gap.h12,
           PostMedia(post: post),

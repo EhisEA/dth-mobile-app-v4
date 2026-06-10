@@ -188,7 +188,7 @@ class AppButton extends StatelessWidget {
   Widget _buildLabel() {
     final title = AppText.regular(
       text ?? "",
-      fontSize: fontSize ?? (isShort ? 16 : 12),
+      fontSize: fontSize ?? (isShort ? 16 : 14),
       fontWeight: fontWeight ?? FontWeight.w400,
       color: enabled ? textColor : disableTextColor ?? AppColors.tint15,
       centered: true,
