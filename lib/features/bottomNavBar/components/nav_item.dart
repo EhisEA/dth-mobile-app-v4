@@ -10,6 +10,7 @@ class NavItem extends StatelessWidget {
     required this.isActive,
     this.onTap,
     this.semanticLabel,
+    this.iconBuilder,
   });
 
   final String icon;
@@ -19,6 +20,9 @@ class NavItem extends StatelessWidget {
 
   /// Spoken by screen readers; should match the tab title from the server.
   final String? semanticLabel;
+
+  /// When set, renders instead of [icon] / [activeIcon] (e.g. stacked PRO badge).
+  final Widget Function(bool isActive)? iconBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +54,9 @@ class NavItem extends StatelessWidget {
               child: Center(
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
-                  child: SvgPicture.asset(
-                    iconToUse,
-                    width: isActive ? 24 : 24,
-                    height: isActive ? 24 : 24,
-                  ),
+                  child: iconBuilder != null
+                      ? iconBuilder!(isActive)
+                      : SvgPicture.asset(iconToUse, width: 24, height: 24),
                 ),
               ),
             ),

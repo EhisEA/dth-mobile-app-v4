@@ -10,6 +10,7 @@ class PostDescription extends StatefulWidget {
     super.key,
     required this.text,
     this.onReadMore,
+    this.onExpansionChanged,
     this.bodyColor = const Color(0xff202020),
     this.linkColor = const Color(0xff6A6A6A),
     this.lineHeight = 1.4,
@@ -18,6 +19,7 @@ class PostDescription extends StatefulWidget {
 
   final String text;
   final VoidCallback? onReadMore;
+  final ValueChanged<bool>? onExpansionChanged;
 
   /// Whether to make the read more action happen on tap or not
   final bool shouldReadMoreAction;
@@ -42,8 +44,9 @@ class _PostDescriptionState extends State<PostDescription> {
   @override
   void didUpdateWidget(covariant PostDescription oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text) {
+    if (oldWidget.text != widget.text && _expanded) {
       _expanded = false;
+      widget.onExpansionChanged?.call(false);
     }
   }
 
@@ -58,7 +61,9 @@ class _PostDescriptionState extends State<PostDescription> {
       widget.onReadMore!();
       return;
     }
-    setState(() => _expanded = !_expanded);
+    final next = !_expanded;
+    setState(() => _expanded = next);
+    widget.onExpansionChanged?.call(next);
   }
 
   TextStyle get _bodyStyle => AppTextStyle.regular.copyWith(

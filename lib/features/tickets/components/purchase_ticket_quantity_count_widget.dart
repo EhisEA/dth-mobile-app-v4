@@ -2,6 +2,7 @@ import "package:dth_v4/core/core.dart";
 import "package:dth_v4/widgets/text/textstyles.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:flutter_utils/flutter_utils.dart";
 
 class PurchaseTicketCountWidget extends StatefulWidget {
   const PurchaseTicketCountWidget({
@@ -89,31 +90,41 @@ class _PurchaseTicketCountWidgetState extends State<PurchaseTicketCountWidget> {
           backgroundColor: canDecrement ? AppColors.black : AppColors.tint5,
           iconColor: AppColors.white,
         ),
-        SizedBox(
-          width: 36,
-          child: TextField(
-            controller: _controller,
-            focusNode: _focusNode,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            style: AppTextStyle.semiBold.copyWith(
-              fontSize: 14,
-              color: AppColors.black,
+        Gap.w6,
+        Container(
+          width: 34,
+          height: 30,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(color: AppColors.greyTint25),
+          ),
+          child: Center(
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              style: AppTextStyle.semiBold.copyWith(
+                fontSize: 14,
+                height: 1,
+                color: AppColors.black,
+              ),
+              cursorColor: AppColors.primary,
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.only(left: 2),
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onSubmitted: (_) => _focusNode.unfocus(),
+              onTapOutside: (_) => _focusNode.unfocus(),
             ),
-            cursorColor: AppColors.primary,
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onSubmitted: (_) => _focusNode.unfocus(),
-            onTapOutside: (_) => _focusNode.unfocus(),
           ),
         ),
+        Gap.w6,
         PurchaseTicketCountButton(
           icon: Icons.add,
           enabled: widget.canIncrement,

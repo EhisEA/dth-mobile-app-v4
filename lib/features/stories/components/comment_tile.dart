@@ -58,10 +58,10 @@ class CommentTile extends StatelessWidget {
                     fontSize: 14,
                     color: Color(0xff202020),
                   ),
-                  Gap.w4,
+                  Gap.w6,
                   AppText.regular(
                     comment.timeAgo,
-                    fontSize: 10,
+                    fontSize: 11,
                     color: AppColors.tint15,
                   ),
                 ],
@@ -69,7 +69,7 @@ class CommentTile extends StatelessWidget {
               // Gap.h8,
               AppText.regular(
                 comment.body,
-                fontSize: 12,
+                fontSize: 13,
                 color: Color(0xff202020),
                 height: 1.35,
               ),

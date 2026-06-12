@@ -106,7 +106,7 @@ class SvgAssets {
   static const String play = "$svgPath/home/play.svg";
   static const String message = "$svgPath/home/message.svg";
   static const String send2 = "$svgPath/home/send-2.svg";
-  static const String homeStar = "$svgPath/home/home_star.svg";
+  static const String homePlay = "$svgPath/home/home_play.svg";
 
   /////////////////////NOTIFICATIONS//////////////////////
   static const String notificationsMarkAllRead =
@@ -152,7 +152,8 @@ class SvgAssets {
       "$svgPath/tickets/ticket_empty_state.svg";
   static const String dthText = "$svgPath/tickets/dth_text.svg";
   static const String ticketTitle = "$svgPath/tickets/ticket_title.svg";
-  static const String streamlineTickets = "$svgPath/tickets/streamline_tickets.svg";
+  static const String streamlineTickets =
+      "$svgPath/tickets/streamline_tickets.svg";
 
   /////////////////////SUBSCRIPTION//////////////////////
   ///

@@ -216,7 +216,6 @@ class _PersonalInfomationViewState
                   fontSize: 20,
                   color: AppColors.mainBlack,
                 ),
-                Gap.h2,
                 AppText.regular(
                   u.email,
                   centered: true,

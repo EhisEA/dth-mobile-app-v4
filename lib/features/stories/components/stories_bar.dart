@@ -31,7 +31,7 @@ class StoriesBar extends StatelessWidget {
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
                 color: Colors.red,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Stack(
                 children: [
@@ -81,7 +81,11 @@ class StoriesBar extends StatelessWidget {
                   Positioned(
                     top: 8,
                     left: 8,
-                    child: SvgPicture.asset(SvgAssets.homeStar),
+                    child: SvgPicture.asset(
+                      SvgAssets.homePlay,
+                      height: 18,
+                      width: 18,
+                    ),
                   ),
                 ],
               ),

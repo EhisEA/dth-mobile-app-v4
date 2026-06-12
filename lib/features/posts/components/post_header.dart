@@ -10,8 +10,6 @@ class PosTimelinetHeader extends StatelessWidget {
 
   final Post post;
 
-  static const Color _muted = Color(0xff8F8F8F);
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -31,7 +29,6 @@ class PosTimelinetHeader extends StatelessWidget {
                     maxLines: 1,
                     color: AppColors.black,
                   ),
-                  // Gap.h2,
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -54,7 +51,7 @@ class PosTimelinetHeader extends StatelessWidget {
                       AppText.regular(
                         post.createdAt ?? "",
                         fontSize: 12,
-                        color: _muted,
+                        color: AppColors.blackTint20,
                       ),
                     ],
                   ),

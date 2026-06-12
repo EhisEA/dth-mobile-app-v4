@@ -208,7 +208,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
                                         children: [
-                                          Gap.h16,
                                           StoriesBar(
                                             stories: vm.stories,
                                             onStoryTap: (story) {
@@ -323,7 +322,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                       final isLast = index == posts.length - 1;
                                       return Padding(
                                         padding: EdgeInsets.only(
-                                          top: index == 0 ? 12 : 0,
+                                          top: index == 0 ? 2 : 0,
                                           bottom: isLast ? 0 : 12,
                                         ),
                                         child: PostCard(

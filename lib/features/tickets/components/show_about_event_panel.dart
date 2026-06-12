@@ -35,7 +35,7 @@ class ShowAboutEventPanel extends StatelessWidget {
             fontWeight: FontWeight.w500,
             color: AppColors.black,
           ),
-          Gap.h6,
+
           AppText.regular(
             aboutBody,
             fontSize: 14,
@@ -76,7 +76,6 @@ class _DetailCell extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppText.medium(label, fontSize: 14, color: AppColors.black),
-        Gap.h4,
         AppText.regular(
           value,
           fontSize: 14,

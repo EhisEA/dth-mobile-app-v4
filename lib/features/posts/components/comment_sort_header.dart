@@ -1,4 +1,3 @@
-import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";

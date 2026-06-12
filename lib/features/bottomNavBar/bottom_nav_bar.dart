@@ -9,6 +9,7 @@ import "package:dth_v4/features/bottomNavBar/viewmodel/bottom_nav_bar_view_model
 import "package:dth_v4/features/home/views/home_view.dart";
 import "package:dth_v4/features/profile/profile_view/views/profile_view.dart";
 import "package:dth_v4/features/search/views/search_view.dart";
+import "package:dth_v4/features/subscription/components/pro_badge_icon.dart";
 import "package:dth_v4/features/subscription/views/subscription_view.dart";
 import "package:dth_v4/features/tickets/tickets.dart";
 import "package:dth_v4/widgets/widgets.dart";
@@ -30,11 +31,13 @@ class _NavBinding {
     required this.assetInactive,
     required this.assetActive,
     required this.screen,
+    this.iconBuilder,
   });
   final String label;
   final String assetInactive;
   final String assetActive;
   final Widget screen;
+  final Widget Function(bool isActive)? iconBuilder;
 }
 
 /// Maps an `AppModuleNavItem.name` (server-controlled identifier) to its
@@ -69,6 +72,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
         assetInactive: SvgAssets.verify,
         assetActive: SvgAssets.verifyActive,
         screen: const SubscriptionView(),
+        iconBuilder: (isActive) => ProBadgeIcon(isActive: isActive),
       );
     case 'profile':
       return _NavBinding(
@@ -108,6 +112,7 @@ final List<_NavBinding> _kFallbackBindings = [
     assetInactive: SvgAssets.verify,
     assetActive: SvgAssets.verifyActive,
     screen: const SubscriptionView(),
+    iconBuilder: (isActive) => ProBadgeIcon(isActive: isActive),
   ),
   _NavBinding(
     label: 'Profile',
@@ -235,8 +240,11 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
           final innerH = (outerH - bottomPad).clamp(1.0, 400.0);
           return Padding(
             padding: EdgeInsets.only(bottom: bottomPad),
-            child: SizedBox(
+            child: Container(
               height: innerH,
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.greyTint25)),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -246,6 +254,7 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
                       child: NavItem(
                         icon: bindings[i].assetInactive,
                         activeIcon: bindings[i].assetActive,
+                        iconBuilder: bindings[i].iconBuilder,
                         isActive: _tabController.index == i,
                         semanticLabel: bindings[i].label,
                         onTap: () {

@@ -288,7 +288,7 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                   color: Colors.white,
                   clipBehavior: Clip.antiAlias,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+                    top: Radius.circular(24),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,8 +317,7 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                           onNotification: (n) {
                             if (n is ScrollEndNotification) {
                               _settle(
-                                primaryVelocity:
-                                    n.dragDetails?.primaryVelocity,
+                                primaryVelocity: n.dragDetails?.primaryVelocity,
                               );
                             }
                             return false;
@@ -471,10 +470,7 @@ class _SheetProgressBar extends StatelessWidget {
     if (c == null) {
       return _bar(0);
     }
-    return AnimatedBuilder(
-      animation: c,
-      builder: (_, _) => _bar(c.progress),
-    );
+    return AnimatedBuilder(animation: c, builder: (_, _) => _bar(c.progress));
   }
 
   Widget _bar(double progress) {

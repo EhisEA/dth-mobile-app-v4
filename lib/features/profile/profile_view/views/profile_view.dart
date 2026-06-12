@@ -82,10 +82,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                                     .requestSupportWebSession(),
                               );
                             },
-                            child: SvgPicture.asset(
-                              SvgAssets.support,
-                              height: 36,
-                              width: 36,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4.0),
+                              child: SvgPicture.asset(
+                                SvgAssets.support,
+                                height: 38,
+                                width: 38,
+                              ),
                             ),
                           ),
                         ),
@@ -101,15 +104,15 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         AppText.semiBold(
                           user?.fullName ?? "",
                           centered: true,
-                          fontSize: 18,
+                          fontSize: 20,
                           color: AppColors.mainBlack,
                         ),
-                        Gap.h2,
+
                         AppText.regular(
                           user?.email ?? "",
                           centered: true,
                           fontSize: 12,
-                          color: AppColors.tint15,
+                          color: AppColors.tint25.withValues(alpha: 0.8),
                         ),
                         ContestantPill(user: user),
                         if (user?.participationRole == ParticipationRole.user &&

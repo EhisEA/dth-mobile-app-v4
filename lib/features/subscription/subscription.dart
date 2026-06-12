@@ -1,4 +1,5 @@
 export "views/subscription_view.dart";
+export "components/pro_badge_icon.dart";
 export "components/subscription_widget.dart";
 export "views/confirmation_view.dart";
 export "components/subscription_plan_card.dart";

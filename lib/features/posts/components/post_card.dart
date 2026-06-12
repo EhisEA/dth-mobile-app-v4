@@ -47,7 +47,7 @@ class PostCard extends StatelessWidget {
             onComment: onComment,
             onShare: onShare,
           ),
-          Gap.h12,
+          Gap.h8,
         ],
       ),
     );

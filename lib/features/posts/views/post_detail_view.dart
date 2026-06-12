@@ -450,7 +450,7 @@ class _TransparentBackAppBar extends StatelessWidget
   }
 }
 
-class _PostBlock extends StatelessWidget {
+class _PostBlock extends StatefulWidget {
   const _PostBlock({
     required this.post,
     required this.onLike,
@@ -470,47 +470,70 @@ class _PostBlock extends StatelessWidget {
   final ValueListenable<double>? metaProgress;
 
   @override
+  State<_PostBlock> createState() => _PostBlockState();
+}
+
+class _PostBlockState extends State<_PostBlock> {
+  bool _descriptionExpanded = false;
+
+  Widget _withMetaFade(Widget child) {
+    final progress = widget.metaProgress;
+    if (progress == null) return child;
+
+    return ValueListenableBuilder<double>(
+      valueListenable: progress,
+      builder: (context, t, child) {
+        return Opacity(
+          opacity: (1 - t).clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, -t * _PostDetailViewState._metaSlidePx),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final headerAndDescription = Column(
+    final description = widget.post.description.isNotEmpty
+        ? Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: PostDescription(
+              text: widget.post.description,
+              lineHeight: 1.45,
+              onExpansionChanged: (expanded) {
+                setState(() => _descriptionExpanded = expanded);
+              },
+            ),
+          )
+        : null;
+
+    // Pinned-video scroll fade targets the header (and collapsed description).
+    // Expanded copy stays fully opaque so long "Read more" text does not vanish
+    // into the background while scrolling to comments.
+    final meta = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PostDetailsHeader(post: post),
-        if (post.description.isNotEmpty) ...[
-          Gap.h12,
-          PostDescription(text: post.description, lineHeight: 1.45),
-        ],
+        _withMetaFade(PostDetailsHeader(post: widget.post)),
+        if (description != null)
+          _descriptionExpanded ? description : _withMetaFade(description),
       ],
     );
-
-    final progress = metaProgress;
-    final meta = progress == null
-        ? headerAndDescription
-        : ValueListenableBuilder<double>(
-            valueListenable: progress,
-            builder: (context, t, child) {
-              return Opacity(
-                opacity: (1 - t).clamp(0.0, 1.0),
-                child: Transform.translate(
-                  offset: Offset(0, -t * _PostDetailViewState._metaSlidePx),
-                  child: child,
-                ),
-              );
-            },
-            child: headerAndDescription,
-          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (renderMedia) ...[PostMedia(post: post), Gap.h16],
+        if (widget.renderMedia) ...[PostMedia(post: widget.post), Gap.h16],
         meta,
         Gap.h18,
         PostActions(
-          post: post,
+          post: widget.post,
           showContainer: true,
-          onLike: onLike,
+          onLike: widget.onLike,
           onComment: () {},
-          onShare: onShare,
+          onShare: widget.onShare,
         ),
       ],
     );

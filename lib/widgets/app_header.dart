@@ -19,7 +19,7 @@ class AppHeader extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Image.asset(ImageAssets.logo2, height: 32, width: 110),
+        Image.asset(ImageAssets.logo2, height: 36, width: 110),
         Row(
           children: [
             // GestureDetector(
@@ -47,6 +47,8 @@ class AppHeader extends ConsumerWidget {
                   ref.watch(activeLivestreamProvider).value != null
                       ? SvgAssets.livestreamLives
                       : SvgAssets.livestream,
+                  height: 20,
+                  width: 20,
                 ),
               ),
               Gap.w18,
@@ -56,7 +58,14 @@ class AppHeader extends ConsumerWidget {
                 navigationService.navigateTo(NotificationsView.path);
                 HapticFeedback.lightImpact();
               },
-              child: SvgPicture.asset(SvgAssets.notification),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4.0),
+                child: SvgPicture.asset(
+                  SvgAssets.notification,
+                  height: 22,
+                  width: 22,
+                ),
+              ),
             ),
           ],
         ),
