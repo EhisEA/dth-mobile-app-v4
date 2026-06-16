@@ -67,6 +67,15 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
   static const double _videoLiftPx = 6;
   static const double _metaSlidePx = 16;
 
+  /// Single source of truth for the hero image's shape (width : height), shared
+  /// by the [SliverAppBar] expanded height, the [PostHeroImage] aspect ratio
+  /// and the collapse-fraction math so they can never drift apart. Height is
+  /// derived from the live width, so it scales to any screen size.
+  static const double _heroAspectRatio = 4 / 5;
+
+  double _heroImageHeight(BuildContext context) =>
+      MediaQuery.sizeOf(context).width / _heroAspectRatio;
+
   @override
   void initState() {
     super.initState();
@@ -207,15 +216,20 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     final isYoutubeVideo =
         post != null && post.isVideo && (post.video?.isYoutube ?? false);
     final isPinnedVideo = _ytController != null;
-    // All three cases want the transparent back-only app bar overlaying the
-    // media at the top of the screen.
-    final useTransparentBar = isImageHero || isYoutubeVideo;
+    // The pinned-video layout overlays a transparent back-only bar on the video
+    // at the top. The image layout instead uses an in-scroll collapsing
+    // [SliverAppBar] (see [_buildImageSliverAppBar]) so the bar carries the
+    // back button below the status bar and the comments header pins under it,
+    // rather than scrolling behind the status bar.
+    final useTransparentBar = isYoutubeVideo;
 
     Widget buildScaffold(Widget? pinnedMedia) => Scaffold(
       extendBodyBehindAppBar: useTransparentBar,
-      appBar: useTransparentBar
-          ? const _TransparentBackAppBar()
-          : DthAppBar(backgroundColor: Colors.white),
+      appBar: isImageHero
+          ? null
+          : (useTransparentBar
+                ? const _TransparentBackAppBar()
+                : DthAppBar(backgroundColor: Colors.white)),
       backgroundColor: const Color(0xffFCFCFC),
       body: vm.baseState.when(
         busy: () => const PostDetailSkeleton(),
@@ -246,13 +260,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       physics: const AlwaysScrollableScrollPhysics(),
                       slivers: [
-                        if (isImageHero)
-                          SliverToBoxAdapter(
-                            child: PostHeroImage(
-                              urls: post.imageUrls,
-                              heroPrefix: post.uid,
-                            ),
-                          ),
+                        if (isImageHero) _buildImageSliverAppBar(context, post),
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: EdgeInsets.fromLTRB(
@@ -431,7 +439,96 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     if (isYoutubeVideo) {
       return buildScaffold(_pinnedVideoPlaceholder(context, post));
     }
-    return buildScaffold(null);
+    final scaffold = buildScaffold(null);
+    if (!isImageHero) return scaffold;
+    // The image layout has no opaque app bar to declare the status-bar style,
+    // so drive it from the scroll: light icons over the (gradient-topped)
+    // image, dark icons once the white collapsed bar takes over. Only the thin
+    // AnnotatedRegion wrapper rebuilds on scroll — the Scaffold is cached.
+    return AnimatedBuilder(
+      animation: _scrollController,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: _imageCollapseFraction(context) > 0.5
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light,
+        child: child!,
+      ),
+      child: scaffold,
+    );
+  }
+
+  /// Scroll progress (0 = image fully expanded, 1 = bar fully collapsed) for
+  /// the image-post [SliverAppBar]. Drives the back-button morph, the author
+  /// title fade and the status-bar style.
+  double _imageCollapseFraction(BuildContext context) {
+    if (!_scrollController.hasClients) return 0;
+    final expandedHeight = _heroImageHeight(context);
+    final collapsedHeight = kToolbarHeight + MediaQuery.paddingOf(context).top;
+    final distance = (expandedHeight - collapsedHeight).clamp(
+      1.0,
+      double.infinity,
+    );
+    return (_scrollController.offset / distance).clamp(0.0, 1.0);
+  }
+
+  /// Collapsing app bar for image posts: the hero image is the expanded
+  /// background; as it scrolls away it collapses into a solid white bar (below
+  /// the status bar) carrying the back button and the post author.
+  Widget _buildImageSliverAppBar(BuildContext context, Post post) {
+    // SliverAppBar adds the status-bar inset on top of `expandedHeight`
+    // (maxExtent = topPadding + expandedHeight). Subtract it so the expanded
+    // header is exactly the image height, not image height + status bar.
+    final expandedHeight =
+        _heroImageHeight(context) - MediaQuery.paddingOf(context).top;
+    return SliverAppBar(
+      pinned: true,
+      expandedHeight: expandedHeight,
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      shadowColor: Colors.black26,
+      elevation: 0,
+      // Subtle shadow only once content scrolls under the collapsed bar, so it
+      // separates from the comments below.
+      scrolledUnderElevation: 3,
+      automaticallyImplyLeading: false,
+      titleSpacing: 0,
+      leadingWidth: 60,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 4),
+        child: Center(
+          child: _ImageAppBarBackButton(
+            scroll: _scrollController,
+            fraction: () => _imageCollapseFraction(context),
+            onTap: () => Navigator.pop(context),
+          ),
+        ),
+      ),
+      title: AnimatedBuilder(
+        animation: _scrollController,
+        builder: (context, _) {
+          // Fade in only over the back half of the collapse so the author
+          // doesn't appear while the image is still prominent.
+          final t = _imageCollapseFraction(context);
+          return Opacity(
+            opacity: ((t - 0.5) * 2).clamp(0.0, 1.0),
+            child: AppText.semiBold(
+              post.authorName,
+              fontSize: 16,
+              color: AppColors.mainBlack,
+              maxLines: 1,
+            ),
+          );
+        },
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.parallax,
+        background: PostHeroImage(
+          urls: post.imageUrls,
+          heroPrefix: post.uid,
+          aspectRatio: _heroAspectRatio,
+        ),
+      ),
+    );
   }
 
   Widget _pinnedVideoPlaceholder(BuildContext context, Post post) {
@@ -468,6 +565,55 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Back button for the image-post [SliverAppBar] that morphs with the collapse
+/// [fraction]: a dark translucent disc with a white arrow over the image (so
+/// it reads against bright photos), fading to a bare dark arrow once the solid
+/// white bar has taken over. Listens to [scroll] so it repaints as you scroll.
+class _ImageAppBarBackButton extends StatelessWidget {
+  const _ImageAppBarBackButton({
+    required this.scroll,
+    required this.fraction,
+    required this.onTap,
+  });
+
+  final Listenable scroll;
+  final double Function() fraction;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: scroll,
+      builder: (context, _) {
+        final t = fraction();
+        final discAlpha = (0.5 * (1 - t)).clamp(0.0, 0.5);
+        final iconColor = Color.lerp(Colors.white, AppColors.mainBlack, t)!;
+        return GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: ClipOval(
+              child: Material(
+                color: Colors.black.withValues(alpha: discAlpha),
+                shape: const CircleBorder(),
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 18,
+                    color: iconColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
