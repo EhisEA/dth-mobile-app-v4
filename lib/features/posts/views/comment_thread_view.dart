@@ -143,6 +143,7 @@ class _ParentCommentBlock extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppText.semiBold(
                         comment.authorName.isEmpty

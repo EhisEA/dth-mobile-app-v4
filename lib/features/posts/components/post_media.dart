@@ -63,19 +63,12 @@ class _VideoBlock extends StatelessWidget {
         color: Colors.black,
         child: InkWell(
           onTap: onPlay,
-          child: SizedBox(
-            width: double.infinity,
-            height: height,
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                thumbnailUrl.trim().isEmpty
-                    ? const ColoredBox(color: Colors.black)
-                    : CachedNetworkImage(
-                        imageUrl: thumbnailUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const ShimmerBox(),
-                      ),
+                Image.network(thumbnailUrl, fit: BoxFit.cover),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -157,43 +150,32 @@ class _ImageGalleryBlock extends StatelessWidget {
 
     final extra = n - 3;
     final r = Radius.circular(radius);
-    return SizedBox(
-      height: height,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 3,
-            child: ClipRRect(
-              borderRadius: BorderRadius.all(r),
-              child: _cell(urls[0], context),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            flex: 1,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.all(r),
-                    child: _cell(urls[1], context),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.all(r),
+    return AspectRatio(
+      aspectRatio: 16 / 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(r),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 3, child: _cell(urls[0], context)),
+            const SizedBox(width: 2),
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _cell(urls[1], context)),
+                  const SizedBox(height: 2),
+                  Expanded(
                     child: extra > 0
                         ? _cellWithOverlay(urls[2], context, '$extra+')
                         : _cell(urls[2], context),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -201,11 +183,7 @@ class _ImageGalleryBlock extends StatelessWidget {
   Widget _one(String url, BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: SizedBox(
-        width: double.infinity,
-        height: height,
-        child: _cell(url, context),
-      ),
+      child: _cell(url, context),
     );
   }
 

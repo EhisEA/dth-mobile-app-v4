@@ -18,6 +18,7 @@ class FullReelBody extends StatefulWidget {
     required this.onBack,
     required this.onChatTap,
     required this.description,
+    required this.title,
     required this.timeAgo,
     this.progress = 0,
     this.isPlaying = false,
@@ -38,6 +39,7 @@ class FullReelBody extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onChatTap;
   final String description;
+  final String title;
   final String timeAgo;
   final bool excludeBackdrop;
 
@@ -148,57 +150,60 @@ class _FullReelBodyState extends State<FullReelBody> {
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SvgPicture.asset(SvgAssets.primaryLogo),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: SvgPicture.asset(SvgAssets.primaryLogo),
+                    ),
                     Gap.w10,
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FittedBox(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                SvgPicture.asset(
-                                  SvgAssets.blackLogo,
-                                  height: 20,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColors.white,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                                Gap.w4,
-                                AppText.regular(
-                                  "with",
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.tint5,
-                                ),
-                                Gap.w4,
-                                AppText.regular(
-                                  "Contestant Publicity",
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xffFCFCFC),
-                                ),
-                                if (widget.timeAgo.isNotEmpty) ...[
-                                  Gap.w8,
-                                  AppText.regular(
-                                    widget.timeAgo,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.tint5,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Gap.h4,
+                          // FittedBox(
+                          //   child: Row(
+                          //     crossAxisAlignment: CrossAxisAlignment.start,
+                          //     mainAxisAlignment: MainAxisAlignment.start,
+                          //     children: [
+                          //       SvgPicture.asset(
+                          //         SvgAssets.blackLogo,
+                          //         height: 20,
+                          //         colorFilter: ColorFilter.mode(
+                          //           AppColors.white,
+                          //           BlendMode.srcIn,
+                          //         ),
+                          //       ),
+                          //       Gap.w4,
+                          //       AppText.regular(
+                          //         "with",
+                          //         fontSize: 12,
+                          //         fontWeight: FontWeight.w400,
+                          //         color: AppColors.tint5,
+                          //       ),
+                          //       Gap.w4,
+                          //       AppText.regular(
+                          //         widget.title,
+                          //         fontSize: 12,
+                          //         fontWeight: FontWeight.w500,
+                          //         color: Color(0xffFCFCFC),
+                          //       ),
+                          //       if (widget.timeAgo.isNotEmpty) ...[
+                          //         Gap.w8,
+                          //         AppText.regular(
+                          //           widget.timeAgo,
+                          //           fontSize: 12,
+                          //           fontWeight: FontWeight.w400,
+                          //           color: AppColors.tint5,
+                          //         ),
+                          //       ],
+                          //     ],
+                          //   ),
+                          // ),
+                          // Gap.h4,
                           if (body.isNotEmpty)
                             Text.rich(
                               TextSpan(

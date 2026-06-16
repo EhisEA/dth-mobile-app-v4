@@ -240,7 +240,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
                                         children: [
-                                          Gap.h10,
+                                          // Gap.h10,
                                           GestureDetector(
                                             behavior: HitTestBehavior.opaque,
                                             onTap: () {
@@ -262,7 +262,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                               ),
                                             ),
                                           ),
-                                          Gap.h10,
+                                          Gap.h16,
                                         ],
                                       )
                                     : const SizedBox.shrink(),

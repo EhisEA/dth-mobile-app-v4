@@ -241,6 +241,7 @@ class _ReelPageState extends ConsumerState<ReelPage> {
                         onBack: _onBack,
                         onChatTap: _toggleChat,
                         description: reel.description,
+                        title: reel.title,
                         timeAgo: formatTimeAgo(reel.createdAt),
                         progress: _playerController.progress,
                         isPlaying: _playerController.isPlaying,

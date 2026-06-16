@@ -1,3 +1,4 @@
+import "package:dth_v4/core/utils/colors.dart";
 import "package:dth_v4/features/posts/components/post_actions.dart";
 import "package:dth_v4/features/posts/components/post_description.dart";
 import "package:dth_v4/features/posts/components/post_header.dart";
@@ -32,9 +33,9 @@ class PostCard extends StatelessWidget {
         children: [
           PosTimelinetHeader(post: post),
           if (post.description.isNotEmpty) ...[
-            Gap.h4,
+            Gap.h12,
             PostDescription(
-              text: post.description,
+              text: post.description.replaceAll("\n", " "),
               shouldReadMoreAction: false,
             ),
           ],
@@ -48,6 +49,7 @@ class PostCard extends StatelessWidget {
             onShare: onShare,
           ),
           Gap.h8,
+          Divider(thickness: 1.4, color: AppColors.greyTint30),
         ],
       ),
     );

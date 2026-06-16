@@ -16,7 +16,7 @@ class PosTimelinetHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            SvgPicture.asset(SvgAssets.primaryLogo, height: 28, width: 28),
+            SvgPicture.asset(SvgAssets.primaryLogo, height: 32, width: 32),
             Gap.w12,
             Expanded(
               child: Column(
@@ -25,8 +25,9 @@ class PosTimelinetHeader extends StatelessWidget {
                 children: [
                   AppText.medium(
                     post.title,
-                    fontSize: 16,
+                    fontSize: 14,
                     maxLines: 1,
+                    letterSpacing: -0.4,
                     color: AppColors.black,
                   ),
                   Row(
@@ -110,14 +111,22 @@ class PostDetailsHeader extends StatelessWidget {
                   Gap.w2,
                   Flexible(
                     child: AppText.semiBold(
-                      post.subtitle ?? "General" * 3,
+                      post.subtitle ?? "General",
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: AppColors.black,
                       maxLines: 1,
                     ),
                   ),
-                  Gap.w4,
+                  Gap.w2,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.greyTint30,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+                  ),
+                  Gap.w2,
                   AppText.medium(
                     post.createdAt ?? "",
                     fontSize: 12,
@@ -125,16 +134,18 @@ class PostDetailsHeader extends StatelessWidget {
                     color: AppColors.blackTint20,
                     maxLines: 1,
                   ),
-                  if (post.viewCount > 0) ...[
-                    Gap.w4,
-                    AppText.medium(
-                      "${post.viewCount} views",
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.blackTint20,
-                      maxLines: 1,
-                    ),
-                  ],
+                  // if (post.viewCount > 0) ...[
+                  //   Gap.w4,
+
+                  // Gap.w4,
+                  // AppText.medium(
+                  //   "${post.viewCount} views",
+                  //   fontSize: 12,
+                  //   fontWeight: FontWeight.w400,
+                  //   color: AppColors.blackTint20,
+                  //   maxLines: 1,
+                  // ),
+                  // ],
                 ],
               ),
             ),

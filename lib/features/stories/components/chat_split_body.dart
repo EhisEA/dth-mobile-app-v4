@@ -57,18 +57,31 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
   late final AnimationController _settleCtrl;
   VoidCallback? _settleTick;
 
+  /// True while the running settle animation is a dismiss (sheet flying
+  /// off-screen). A spring-back (false) may be interrupted by a fresh drag;
+  /// a dismiss is left to finish so the close commits.
+  bool _settleIsDismiss = false;
+
+  /// Set when [_interruptSettle] stops a spring-back early, so the
+  /// controller's completion callback knows not to treat it as a finished
+  /// animation.
+  bool _settleInterrupted = false;
+
   /// Pulls below min shrink the sheet at this fraction of the drag distance,
   /// so the sheet visibly resists — gives the user a "rubber-band" feel
   /// instead of pinning at min while their finger keeps moving.
   static const double _pullDamping = 0.5;
 
   /// When the user releases below min × this ratio, commit dismiss.
-  /// Above it, spring back to min.
-  static const double _dismissExtentRatio = 0.6;
+  /// Above it, spring back to min. Kept high so a normal deliberate
+  /// drag-down commits the close — the pull past min is damped by
+  /// [_pullDamping], so a low ratio here would force an unnaturally long
+  /// drag before the sheet ever dismisses.
+  static const double _dismissExtentRatio = 0.8;
 
   /// Downward fling threshold (logical px/s) that commits dismiss even when
   /// the user hasn't pulled far enough — feels natural for a quick flick.
-  static const double _dismissVelocity = 900;
+  static const double _dismissVelocity = 650;
 
   @override
   void initState() {
@@ -169,6 +182,20 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
     _settle(primaryVelocity: details.primaryVelocity);
   }
 
+  /// Called when a fresh drag begins. If a spring-back is mid-flight, cancel
+  /// it so the new drag takes over immediately instead of being swallowed by
+  /// the `_settleCtrl.isAnimating` guards — otherwise a quick retry after a
+  /// failed close does nothing for the spring-back's duration.
+  void _interruptSettle() {
+    if (!_settleCtrl.isAnimating || _settleIsDismiss) return;
+    _settleInterrupted = true;
+    _settleCtrl.stop();
+    if (_settleTick != null) {
+      _settleCtrl.removeListener(_settleTick!);
+      _settleTick = null;
+    }
+  }
+
   /// Called from the gesture detector's drag-end AND from the chat list's
   /// scroll-end notification. Decides whether to spring back to min or to
   /// commit dismiss.
@@ -200,10 +227,16 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
       return;
     }
     _settleCtrl.reset();
-    _settleCtrl.duration = Duration(milliseconds: dismiss ? 280 : 220);
+    _settleIsDismiss = dismiss;
+    _settleInterrupted = false;
+    _settleCtrl.duration = const Duration(milliseconds: 220);
     final curved = CurvedAnimation(
       parent: _settleCtrl,
-      curve: dismiss ? Curves.easeInCubic : Curves.easeOutCubic,
+      // Both paths continue a release that was already in motion, so use a
+      // decelerate curve: it moves immediately and eases to rest. An
+      // accelerate curve (easeInCubic) sat nearly still at the start —
+      // reading as a "delay" — then whipped shut at the end (the "jump").
+      curve: Curves.easeOutCubic,
     );
     void tick() {
       if (!mounted) return;
@@ -218,6 +251,11 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
         _settleTick = null;
       }
       curved.dispose();
+      // A fresh drag interrupted this spring-back — don't run completion.
+      if (_settleInterrupted) {
+        _settleInterrupted = false;
+        return;
+      }
       if (mounted && dismiss) widget.onCloseChat();
     });
   }
@@ -266,6 +304,7 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                 height: reelH,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  onVerticalDragStart: (_) => _interruptSettle(),
                   onVerticalDragUpdate: (d) =>
                       _applyVerticalDragDy(d.primaryDelta ?? 0, h),
                   onVerticalDragEnd: (d) => _onVerticalDragEnd(d, h),
@@ -295,6 +334,7 @@ class _ChatSplitBodyState extends State<ChatSplitBody>
                     children: [
                       GestureDetector(
                         behavior: HitTestBehavior.translucent,
+                        onVerticalDragStart: (_) => _interruptSettle(),
                         onVerticalDragUpdate: (d) =>
                             _applyVerticalDragDy(d.primaryDelta ?? 0, h),
                         onVerticalDragEnd: (d) => _onVerticalDragEnd(d, h),

@@ -162,7 +162,7 @@ class _GetStartedViewState extends ConsumerState<GetStartedView> {
                   ),
                   const Spacer(),
                   AppText.bold(
-                    'Welcome to DTH 5',
+                    'Welcome to DTH',
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xffC2FFE0),

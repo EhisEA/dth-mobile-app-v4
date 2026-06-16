@@ -12,7 +12,7 @@ class ApiRoute {
   );
   static String get prodBaseURL => const String.fromEnvironment(
     "PROD_BASE_URL",
-    defaultValue: "https://dth5.on-forge.com/api",
+    defaultValue: "https://api.de9jaspirit.com/api",
   );
 
   /////AUTH

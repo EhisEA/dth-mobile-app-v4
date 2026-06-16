@@ -56,7 +56,8 @@ class StoriesBar extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             const Color(0xff121212).withValues(alpha: 0.0),
-                            const Color(0xff121212),
+                            const Color(0xff121212).withValues(alpha: 0.0),
+                            const Color(0xff121212).withValues(alpha: 0.4),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -68,12 +69,12 @@ class StoriesBar extends StatelessWidget {
                     bottom: 12,
                     right: 12,
                     left: 12,
-                    child: AppText.semiBold(
+                    child: AppText.bold(
                       s.label,
                       fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w900,
                       maxLines: 2,
-                      color: AppColors.white,
+                      color: Colors.white,
                       height: 1.2,
                       // centered: true,
                     ),

@@ -301,35 +301,35 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
                   subtitle: _primaryButtonSubtitle(process),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                child: Text.rich(
-                  TextSpan(
-                    style: AppTextStyle.regular.copyWith(
-                      fontSize: 11,
-                      color: AppColors.blackTint20,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: 'Proudly sponsored by ',
-                        style: AppTextStyle.regular.copyWith(
-                          fontSize: 12,
-                          color: AppColors.blackTint20,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'Vent Africa',
-                        style: AppTextStyle.regular.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xff009DF9),
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              // Padding(
+              //   padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+              //   child: Text.rich(
+              //     TextSpan(
+              //       style: AppTextStyle.regular.copyWith(
+              //         fontSize: 11,
+              //         color: AppColors.blackTint20,
+              //       ),
+              //       children: [
+              //         TextSpan(
+              //           text: 'Proudly sponsored by ',
+              //           style: AppTextStyle.regular.copyWith(
+              //             fontSize: 12,
+              //             color: AppColors.blackTint20,
+              //           ),
+              //         ),
+              //         TextSpan(
+              //           text: 'Vent Africa',
+              //           style: AppTextStyle.regular.copyWith(
+              //             fontSize: 12,
+              //             fontWeight: FontWeight.w600,
+              //             color: const Color(0xff009DF9),
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //     textAlign: TextAlign.center,
+              //   ),
+              // ),
             ],
           ),
         ),

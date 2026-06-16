@@ -128,7 +128,7 @@ class _PostDescriptionState extends State<PostDescription> {
                 TextSpan(text: linkText, style: _linkStyle),
               ],
             ),
-            maxLines: 2,
+            maxLines: 3,
             textDirection: TextDirection.ltr,
           )..layout(maxWidth: w);
           if (trial.didExceedMaxLines) {
@@ -142,7 +142,7 @@ class _PostDescriptionState extends State<PostDescription> {
         final visible = widget.text.substring(0, cut);
 
         return RichText(
-          maxLines: 2,
+          maxLines: 4,
           text: TextSpan(
             style: _bodyStyle,
             children: [

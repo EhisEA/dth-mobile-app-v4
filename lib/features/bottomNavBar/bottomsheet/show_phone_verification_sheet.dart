@@ -17,6 +17,7 @@ Future<void> showPhoneVerificationBottomSheet(
   return showBlurredModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    enableDrag: false,
     isDismissible: false,
     useSafeArea: false,
     builder: (ctx) => _PhoneVerificationSheetBody(user: user),

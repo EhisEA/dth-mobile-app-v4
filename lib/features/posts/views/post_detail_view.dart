@@ -1,5 +1,6 @@
 import "dart:async";
 
+import "package:dth_v4/data/data.dart" show CommentSort;
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/components/comment_composer.dart";
 import "package:dth_v4/features/posts/components/comment_sort_header.dart";
@@ -21,6 +22,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 import "package:youtube_player_flutter/youtube_player_flutter.dart";
 
@@ -230,58 +232,69 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       }
                       return false;
                     },
-                    child: ListView(
+                    child: CustomScrollView(
                       controller: _scrollController,
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: [
-                        if (isImageHero) PostHeroImage(urls: post.imageUrls),
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            isImageHero || isPinnedVideo ? 16 : 12,
-                            16,
-                            0,
+                      slivers: [
+                        if (isImageHero)
+                          SliverToBoxAdapter(
+                            child: PostHeroImage(urls: post.imageUrls),
                           ),
-                          child: _PostBlock(
-                            post: post,
-                            // Hero (image) and pinned (video) both render
-                            // media themselves outside the post block.
-                            renderMedia: !isImageHero && !isPinnedVideo,
-                            onLike: vm.togglePostLike,
-                            onShare: () => LinkShareHelper.sharePost(
-                              postUid: post.uid,
-                              title: post.title,
-                              description: post.description,
-                              imageUrl: post.imageUrls.isNotEmpty
-                                  ? post.imageUrls.first
-                                  : "",
-                              onShared: () {
-                                final cache = ref.read(postsCacheProvider);
-                                final current = cache.get(post.uid);
-                                if (current == null) return;
-                                cache.upsert(
-                                  current.copyWith(
-                                    shareCount: current.shareCount + 1,
-                                  ),
-                                );
-                              },
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              isImageHero || isPinnedVideo ? 16 : 12,
+                              16,
+                              24,
                             ),
-                            // Only the pinned-video layout has a sticky media
-                            // strip above the scroll — that's where the
-                            // YouTube-style fade makes sense.
-                            metaProgress: isPinnedVideo ? _metaProgress : null,
+                            child: _PostBlock(
+                              post: post,
+                              // Hero (image) and pinned (video) both render
+                              // media themselves outside the post block.
+                              renderMedia: !isImageHero && !isPinnedVideo,
+                              onLike: vm.togglePostLike,
+                              onShare: () => LinkShareHelper.sharePost(
+                                postUid: post.uid,
+                                title: post.title,
+                                description: post.description,
+                                imageUrl: post.imageUrls.isNotEmpty
+                                    ? post.imageUrls.first
+                                    : "",
+                                onShared: () {
+                                  final cache = ref.read(postsCacheProvider);
+                                  final current = cache.get(post.uid);
+                                  if (current == null) return;
+                                  cache.upsert(
+                                    current.copyWith(
+                                      shareCount: current.shareCount + 1,
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Only the pinned-video layout has a sticky media
+                              // strip above the scroll — that's where the
+                              // YouTube-style fade makes sense.
+                              metaProgress: isPinnedVideo
+                                  ? _metaProgress
+                                  : null,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-                          child: _CommentsSection(
-                            vm: vm,
-                            comments: comments,
-                            onOpenThread: _openThread,
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _StickyCommentSortHeaderDelegate(
+                            count: vm.post?.commentCount ?? comments.length,
+                            sort: vm.sort,
+                            onSortChanged: vm.setSort,
                           ),
+                        ),
+                        _CommentsSliver(
+                          vm: vm,
+                          comments: comments,
+                          onOpenThread: _openThread,
                         ),
                       ],
                     ),
@@ -528,20 +541,102 @@ class _PostBlockState extends State<_PostBlock> {
         if (widget.renderMedia) ...[PostMedia(post: widget.post), Gap.h16],
         meta,
         Gap.h18,
-        PostActions(
-          post: widget.post,
-          showContainer: true,
-          onLike: widget.onLike,
-          onComment: () {},
-          onShare: widget.onShare,
+        Row(
+          children: [
+            Expanded(
+              child: PostActions(
+                post: widget.post,
+                showContainer: true,
+                onLike: widget.onLike,
+                onComment: () {},
+                onShare: widget.onShare,
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    SvgAssets.eye,
+                    height: 16,
+                    width: 16,
+                    colorFilter: ColorFilter.mode(
+                      Color(0XFF454545),
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  Gap.w4,
+                  AppText.medium(
+                    formatCount(widget.post.viewCount),
+                    fontSize: 12,
+                    color: Color(0XFF454545),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _CommentsSection extends StatelessWidget {
-  const _CommentsSection({
+class _StickyCommentSortHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _StickyCommentSortHeaderDelegate({
+    required this.count,
+    required this.sort,
+    required this.onSortChanged,
+  });
+
+  final int count;
+  final CommentSort sort;
+  final void Function(CommentSort) onSortChanged;
+
+  static const _background = Color(0xffFCFCFC);
+  static const _height = 44.0;
+
+  @override
+  double get minExtent => _height;
+
+  @override
+  double get maxExtent => _height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: _background,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: CommentSortHeader(
+            title: "Comments",
+            count: count,
+            sort: sort,
+            onSortChanged: onSortChanged,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyCommentSortHeaderDelegate old) {
+    return old.count != count || old.sort != sort;
+  }
+}
+
+class _CommentsSliver extends StatelessWidget {
+  const _CommentsSliver({
     required this.vm,
     required this.comments,
     required this.onOpenThread,
@@ -553,57 +648,70 @@ class _CommentsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        CommentSortHeader(
-          title: "Comments",
-          count: vm.post?.commentCount ?? comments.length,
-          sort: vm.sort,
-          onSortChanged: vm.setSort,
-        ),
-        Gap.h16,
-        if (vm.commentsLoading && comments.isEmpty)
-          const Center(
+    if (vm.commentsLoading && comments.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Center(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: CircularProgressIndicator.adaptive(),
             ),
-          )
-        else if (vm.commentsError != null && comments.isEmpty)
-          _CommentsErrorState(
+          ),
+        ),
+      );
+    }
+
+    if (vm.commentsError != null && comments.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: _CommentsErrorState(
             message: vm.commentsError!.message,
             onRetry: () => vm.retryLoadComments(),
-          )
-        else if (comments.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: AppText.regular(
-              "Be the first to drop a banger.",
-              fontSize: 12,
-              color: AppColors.blackTint20,
-              textAlign: TextAlign.center,
-            ),
-          )
-        else ...[
-          ...comments.map(
-            (c) => Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: CommentTile(
-                comment: c,
-                onTap: () => onOpenThread(c.uid),
-                onLike: () => vm.toggleCommentLike(c),
-                showReplyChip: true,
-              ),
-            ),
           ),
-          if (vm.loadingMoreComments)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator.adaptive()),
+        ),
+      );
+    }
+
+    if (comments.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: AppText.regular(
+            "Be the first to drop a banger.",
+            fontSize: 12,
+            color: AppColors.blackTint20,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          if (index == comments.length) {
+            return vm.loadingMoreComments
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator.adaptive()),
+                  )
+                : const SizedBox.shrink();
+          }
+          final c = comments[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: CommentTile(
+              comment: c,
+              onTap: () => onOpenThread(c.uid),
+              onLike: () => vm.toggleCommentLike(c),
+              showReplyChip: true,
             ),
-        ],
-      ],
+          );
+        }, childCount: comments.length + (vm.loadingMoreComments ? 1 : 0)),
+      ),
     );
   }
 }

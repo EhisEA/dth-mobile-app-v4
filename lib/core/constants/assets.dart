@@ -90,6 +90,7 @@ class SvgAssets {
   static const String profile = "$svgPath/bottomNavBar/profile.svg";
   static const String profileActive =
       "$svgPath/bottomNavBar/profile_filled.svg";
+  static const eye = "$svgPath/eye.svg";
 
   /////////////////////HOME//////////////////////
   static const String livestreamLives = "$svgPath/home/livestream_live.svg";
