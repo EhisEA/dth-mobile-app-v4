@@ -2,13 +2,19 @@ import "dart:ui" show ImageFilter;
 
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/posts/components/post_hero.dart";
 import "package:dth_v4/features/posts/models/post.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter_svg/svg.dart";
 
 class PostMedia extends StatelessWidget {
-  const PostMedia({super.key, required this.post, this.onPlayVideo});
+  const PostMedia({
+    super.key,
+    required this.post,
+    this.onPlayVideo,
+    this.enableHero = false,
+  });
 
   final Post post;
 
@@ -17,17 +23,25 @@ class PostMedia extends StatelessWidget {
   /// outer tap (navigation) will pass through.
   final VoidCallback? onPlayVideo;
 
+  /// Enables the shared [Hero] that flies this media into the post detail
+  /// screen. Only the feed [PostCard] sets this — keeping it off elsewhere
+  /// (detail fallback media, livestream) avoids two heroes sharing a tag across
+  /// simultaneously-alive tabs, which Flutter asserts on.
+  final bool enableHero;
+
   static const double _mediaHeight = 160;
   static const double _radius = 12;
 
   @override
   Widget build(BuildContext context) {
+    final heroPrefix = enableHero ? post.uid : null;
     if (post.isVideo && post.video != null) {
       return _VideoBlock(
         thumbnailUrl: post.video!.thumbnailUrl,
         height: _mediaHeight,
         radius: _radius,
         onPlay: onPlayVideo,
+        heroTag: heroPrefix == null ? null : postVideoHeroTag(heroPrefix),
       );
     }
     final urls = post.imageUrls;
@@ -38,6 +52,7 @@ class PostMedia extends StatelessWidget {
       urls: urls,
       height: _mediaHeight,
       radius: _radius,
+      heroPrefix: heroPrefix,
     );
   }
 }
@@ -48,6 +63,7 @@ class _VideoBlock extends StatelessWidget {
     required this.height,
     required this.radius,
     this.onPlay,
+    this.heroTag,
   });
 
   final String thumbnailUrl;
@@ -55,9 +71,14 @@ class _VideoBlock extends StatelessWidget {
   final double radius;
   final VoidCallback? onPlay;
 
+  /// When set, the block flies to the detail screen's pinned player via a
+  /// [PostVideoHero]. Null disables the hero (e.g. when rendered somewhere the
+  /// transition does not apply).
+  final String? heroTag;
+
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    final block = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Material(
         color: Colors.black,
@@ -105,6 +126,9 @@ class _VideoBlock extends StatelessWidget {
         ),
       ),
     );
+    final tag = heroTag;
+    if (tag == null) return block;
+    return PostVideoHero(tag: tag, thumbnailUrl: thumbnailUrl, child: block);
   }
 }
 
@@ -113,11 +137,16 @@ class _ImageGalleryBlock extends StatelessWidget {
     required this.urls,
     required this.height,
     required this.radius,
+    required this.heroPrefix,
   });
 
   final List<String> urls;
   final double height;
   final double radius;
+
+  /// Per-post namespace for the image [Hero] tags (the post uid). Null
+  /// disables the hero (primary cell rendered without one).
+  final String? heroPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +162,7 @@ class _ImageGalleryBlock extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
-                child: _cell(urls[0], context),
+                child: _heroCell(urls[0], context),
               ),
             ),
             const SizedBox(width: 4),
@@ -157,7 +186,7 @@ class _ImageGalleryBlock extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: _cell(urls[0], context)),
+            Expanded(flex: 3, child: _heroCell(urls[0], context)),
             const SizedBox(width: 2),
             Expanded(
               flex: 1,
@@ -183,6 +212,19 @@ class _ImageGalleryBlock extends StatelessWidget {
   Widget _one(String url, BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
+      child: _heroCell(url, context),
+    );
+  }
+
+  /// The primary cell, wrapped so it flies to the detail hero / fullscreen
+  /// viewer. Only the first image in a gallery gets a hero — the secondary
+  /// cells have no counterpart on the detail screen.
+  Widget _heroCell(String url, BuildContext context) {
+    final prefix = heroPrefix;
+    if (prefix == null) return _cell(url, context);
+    return PostImageHero(
+      tag: postImageHeroTag(prefix, url),
+      url: url,
       child: _cell(url, context),
     );
   }

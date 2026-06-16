@@ -1,6 +1,7 @@
 import "dart:ui";
 
 import "package:cached_network_image/cached_network_image.dart";
+import "package:dth_v4/features/posts/components/post_hero.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -11,26 +12,35 @@ class FullscreenImageViewer extends StatefulWidget {
     super.key,
     required this.urls,
     this.initialIndex = 0,
+    this.heroPrefix,
   });
 
   final List<String> urls;
   final int initialIndex;
 
+  /// Per-post namespace (the post uid) shared with the detail hero image so the
+  /// tapped photo flies in from / back to it. Null disables the hero.
+  final String? heroPrefix;
+
   static Future<void> open(
     BuildContext context, {
     required List<String> urls,
     int initialIndex = 0,
+    String? heroPrefix,
   }) {
-    return Navigator.of(context, rootNavigator: true).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.transparent,
-        transitionDuration: const Duration(milliseconds: 220),
-        reverseTransitionDuration: const Duration(milliseconds: 180),
-        pageBuilder: (_, _, _) =>
-            FullscreenImageViewer(urls: urls, initialIndex: initialIndex),
-        transitionsBuilder: (_, anim, _, child) =>
-            FadeTransition(opacity: anim, child: child),
+    // Push onto the nearest navigator (the app's main `navigatorKey`
+    // navigator), NOT `rootNavigator: true`. The root-most navigator in this
+    // app is the FlushBar overlay navigator created in `MaterialApp.builder`,
+    // which sits ABOVE the main navigator. The Android system back button is
+    // dispatched by `WidgetsApp.didPopRoute` to the main navigator only, so a
+    // route pushed on the FlushBar navigator never receives the pop and
+    // `PopScope` here would never fire. Pushing on the main navigator lines
+    // the route up with where back is delivered.
+    return Navigator.of(context).push<void>(
+      _FullscreenImageViewerRoute(
+        urls: urls,
+        initialIndex: initialIndex,
+        heroPrefix: heroPrefix,
       ),
     );
   }
@@ -110,6 +120,39 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer>
     setState(() => _dragY += details.primaryDelta ?? 0);
   }
 
+  void _close() {
+    // Pop the nearest navigator — the same one `open` pushed onto. Using
+    // `rootNavigator: true` here would target the FlushBar overlay navigator
+    // instead of the route's own navigator and pop the wrong thing.
+    Navigator.of(context).pop();
+  }
+
+  void _resetZoom() {
+    _transformControllers[_current].value = Matrix4.identity();
+    if (mounted) setState(() {});
+  }
+
+  /// Wraps the page image in the shared [PostImageHero] when a [heroPrefix]
+  /// was provided, so the photo flies in from / back to the detail image.
+  Widget _maybeHero(String url, Widget child) {
+    final prefix = widget.heroPrefix;
+    if (prefix == null) return child;
+    return PostImageHero(
+      tag: postImageHeroTag(prefix, url),
+      url: url,
+      child: child,
+    );
+  }
+
+  void _onPopInvoked(bool didPop, Object? result) {
+    if (didPop) return;
+    if (_currentScale() > 1.05) {
+      _resetZoom();
+      return;
+    }
+    _close();
+  }
+
   void _onVerticalDragEnd(DragEndDetails details) {
     if (!_draggingActive) return;
     _draggingActive = false;
@@ -117,7 +160,7 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer>
     final shouldDismiss =
         _dragY > _dismissDistance || velocity > _dismissVelocity;
     if (shouldDismiss) {
-      Navigator.of(context).pop();
+      _close();
     } else {
       _snapTween = Tween<double>(
         begin: _dragY,
@@ -139,48 +182,55 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer>
     // just sliding off-screen.
     final photoOpacity = 1.0 - fadeProgress * 0.6;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black.withValues(alpha: backdropOpacity),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: backdropOpacity),
+                ),
               ),
-            ),
-            Opacity(
-              opacity: photoOpacity.clamp(0.0, 1.0),
-              child: Transform.translate(
-                offset: Offset(0, _dragY),
-                child: Transform.scale(
-                  scale: dragScale,
-                  child: GestureDetector(
-                    onVerticalDragStart: _onVerticalDragStart,
-                    onVerticalDragUpdate: _onVerticalDragUpdate,
-                    onVerticalDragEnd: _onVerticalDragEnd,
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: n,
-                      onPageChanged: _onPageChanged,
-                      itemBuilder: (_, i) => InteractiveViewer(
-                        transformationController: _transformControllers[i],
-                        minScale: 1,
-                        maxScale: 4,
-                        clipBehavior: Clip.none,
-                        child: Center(
-                          child: CachedNetworkImage(
-                            imageUrl: widget.urls[i],
-                            fit: BoxFit.contain,
-                            placeholder: (_, _) => const Center(
-                              child: CircularProgressIndicator.adaptive(),
-                            ),
-                            errorWidget: (_, _, _) => const Center(
-                              child: Icon(
-                                Icons.broken_image_outlined,
-                                color: Colors.white54,
-                                size: 48,
+              Opacity(
+                opacity: photoOpacity.clamp(0.0, 1.0),
+                child: Transform.translate(
+                  offset: Offset(0, _dragY),
+                  child: Transform.scale(
+                    scale: dragScale,
+                    child: GestureDetector(
+                      onVerticalDragStart: _onVerticalDragStart,
+                      onVerticalDragUpdate: _onVerticalDragUpdate,
+                      onVerticalDragEnd: _onVerticalDragEnd,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: n,
+                        onPageChanged: _onPageChanged,
+                        itemBuilder: (_, i) => InteractiveViewer(
+                          transformationController: _transformControllers[i],
+                          minScale: 1,
+                          maxScale: 4,
+                          clipBehavior: Clip.none,
+                          child: Center(
+                            child: _maybeHero(
+                              widget.urls[i],
+                              CachedNetworkImage(
+                                imageUrl: widget.urls[i],
+                                fit: BoxFit.contain,
+                                placeholder: (_, _) => const Center(
+                                  child: CircularProgressIndicator.adaptive(),
+                                ),
+                                errorWidget: (_, _, _) => const Center(
+                                  child: Icon(
+                                    Icons.broken_image_outlined,
+                                    color: Colors.white54,
+                                    size: 48,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -190,50 +240,102 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer>
                   ),
                 ),
               ),
-            ),
-            // Controls fade as the user drags so they don't fight the dismiss
-            // visually.
-            IgnorePointer(
-              ignoring: controlsOpacity < 0.05,
-              child: Opacity(
-                opacity: controlsOpacity.clamp(0.0, 1.0),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        _GlassIconButton(
-                          icon: Icons.close_rounded,
-                          onTap: () => Navigator.of(context).pop(),
-                        ),
-                        const Spacer(),
-                        if (n > 1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: AppText.medium(
-                              "${_current + 1} / $n",
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
+              // Controls fade as the user drags so they don't fight the dismiss
+              // visually.
+              IgnorePointer(
+                ignoring: controlsOpacity < 0.05,
+                child: Opacity(
+                  opacity: controlsOpacity.clamp(0.0, 1.0),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          _GlassIconButton(
+                            icon: Icons.close_rounded,
+                            onTap: _close,
                           ),
-                      ],
+                          const Spacer(),
+                          if (n > 1)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: AppText.medium(
+                                "${_current + 1} / $n",
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _FullscreenImageViewerRoute extends PageRoute<void> {
+  _FullscreenImageViewerRoute({
+    required this.urls,
+    required this.initialIndex,
+    this.heroPrefix,
+  });
+
+  final List<String> urls;
+  final int initialIndex;
+  final String? heroPrefix;
+
+  @override
+  bool get opaque => false;
+
+  @override
+  Color? get barrierColor => Colors.transparent;
+
+  @override
+  bool get barrierDismissible => false;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  bool get fullscreenDialog => true;
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 220);
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 180);
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return FadeTransition(
+      opacity: animation,
+      child: FullscreenImageViewer(
+        urls: urls,
+        initialIndex: initialIndex,
+        heroPrefix: heroPrefix,
       ),
     );
   }

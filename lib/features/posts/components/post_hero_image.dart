@@ -1,5 +1,6 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/posts/components/post_hero.dart";
 import "package:dth_v4/features/posts/views/photo_viewer.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
@@ -9,10 +10,16 @@ class PostHeroImage extends StatefulWidget {
     super.key,
     required this.urls,
     this.aspectRatio = 4 / 5,
+    this.heroPrefix,
   });
 
   final List<String> urls;
   final double aspectRatio;
+
+  /// Per-post namespace (the post uid) shared with the feed card and the
+  /// fullscreen viewer so the same image flies between all three. Null
+  /// disables the hero animation.
+  final String? heroPrefix;
 
   @override
   State<PostHeroImage> createState() => _PostHeroImageState();
@@ -32,6 +39,18 @@ class _PostHeroImageState extends State<PostHeroImage> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Wraps [child] in a shared [PostImageHero] when a [heroPrefix] is set so
+  /// the image flies in from the feed card and out to the fullscreen viewer.
+  Widget _maybeHero(String url, Widget child) {
+    final prefix = widget.heroPrefix;
+    if (prefix == null) return child;
+    return PostImageHero(
+      tag: postImageHeroTag(prefix, url),
+      url: url,
+      child: child,
+    );
   }
 
   @override
@@ -58,16 +77,20 @@ class _PostHeroImageState extends State<PostHeroImage> {
                     context,
                     urls: urls,
                     initialIndex: i,
+                    heroPrefix: widget.heroPrefix,
                   ),
-                  child: CachedNetworkImage(
-                    imageUrl: urls[i],
-                    fit: BoxFit.cover,
-                    placeholder: (context, _) => const ShimmerBox(),
-                    errorWidget: (context, _, _) => ColoredBox(
-                      color: AppColors.baseShimmer(context),
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: AppColors.tint15,
+                  child: _maybeHero(
+                    urls[i],
+                    CachedNetworkImage(
+                      imageUrl: urls[i],
+                      fit: BoxFit.cover,
+                      placeholder: (context, _) => const ShimmerBox(),
+                      errorWidget: (context, _, _) => ColoredBox(
+                        color: AppColors.baseShimmer(context),
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: AppColors.tint15,
+                        ),
                       ),
                     ),
                   ),

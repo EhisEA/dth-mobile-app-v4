@@ -1,5 +1,6 @@
 import "dart:async";
 
+import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/data/data.dart" show CommentSort;
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/components/comment_composer.dart";
@@ -9,6 +10,7 @@ import "package:dth_v4/features/posts/components/post_actions.dart";
 import "package:dth_v4/features/posts/components/post_detail_skeleton.dart";
 import "package:dth_v4/features/posts/components/post_description.dart";
 import "package:dth_v4/features/posts/components/post_header.dart";
+import "package:dth_v4/features/posts/components/post_hero.dart";
 import "package:dth_v4/features/posts/components/post_hero_image.dart";
 import "package:dth_v4/features/posts/components/post_media.dart";
 import "package:dth_v4/features/posts/models/comment.dart";
@@ -198,10 +200,16 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
     final isImageHero =
         post != null && !post.isVideo && post.imageUrls.isNotEmpty;
+    // Known from the post data before the player controller is built. We pin a
+    // thumbnail placeholder for this case so the [PostVideoHero] destination is
+    // already in the tree when the card→detail hero flight starts (the
+    // controller is only created in a post-frame callback, a frame too late).
+    final isYoutubeVideo =
+        post != null && post.isVideo && (post.video?.isYoutube ?? false);
     final isPinnedVideo = _ytController != null;
-    // Either case wants the transparent back-only app bar overlaying the
+    // All three cases want the transparent back-only app bar overlaying the
     // media at the top of the screen.
-    final useTransparentBar = isImageHero || isPinnedVideo;
+    final useTransparentBar = isImageHero || isYoutubeVideo;
 
     Widget buildScaffold(Widget? pinnedMedia) => Scaffold(
       extendBodyBehindAppBar: useTransparentBar,
@@ -240,7 +248,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       slivers: [
                         if (isImageHero)
                           SliverToBoxAdapter(
-                            child: PostHeroImage(urls: post.imageUrls),
+                            child: PostHeroImage(
+                              urls: post.imageUrls,
+                              heroPrefix: post.uid,
+                            ),
                           ),
                         SliverToBoxAdapter(
                           child: Padding(
@@ -253,8 +264,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                             child: _PostBlock(
                               post: post,
                               // Hero (image) and pinned (video) both render
-                              // media themselves outside the post block.
-                              renderMedia: !isImageHero && !isPinnedVideo,
+                              // media themselves outside the post block — for
+                              // youtube use the post-data flag (not the
+                              // controller) so the placeholder frame matches.
+                              renderMedia: !isImageHero && !isYoutubeVideo,
                               onLike: vm.togglePostLike,
                               onShare: () => LinkShareHelper.sharePost(
                                 postUid: post.uid,
@@ -355,46 +368,53 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
             // come back on top of YT's retry / replay overlay.
             final showLoadingMask = !_hasBeenReady && !v.hasError;
             return buildScaffold(
-              // Outer ColoredBox stays at the layout-allocated slot so the
-              // 6px lift doesn't reveal the (light) scaffold colour beneath
-              // the video — the bottom strip that briefly appears as the
-              // inner Container translates upward stays black.
-              ColoredBox(
-                color: Colors.black,
-                child: ValueListenableBuilder<double>(
-                  valueListenable: _metaProgress,
-                  builder: (context, t, child) {
-                    return Transform.translate(
-                      offset: Offset(0, -t * _videoLiftPx),
-                      child: child,
-                    );
-                  },
-                  child: Container(
-                    color: Colors.black,
-                    padding: EdgeInsets.only(
-                      top: MediaQuery.paddingOf(context).top,
-                    ),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          player,
-                          if (showLoadingMask)
-                            const ColoredBox(
-                              color: Colors.black,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 28,
-                                  height: 28,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+              // Flies from the feed card's video thumbnail. The hero's flight
+              // shuttle paints the thumbnail still (see [PostVideoHero]); the
+              // live player only takes over once the hero has landed.
+              PostVideoHero(
+                tag: postVideoHeroTag(post?.uid ?? ""),
+                thumbnailUrl: post?.video?.thumbnailUrl ?? "",
+                // Outer ColoredBox stays at the layout-allocated slot so the
+                // 6px lift doesn't reveal the (light) scaffold colour beneath
+                // the video — the bottom strip that briefly appears as the
+                // inner Container translates upward stays black.
+                child: ColoredBox(
+                  color: Colors.black,
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: _metaProgress,
+                    builder: (context, t, child) {
+                      return Transform.translate(
+                        offset: Offset(0, -t * _videoLiftPx),
+                        child: child,
+                      );
+                    },
+                    child: Container(
+                      color: Colors.black,
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.paddingOf(context).top,
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            player,
+                            if (showLoadingMask)
+                              const ColoredBox(
+                                color: Colors.black,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -405,7 +425,50 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
         ),
       );
     }
+    // YouTube post whose controller hasn't been built yet: pin a thumbnail
+    // placeholder so the [PostVideoHero] destination exists for the incoming
+    // card→detail flight. The player swaps in (above) once it's ready.
+    if (isYoutubeVideo) {
+      return buildScaffold(_pinnedVideoPlaceholder(context, post));
+    }
     return buildScaffold(null);
+  }
+
+  Widget _pinnedVideoPlaceholder(BuildContext context, Post post) {
+    return PostVideoHero(
+      tag: postVideoHeroTag(post.uid),
+      thumbnailUrl: post.video?.thumbnailUrl ?? "",
+      child: ColoredBox(
+        color: Colors.black,
+        child: Container(
+          color: Colors.black,
+          padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: post.video?.thumbnailUrl ?? "",
+                  fit: BoxFit.cover,
+                ),
+                const ColoredBox(color: Color(0x66000000)),
+                const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

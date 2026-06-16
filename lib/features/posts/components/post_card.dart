@@ -40,7 +40,7 @@ class PostCard extends StatelessWidget {
             ),
           ],
           Gap.h12,
-          PostMedia(post: post),
+          PostMedia(post: post, enableHero: true),
           Gap.h10,
           PostActions(
             post: post,
