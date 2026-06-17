@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/features/posts/components/like_chip.dart';
+import 'package:dth_v4/features/posts/components/post_description.dart';
 import 'package:dth_v4/features/posts/models/comment.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -67,11 +68,11 @@ class CommentTile extends StatelessWidget {
                 ],
               ),
               // Gap.h8,
-              AppText.regular(
-                comment.body,
-                fontSize: 13,
-                color: Color(0xff202020),
-                height: 1.35,
+              PostDescription(
+                text: comment.body,
+                lineHeight: 1.35,
+                bodyColor: const Color(0xff202020),
+                linkColor: AppColors.blackTint20,
               ),
               if (parent) ...[
                 Gap.h8,

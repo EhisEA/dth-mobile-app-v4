@@ -134,7 +134,9 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
                       child: AppTextField(
                         controller: widget.composerController,
                         hint: "Drop a banger...",
-                        borderRadius: BorderRadius.circular(100),
+                        borderRadius: widget.composerController.text.isNotEmpty
+                            ? BorderRadius.circular(12)
+                            : BorderRadius.circular(100),
                         focusNode: _focus,
                         tapToFocus: false,
                         fillColor: _isTextfieldFocused

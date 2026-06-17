@@ -1,6 +1,7 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/features/posts/components/like_chip.dart";
+import "package:dth_v4/features/posts/components/post_description.dart";
 import "package:dth_v4/features/posts/models/comment.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
@@ -30,43 +31,45 @@ class CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tile = Row(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        _Avatar(name: comment.authorName, url: comment.avatarUrl),
+        _TapTarget(
+          onTap: onTap,
+          child: _Avatar(name: comment.authorName, url: comment.avatarUrl),
+        ),
         Gap.w10,
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: AppText.medium(
-                      comment.authorName.isEmpty ? "User" : comment.authorName,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0XFF202020),
-                      maxLines: 1,
+              _TapTarget(
+                onTap: onTap,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: AppText.medium(
+                        comment.authorName.isEmpty
+                            ? "User"
+                            : comment.authorName,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0XFF202020),
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                  Gap.w8,
-                  AppText.regular(
-                    comment.timeAgo,
-                    fontSize: 12,
-                    color: AppColors.blackTint20,
-                  ),
-                ],
+                    Gap.w8,
+                    AppText.regular(
+                      comment.timeAgo,
+                      fontSize: 12,
+                      color: AppColors.blackTint20,
+                    ),
+                  ],
+                ),
               ),
               Gap.h4,
-              AppText.regular(
-                comment.body,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                height: 1.4,
-                color: Color(0XFF202020),
-              ),
+              _CommentBody(text: comment.body, onOpenThread: onTap),
               Gap.h8,
               Row(
                 children: [
@@ -111,11 +114,45 @@ class CommentTile extends StatelessWidget {
           ),
       ],
     );
-    if (onTap == null) return tile;
+  }
+}
+
+class _CommentBody extends StatelessWidget {
+  const _CommentBody({required this.text, this.onOpenThread});
+
+  final String text;
+
+  /// When set (top-level comments in post detail), **Read more** and body taps
+  /// open the comment thread instead of expanding inline.
+  final VoidCallback? onOpenThread;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = PostDescription(
+      text: text,
+      lineHeight: 1.4,
+      bodyColor: const Color(0xFF202020),
+      linkColor: AppColors.blackTint20,
+      onReadMore: onOpenThread,
+    );
+    if (onOpenThread == null) return description;
+    return _TapTarget(onTap: onOpenThread, child: description);
+  }
+}
+
+class _TapTarget extends StatelessWidget {
+  const _TapTarget({required this.onTap, required this.child});
+
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (onTap == null) return child;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: tile,
+      child: child,
     );
   }
 }

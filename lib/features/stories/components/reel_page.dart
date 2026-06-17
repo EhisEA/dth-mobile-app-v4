@@ -5,7 +5,8 @@ import "package:dth_v4/core/utils/colors.dart";
 import "package:dth_v4/core/utils/format_count.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/posts/components/like_chip.dart";
-import "package:dth_v4/features/posts/models/post_mapper.dart" show formatTimeAgo;
+import "package:dth_v4/features/posts/models/post_mapper.dart"
+    show formatTimeAgo;
 import "package:dth_v4/features/stories/components/chat_split_body.dart";
 import "package:dth_v4/features/stories/components/full_reel_body.dart";
 import "package:dth_v4/features/stories/components/reel_backdrop_media.dart";
@@ -274,6 +275,9 @@ class _ReelPageState extends ConsumerState<ReelPage> {
                                 controller: _composerController,
                                 focusNode: _composerFocus,
                                 tapToFocus: false,
+                                formatter: [
+                                  LengthLimitingTextInputFormatter(1100),
+                                ],
                                 fillColor: const Color(
                                   0xffEFEFEF,
                                 ).withValues(alpha: 0.16),
@@ -295,15 +299,16 @@ class _ReelPageState extends ConsumerState<ReelPage> {
                               duration: const Duration(milliseconds: 180),
                               switchInCurve: Curves.easeOut,
                               switchOutCurve: Curves.easeIn,
-                              transitionBuilder: (child, anim) => SizeTransition(
-                                sizeFactor: anim,
-                                axis: Axis.horizontal,
-                                axisAlignment: -1,
-                                child: FadeTransition(
-                                  opacity: anim,
-                                  child: child,
-                                ),
-                              ),
+                              transitionBuilder: (child, anim) =>
+                                  SizeTransition(
+                                    sizeFactor: anim,
+                                    axis: Axis.horizontal,
+                                    axisAlignment: -1,
+                                    child: FadeTransition(
+                                      opacity: anim,
+                                      child: child,
+                                    ),
+                                  ),
                               child: hasText
                                   ? Row(
                                       key: const ValueKey("send"),
