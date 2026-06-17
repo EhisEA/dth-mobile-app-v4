@@ -2,6 +2,7 @@ import "package:dth_v4/core/core.dart";
 import "package:dth_v4/widgets/app_text_field.dart";
 import "package:dth_v4/widgets/text/text.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
@@ -133,6 +134,9 @@ class _CommentComposerState extends State<CommentComposer> {
                       enabled: !widget.submitting,
                       minLines: 1,
                       maxLines: 4,
+                      formatter: [LengthLimitingTextInputFormatter(1100)],
+
+                      // maxLength: 1100,
                       textCapitalization: TextCapitalization.sentences,
                       borderRadius: BorderRadius.circular(_isTyping ? 12 : 100),
                       fillColor: isFocused

@@ -46,6 +46,7 @@ class AppTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final BoxConstraints? prefixIconConstraints;
   final BoxConstraints? suffixIconConstraints;
+  final MaxLengthEnforcement? maxLengthEnforcement;
 
   /// When true (default), tapping the field chrome requests focus. Set false
   /// for composers where the outer [GestureDetector] can refocus after Done.
@@ -56,6 +57,7 @@ class AppTextField extends StatefulWidget {
     this.hint,
     this.title,
     this.height,
+    this.maxLengthEnforcement,
     this.borderRadius,
     this.width,
     FocusNode? focusNode,
@@ -173,12 +175,14 @@ class _AppTextFieldState extends State<AppTextField> {
                           maxLines: widget.maxLines,
                           minLines: widget.minLines,
                           readOnly: widget.readOnly,
+
                           style:
                               widget.style ??
                               AppTextStyle.regular.copyWith(
                                 color: AppColors.black,
                                 fontSize: 14,
                               ),
+                          maxLengthEnforcement: widget.maxLengthEnforcement,
                           controller: widget.controller,
                           inputFormatters: widget.formatter,
                           textInputAction: widget.textInputAction,
@@ -200,6 +204,7 @@ class _AppTextFieldState extends State<AppTextField> {
                           enabled: widget.enabled,
                           onChanged: widget.onChanged,
                           decoration: InputDecoration(
+                            // hintMaxLines: 0,
                             contentPadding: widget.contentPadding,
                             errorStyle: const TextStyle(fontSize: 0),
                             prefixIconConstraints: widget.prefixIconConstraints,
