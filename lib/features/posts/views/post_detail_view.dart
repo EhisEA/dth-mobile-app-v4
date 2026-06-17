@@ -76,6 +76,16 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
   double _heroImageHeight(BuildContext context) =>
       MediaQuery.sizeOf(context).width / _heroAspectRatio;
 
+  /// Whether the current post uses the collapsing image app bar, and whether
+  /// that bar has collapsed far enough to want dark status-bar icons. The
+  /// SliverAppBar paints over the status bar in both states, so its own
+  /// `systemOverlayStyle` must carry this — an outer AnnotatedRegion would be
+  /// drawn behind it and ignored. `_imageCollapseDistance` is cached from the
+  /// last build so [_onScroll] can evaluate the threshold without a context.
+  bool _isImageHeroPost = false;
+  bool _imageBarDark = false;
+  double _imageCollapseDistance = 1;
+
   @override
   void initState() {
     super.initState();
@@ -92,6 +102,12 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    // Image posts: flip the status-bar icon brightness once the collapsing bar
+    // is mostly white. Only fires on a threshold cross, so the setState is rare.
+    if (_isImageHeroPost) {
+      final dark = _scrollController.offset / _imageCollapseDistance > 0.5;
+      if (dark != _imageBarDark) setState(() => _imageBarDark = dark);
+    }
     final shifted = (_scrollController.offset - _metaFadeStart).clamp(
       0.0,
       _metaFadeRange,
@@ -209,6 +225,14 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
     final isImageHero =
         post != null && !post.isVideo && post.imageUrls.isNotEmpty;
+    // Cache for [_onScroll] (runs without a build context).
+    _isImageHeroPost = isImageHero;
+    if (isImageHero) {
+      _imageCollapseDistance =
+          (_heroImageHeight(context) -
+                  (kToolbarHeight + MediaQuery.paddingOf(context).top))
+              .clamp(1.0, double.infinity);
+    }
     // Known from the post data before the player controller is built. We pin a
     // thumbnail placeholder for this case so the [PostVideoHero] destination is
     // already in the tree when the card→detail hero flight starts (the
@@ -439,27 +463,16 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     if (isYoutubeVideo) {
       return buildScaffold(_pinnedVideoPlaceholder(context, post));
     }
-    final scaffold = buildScaffold(null);
-    if (!isImageHero) return scaffold;
-    // The image layout has no opaque app bar to declare the status-bar style,
-    // so drive it from the scroll: light icons over the (gradient-topped)
-    // image, dark icons once the white collapsed bar takes over. Only the thin
-    // AnnotatedRegion wrapper rebuilds on scroll — the Scaffold is cached.
-    return AnimatedBuilder(
-      animation: _scrollController,
-      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: _imageCollapseFraction(context) > 0.5
-            ? SystemUiOverlayStyle.dark
-            : SystemUiOverlayStyle.light,
-        child: child!,
-      ),
-      child: scaffold,
-    );
+    // The status-bar style for image posts is carried by the SliverAppBar's
+    // own `systemOverlayStyle` (see [_buildImageSliverAppBar]) — it paints over
+    // the status bar in both states, so an outer AnnotatedRegion here would be
+    // overridden by it.
+    return buildScaffold(null);
   }
 
   /// Scroll progress (0 = image fully expanded, 1 = bar fully collapsed) for
-  /// the image-post [SliverAppBar]. Drives the back-button morph, the author
-  /// title fade and the status-bar style.
+  /// the image-post [SliverAppBar]. Drives the back-button morph and the author
+  /// title fade. (The status-bar style flips on a threshold in [_onScroll].)
   double _imageCollapseFraction(BuildContext context) {
     if (!_scrollController.hasClients) return 0;
     final expandedHeight = _heroImageHeight(context);
@@ -490,6 +503,12 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
       // Subtle shadow only once content scrolls under the collapsed bar, so it
       // separates from the comments below.
       scrolledUnderElevation: 3,
+      // Light icons over the image, dark over the white collapsed bar. Set here
+      // (not via an outer AnnotatedRegion) because the app bar paints over the
+      // status bar in both states and would otherwise force its default.
+      systemOverlayStyle: _imageBarDark
+          ? SystemUiOverlayStyle.dark
+          : SystemUiOverlayStyle.light,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
       leadingWidth: 60,
