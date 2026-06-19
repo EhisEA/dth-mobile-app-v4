@@ -10,6 +10,7 @@ import "package:dth_v4/features/livestream/view_model/active_livestream_provider
 import "package:dth_v4/features/livestream/view_model/livestreams_cache.dart";
 import "package:dth_v4/features/livestream/views/livestream_view.dart";
 import "package:dth_v4/features/posts/posts.dart";
+import "package:dth_v4/features/notifications/notifications.dart";
 import "package:dth_v4/features/stories/stories.dart";
 import "package:dth_v4/features/polls/polls.dart";
 import "package:dth_v4/widgets/widgets.dart";
@@ -33,9 +34,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(homeViewModelProvider).loadTimeline());
       unawaited(ref.read(pollViewModelProvider).loadPoll());
+      unawaited(ref.read(bannersViewModelProvider).loadBanners());
       unawaited(
         ref.read(applicantDashboardViewModelProvider).prefetchForHomeUser(),
       );
+      unawaited(ref.read(notificationsViewModelProvider).prefetchUnreadBadge());
       // Warm the active-livestream cache. The icon tap then reads the
       // resolved state synchronously — no HTTP roundtrip on tap.
       ref.read(activeLivestreamProvider);
@@ -106,6 +109,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
         .whereType<Post>()
         .toList(growable: false);
     final pollVm = ref.watch(pollViewModelProvider);
+    final bannersVm = ref.watch(bannersViewModelProvider);
     return ValueListenableBuilder(
       valueListenable: vm.userModel,
       builder: (context, value, child) {
@@ -160,9 +164,15 @@ class _HomeViewState extends ConsumerState<HomeView> {
                         onRefresh: () async {
                           await vm.refreshTimeline();
                           await pollVm.loadPoll();
+                          await bannersVm.loadBanners();
+                          await ref.read(userStateProvider).getUserDetails();
                         },
                         child: NotificationListener<ScrollNotification>(
                           onNotification: (n) {
+                            // Ignore nested horizontal lists (banners, reels)
+                            // — their scroll metrics would otherwise trigger
+                            // timeline pagination.
+                            if (n.metrics.axis != Axis.vertical) return false;
                             // Trigger loadMore ~400px before the end.
                             // Guards inside loadMoreTimeline (hasMore +
                             // _loadingMore flag) make the firing here
@@ -221,6 +231,21 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                                     },
                                                   );
                                             },
+                                          ),
+                                          Gap.h16,
+                                        ],
+                                      ),
+                              ),
+                              SliverToBoxAdapter(
+                                child: bannersVm.banners.isEmpty
+                                    ? const SizedBox.shrink()
+                                    : Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          HomeBannersBar(
+                                            banners: bannersVm.banners,
                                           ),
                                           Gap.h16,
                                         ],

@@ -46,7 +46,7 @@ class AppRouter {
       case BottomNavBar.path:
         return _getPageRoute(
           settings: settings,
-          viewToShow: const BottomNavBar(),
+          viewToShow: BottomNavBar(key: BottomNavBar.bottomNavBarKey),
         );
 
       case SplashView.path:

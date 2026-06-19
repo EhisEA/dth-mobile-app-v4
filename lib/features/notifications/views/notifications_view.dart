@@ -30,7 +30,10 @@ class _NotificationsViewState extends ConsumerState<NotificationsView> {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(notificationsViewModelProvider).loadFirstPage());
+      final vm = ref.read(notificationsViewModelProvider);
+      if (vm.items.isEmpty) {
+        unawaited(vm.loadFirstPage());
+      }
     });
   }
 
@@ -138,7 +141,10 @@ class _NotificationsViewState extends ConsumerState<NotificationsView> {
                   final item = vm.items[index];
                   return NotificationTile(
                     item: item,
-                    onTap: () => unawaited(vm.markAsRead(item.uid)),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      unawaited(vm.markAsRead(item.uid));
+                    },
                   );
                 },
               ),

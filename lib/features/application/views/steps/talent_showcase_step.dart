@@ -109,7 +109,7 @@ class _TalentShowcaseStepState extends ConsumerState<TalentShowcaseStep>
 
     return Form(
       key: widget.formKey,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      autovalidateMode: AutovalidateMode.disabled,
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [

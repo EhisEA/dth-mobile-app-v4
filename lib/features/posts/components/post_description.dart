@@ -115,11 +115,12 @@ class _PostDescriptionState extends State<PostDescription> {
 
         const suffix = "...";
         const linkText = " Read more";
+        final chars = widget.text.characters;
         var lo = 0;
-        var hi = widget.text.length;
+        var hi = chars.length;
         while (lo < hi) {
           final mid = (lo + hi + 1) ~/ 2;
-          final prefix = widget.text.substring(0, mid);
+          final prefix = chars.take(mid).toString();
           final trial = TextPainter(
             text: TextSpan(
               style: _bodyStyle,
@@ -138,8 +139,8 @@ class _PostDescriptionState extends State<PostDescription> {
           }
         }
 
-        final cut = lo.clamp(0, widget.text.length);
-        final visible = widget.text.substring(0, cut);
+        final cut = lo.clamp(0, chars.length);
+        final visible = chars.take(cut).toString();
 
         return RichText(
           maxLines: 4,

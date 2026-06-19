@@ -13,6 +13,10 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
   List<NotificationItem> _items = const [];
   List<NotificationItem> get items => _items;
 
+  /// Uids optimistically marked read while PATCH is in flight — keeps stale
+  /// refresh responses from flipping a tile back to unread.
+  final Set<String> _pendingReadUids = {};
+
   String? _nextCursor;
   bool get hasMore => _nextCursor != null;
 
@@ -20,6 +24,34 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
   bool get loadingMore => _loadingMore;
 
   bool get hasUnread => _items.any((n) => !n.isRead);
+
+  List<NotificationItem> _withLocalReadState(List<NotificationItem> items) {
+    if (_pendingReadUids.isEmpty) return items;
+    return [
+      for (final n in items)
+        _pendingReadUids.contains(n.uid) || n.isRead
+            ? n.copyWith(isRead: true)
+            : n,
+    ];
+  }
+
+  void _setItems(List<NotificationItem> items, {String? nextCursor}) {
+    _items = _withLocalReadState(items);
+    if (nextCursor != null) {
+      _nextCursor = nextCursor;
+    }
+  }
+
+  /// Silent first-page fetch for the home header badge (no busy skeleton).
+  Future<void> prefetchUnreadBadge() async {
+    try {
+      final page = await _repo.fetchNotifications();
+      _setItems(page.items, nextCursor: page.nextCursor);
+      notifyListeners();
+    } catch (_) {
+      // Badge prefetch is best-effort; home must not surface errors.
+    }
+  }
 
   ViewModelState get markAllReadState =>
       getState(_markAllReadKey) ?? const ViewModelState.idle();
@@ -31,8 +63,7 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
     try {
       changeBaseState(const ViewModelState.busy());
       final page = await _repo.fetchNotifications();
-      _items = page.items;
-      _nextCursor = page.nextCursor;
+      _setItems(page.items, nextCursor: page.nextCursor);
       changeBaseState(const ViewModelState.idle());
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
@@ -42,8 +73,7 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
   Future<void> refresh() async {
     try {
       final page = await _repo.fetchNotifications();
-      _items = page.items;
-      _nextCursor = page.nextCursor;
+      _setItems(page.items, nextCursor: page.nextCursor);
     } on ApiFailure catch (e) {
       showErrorFlushbar(title: "Notifications", message: e.message);
     }
@@ -57,8 +87,7 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
     notifyListeners();
     try {
       final page = await _repo.fetchNotifications(cursor: cursor);
-      _items = [..._items, ...page.items];
-      _nextCursor = page.nextCursor;
+      _setItems([..._items, ...page.items], nextCursor: page.nextCursor);
     } on ApiFailure catch (e) {
       showErrorFlushbar(title: "Notifications", message: e.message);
     } finally {
@@ -73,6 +102,7 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
     final current = _items[index];
     if (current.isRead) return;
 
+    _pendingReadUids.add(uid);
     final previous = _items;
     _items = [
       for (var i = 0; i < _items.length; i++)
@@ -82,7 +112,9 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
 
     try {
       await _repo.markNotificationRead(uid);
+      _pendingReadUids.remove(uid);
     } on ApiFailure catch (e) {
+      _pendingReadUids.remove(uid);
       _items = previous;
       notifyListeners();
       showErrorFlushbar(title: "Notifications", message: e.message);
@@ -95,6 +127,7 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
     setState(_markAllReadKey, const ViewModelState.busy());
     try {
       await _repo.markAllNotificationsRead();
+      _pendingReadUids.clear();
       _items = [for (final n in _items) n.copyWith(isRead: true)];
       setState(_markAllReadKey, const ViewModelState.idle());
       notifyListeners();

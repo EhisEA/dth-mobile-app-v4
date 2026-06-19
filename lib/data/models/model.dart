@@ -15,6 +15,8 @@ export "profile_phone_submit_result.dart";
 export "registration_models.dart";
 export "user_model.dart";
 export "subscription_model.dart";
+export "sponsor_info.dart";
+export "banner_model.dart";
 export "subscription_purchase_init.dart";
 export "support_web_session.dart";
 export "livestream_model.dart";

@@ -15,6 +15,9 @@ class AppHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appModules = ref.watch(appModulesStateProvider);
+    final hasUnread = ref.watch(
+      notificationsViewModelProvider.select((vm) => vm.hasUnread),
+    );
     final navigationService = MobileNavigationService.instance;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -58,12 +61,35 @@ class AppHeader extends ConsumerWidget {
                 navigationService.navigateTo(NotificationsView.path);
                 HapticFeedback.lightImpact();
               },
+              behavior: HitTestBehavior.opaque,
               child: Padding(
                 padding: const EdgeInsets.only(right: 4.0),
-                child: SvgPicture.asset(
-                  SvgAssets.notification,
-                  height: 22,
-                  width: 22,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    SvgPicture.asset(
+                      SvgAssets.notification,
+                      height: 22,
+                      width: 22,
+                    ),
+                    if (hasUnread)
+                      Positioned(
+                        right: 3,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: AppColors.redTint35,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.white,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
