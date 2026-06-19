@@ -66,6 +66,7 @@ class AppDropdownFormField<T> extends StatefulWidget {
     this.splitLabelOnDash = false,
     this.inlineExpandCoordinator,
     this.inlineExpandSlotId,
+    this.titleSize,
   }) : assert(
          (inlineExpandCoordinator == null) == (inlineExpandSlotId == null),
        );
@@ -85,6 +86,7 @@ class AppDropdownFormField<T> extends StatefulWidget {
   final ValueChanged<T?>? onChanged;
   final AutovalidateMode autovalidateMode;
   final bool enabled;
+  final double? titleSize;
 
   /// Called when the field is disabled but the user still taps it.
   final VoidCallback? onDisabledTap;
@@ -412,7 +414,7 @@ class _AppDropdownFormFieldState<T> extends State<AppDropdownFormField<T>> {
             children: [
               AppText.regular(
                 widget.title,
-                fontSize: 10,
+                fontSize: widget.titleSize ?? 10,
                 letterSpacing: -0.2,
                 color: titleColor,
               ),

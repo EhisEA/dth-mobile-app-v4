@@ -81,8 +81,8 @@ class ContestantDashboardTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.regular(_title, fontSize: 14, color: AppColors.black),
-                Gap.h2,
+                AppText.medium(_title, fontSize: 15, color: AppColors.black),
+                Gap.h(2),
                 AppText.regular(
                   _subtitle,
                   fontSize: 12,
