@@ -1,3 +1,4 @@
+import "package:dth_v4/core/extension/string_extension.dart";
 import "package:dth_v4/widgets/text/text.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
@@ -140,7 +141,7 @@ class _PostDescriptionState extends State<PostDescription> {
         }
 
         final cut = lo.clamp(0, chars.length);
-        final visible = chars.take(cut).toString();
+        final visible = chars.take(cut).toString().trimDanglingEmojiJoiner();
 
         return RichText(
           maxLines: 4,

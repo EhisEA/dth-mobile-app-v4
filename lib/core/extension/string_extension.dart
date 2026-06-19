@@ -1,6 +1,36 @@
 import "package:dth_v4/core/extension/double_extension.dart";
 
 extension StringExtension on String {
+  /// Removes a dangling emoji joiner left behind when a grapheme-cluster
+  /// truncation splits a composite emoji — a trailing Zero-Width Joiner
+  /// (U+200D), variation selector (U+FE0F/U+FE0E), or a lone regional-indicator
+  /// half of a flag. Such fragments render as "?"/tofu (notably in truncated
+  /// "Read more" text on some OS versions); the base emoji left after trimming
+  /// renders fine. Uses only `runes`, so it needs no extra imports.
+  String trimDanglingEmojiJoiner() {
+    bool isJoiner(int r) => r == 0x200D || r == 0xFE0F || r == 0xFE0E;
+    bool isRegional(int r) => r >= 0x1F1E6 && r <= 0x1F1FF;
+
+    final codepoints = runes.toList();
+    var end = codepoints.length;
+
+    // Drop trailing joiners / variation selectors (keep the base they dangled
+    // from — a standalone base emoji renders correctly).
+    while (end > 0 && isJoiner(codepoints[end - 1])) {
+      end--;
+    }
+
+    // A flag is two regional indicators; an odd trailing run means we split one.
+    var regionalRun = 0;
+    for (var i = end - 1; i >= 0 && isRegional(codepoints[i]); i--) {
+      regionalRun++;
+    }
+    if (regionalRun.isOdd) end--;
+
+    if (end == codepoints.length) return this;
+    return String.fromCharCodes(codepoints.sublist(0, end));
+  }
+
   ///check if the string is an email
   bool isEmail() {
     //email regex pattern

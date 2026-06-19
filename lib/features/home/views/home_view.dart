@@ -251,47 +251,48 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                         ],
                                       ),
                               ),
-                              SliverToBoxAdapter(
-                                child:
-                                    value?.participationRole ==
-                                            ParticipationRole.user &&
-                                        appModules
-                                                .appModules
-                                                .value
-                                                ?.application ==
-                                            true
-                                    ? Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        children: [
-                                          // Gap.h10,
-                                          GestureDetector(
-                                            behavior: HitTestBehavior.opaque,
-                                            onTap: () {
-                                              MobileNavigationService.instance
-                                                  .navigateTo(
-                                                    ApplicationView.path,
-                                                  );
-                                            },
-                                            child: Container(
-                                              height: 108,
-                                              width: double.infinity,
-                                              decoration: BoxDecoration(
-                                                image: DecorationImage(
-                                                  image: AssetImage(
-                                                    ImageAssets.applyimg,
-                                                  ),
-                                                  fit: BoxFit.fill,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Gap.h16,
-                                        ],
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
+
+                              // SliverToBoxAdapter(
+                              //   child:
+                              //       value?.participationRole ==
+                              //               ParticipationRole.user &&
+                              //           appModules
+                              //                   .appModules
+                              //                   .value
+                              //                   ?.application ==
+                              //               true
+                              //       ? Column(
+                              //           mainAxisSize: MainAxisSize.min,
+                              //           crossAxisAlignment:
+                              //               CrossAxisAlignment.stretch,
+                              //           children: [
+                              //             // Gap.h10,
+                              //             GestureDetector(
+                              //               behavior: HitTestBehavior.opaque,
+                              //               onTap: () {
+                              //                 MobileNavigationService.instance
+                              //                     .navigateTo(
+                              //                       ApplicationView.path,
+                              //                     );
+                              //               },
+                              //               child: Container(
+                              //                 height: 108,
+                              //                 width: double.infinity,
+                              //                 decoration: BoxDecoration(
+                              //                   image: DecorationImage(
+                              //                     image: AssetImage(
+                              //                       ImageAssets.applyimg,
+                              //                     ),
+                              //                     fit: BoxFit.fill,
+                              //                   ),
+                              //                 ),
+                              //               ),
+                              //             ),
+                              //             Gap.h16,
+                              //           ],
+                              //         )
+                              //       : const SizedBox.shrink(),
+                              // ),
                               SliverToBoxAdapter(
                                 child: PollComponent(
                                   pollListenable: pollVm.poll,

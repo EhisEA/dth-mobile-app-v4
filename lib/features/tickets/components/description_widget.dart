@@ -1,4 +1,5 @@
 import 'package:dth_v4/core/core.dart';
+import 'package:dth_v4/core/extension/string_extension.dart';
 import 'package:dth_v4/widgets/text/text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -126,7 +127,7 @@ class _BookedShowDescriptionState extends State<BookedShowDescription> {
         }
 
         final best = lo.clamp(0, chars.length);
-        final prefix = chars.take(best).toString();
+        final prefix = chars.take(best).toString().trimDanglingEmojiJoiner();
 
         return Text.rich(
           TextSpan(
