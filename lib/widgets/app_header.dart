@@ -47,7 +47,7 @@ class AppHeader extends ConsumerWidget {
                 // off the same cached provider as [LivestreamBanner] —
                 // no extra HTTP.
                 child: SvgPicture.asset(
-                  ref.watch(activeLivestreamProvider).value != null
+                  ref.watch(activeLivestreamProvider).valueOrNull != null
                       ? SvgAssets.livestreamLives
                       : SvgAssets.livestream,
                   height: 20,
