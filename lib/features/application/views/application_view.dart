@@ -9,7 +9,6 @@ import 'package:dth_v4/features/application/views/steps/personal_information_ste
 import 'package:dth_v4/features/application/views/steps/talent_showcase_step.dart';
 import 'package:dth_v4/features/application/components/application_segmented_progress.dart';
 import 'package:dth_v4/features/support/support.dart';
-import 'package:dth_v4/widgets/text/textstyles.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -1,27 +1,31 @@
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/models/applicant_dashboard_models.dart";
 import "package:dth_v4/features/application/components/application_segmented_progress.dart";
+import "package:dth_v4/features/application_dashboard/view_model/applicant_dashboard_view_model.dart";
+import "package:dth_v4/features/support/view_model/support_session_view_model.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_svg/flutter_svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 /// Renders a server-driven [InfoForm] as a multi-step wizard. Each
 /// [InfoFormStep] becomes a page; fields are built from their [InfoFormFieldType].
-/// User input is captured per [InfoFormField.key] and returned via
-/// `Navigator.pop` as a `Map<String, dynamic>` on the final submit.
-class InfoFormBuilderView extends StatefulWidget {
+/// A trailing read-only preview submits the answers (keyed by
+/// [InfoFormField.key]) via [ApplicantDashboardViewModel.submitInfoForm].
+class InfoFormBuilderView extends ConsumerStatefulWidget {
   const InfoFormBuilderView({super.key, required this.form});
   static const String path = NavigatorRoutes.infoFormBuilder;
 
   final InfoForm form;
 
   @override
-  State<InfoFormBuilderView> createState() => _InfoFormBuilderViewState();
+  ConsumerState<InfoFormBuilderView> createState() =>
+      _InfoFormBuilderViewState();
 }
 
-class _InfoFormBuilderViewState extends State<InfoFormBuilderView> {
+class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
   late final List<InfoFormStep> _steps = widget.form.steps;
   late final int _stepCount = _steps.length;
 
@@ -113,6 +117,7 @@ class _InfoFormBuilderViewState extends State<InfoFormBuilderView> {
   }
 
   /// Snapshot of all answers keyed by [InfoFormField.key] (empty values dropped).
+  /// `number` fields are sent as ints to match the API contract.
   Map<String, dynamic> _collectValues() {
     final values = <String, dynamic>{};
     for (final field in widget.form.allFields) {
@@ -121,17 +126,28 @@ class _InfoFormBuilderViewState extends State<InfoFormBuilderView> {
         if (v != null && v.isNotEmpty) values[field.key] = v;
       } else {
         final text = _controllers[field.key]?.text.trim() ?? "";
-        if (text.isNotEmpty) values[field.key] = text;
+        if (text.isEmpty) continue;
+        if (field.type == InfoFormFieldType.number) {
+          values[field.key] = int.tryParse(text) ?? text;
+        } else {
+          values[field.key] = text;
+        }
       }
     }
     return values;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final values = _collectValues();
-    // TODO: POST [values] to the info-form endpoint once defined, then refresh
-    // the dashboard. For now hand the answers back to the caller.
-    Navigator.of(context).pop(values);
+    final ok = await ref
+        .read(applicantDashboardViewModelProvider)
+        .submitInfoForm(values);
+    if (!ok || !mounted) return;
+    DthFlushBar.instance.showSuccess(
+      title: "Success",
+      message: "Your details have been submitted.",
+    );
+    Navigator.of(context).pop(true);
   }
 
   String _primaryButtonLabel() {
@@ -147,6 +163,11 @@ class _InfoFormBuilderViewState extends State<InfoFormBuilderView> {
     if (_stepCount == 0) {
       return _emptyScaffold(context);
     }
+    final submitBusy = ref.watch(
+      applicantDashboardViewModelProvider.select(
+        (m) => m.submitInfoFormState.isBusy,
+      ),
+    );
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -172,6 +193,7 @@ class _InfoFormBuilderViewState extends State<InfoFormBuilderView> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: AppButton.primary(
                   text: _primaryButtonLabel(),
+                  isLoading: _isReviewPage && submitBusy,
                   press: _onProceed,
                 ),
               ),
@@ -196,6 +218,17 @@ class _InfoFormBuilderViewState extends State<InfoFormBuilderView> {
                     currentStepIndex: _currentIndex,
                     totalSteps: _stepCount,
                   ),
+          ),
+
+          Gap.w24,
+          GestureDetector(
+            onTap: () async {
+              HapticFeedback.lightImpact();
+              await ref
+                  .read(supportSessionViewModelProvider)
+                  .requestSupportWebSession();
+            },
+            child: SvgPicture.asset(SvgAssets.support),
           ),
         ],
       ),
