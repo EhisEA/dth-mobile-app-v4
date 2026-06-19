@@ -64,6 +64,17 @@ class ApplicationRepoImpl implements ApplicationRepo {
   }
 
   @override
+  Future<ApiResponse<void>> postApplicantInfoForm({
+    required Map<String, dynamic> answers,
+  }) async {
+    await _networkService.post(
+      ApiRoute.applicantInfoForm,
+      data: <String, dynamic>{"answers": answers},
+    );
+    return const ApiResponse<void>();
+  }
+
+  @override
   Future<ApiResponse<InterviewPickerData>> getInterviewSlots() async {
     final response = await _networkService.get(
       ApiRoute.applicantInterviewSlots,

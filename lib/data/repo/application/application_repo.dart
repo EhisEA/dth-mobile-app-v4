@@ -13,6 +13,12 @@ abstract class ApplicationRepo {
     required String socialMediaLink,
   });
 
+  /// Submits the `info_required` journey form. [answers] is keyed by
+  /// `InfoFormField.key`; wrapped as `{ "answers": answers }` by the impl.
+  Future<ApiResponse<void>> postApplicantInfoForm({
+    required Map<String, dynamic> answers,
+  });
+
   Future<ApiResponse<InterviewPickerData>> getInterviewSlots();
 
   Future<ApiResponse<InterviewBookingConfirmation>>

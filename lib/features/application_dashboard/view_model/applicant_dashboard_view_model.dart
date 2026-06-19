@@ -27,6 +27,12 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
 
   bool _silentDashboardBootstrapInFlight = false;
 
+  static const String _submitInfoFormKey = "submit_info_form";
+
+  /// State of [submitInfoForm] (drives the preview submit button's loader).
+  ViewModelState get submitInfoFormState =>
+      getState(_submitInfoFormKey) ?? const ViewModelState.idle();
+
   /// True while [getInterviewSlots] is running for the interview picker opened
   /// from the journey card with this [journeyCardKey].
   bool interviewSlotsFetchBusyFor(String journeyCardKey) =>
@@ -74,7 +80,6 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       final hadData = _data != null;
       if (baseState.isError) {
         changeBaseState(const ViewModelState.idle());
-        notifyListeners();
       }
       await _reloadApplicantDashboard(
         showErrorOnFailure: hadData,
@@ -94,7 +99,6 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       final response = await _applicationRepo.getApplicantDashboard();
       _data = response.data;
       changeBaseState(const ViewModelState.idle());
-      notifyListeners();
     } on ApiFailure catch (e) {
       if (setErrorStateIfFailureAndEmpty && !hadData && _data == null) {
         changeBaseState(ViewModelState.error(e));
@@ -102,6 +106,23 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
         DthFlushBar.instance.showError(message: e.message, title: "Failed");
       }
       notifyListeners();
+    }
+  }
+
+  /// Submits the `info_required` form answers, then silently refreshes the
+  /// dashboard. Returns true on success; shows an error toast on failure.
+  Future<bool> submitInfoForm(Map<String, dynamic> answers) async {
+    if (submitInfoFormState.isBusy) return false;
+    setState(_submitInfoFormKey, const ViewModelState.busy());
+    try {
+      await _applicationRepo.postApplicantInfoForm(answers: answers);
+      setState(_submitInfoFormKey, const ViewModelState.idle());
+      await _reloadApplicantDashboard(showErrorOnFailure: false);
+      return true;
+    } on ApiFailure catch (e) {
+      setState(_submitInfoFormKey, ViewModelState.error(e));
+      DthFlushBar.instance.showError(message: e.message, title: "Failed");
+      return false;
     }
   }
 
@@ -184,7 +205,7 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
-  void handleJourneyCta(BuildContext context, JourneyCard card) {
+  Future<void> handleJourneyCta(BuildContext context, JourneyCard card) async {
     final cta = card.cta;
     if (cta == null || !cta.enabled || cta.label.isEmpty) return;
     if (cta.isLoading) return;
@@ -212,8 +233,20 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       unawaited(_openMeetingLinkFromJourneyCard(context, card.key));
       return;
     }
-    if (target == "application_form" || action == "submit") {
+    if (target == "application_form" || action.toLowerCase() == "submit") {
       MobileNavigationService.instance.navigateTo(NavigatorRoutes.application);
+    }
+    if (action == "open_info_form" || target == "info_form") {
+      final form = card.form;
+      if (form != null && !form.isEmpty) {
+        final result = await MobileNavigationService.instance.navigateTo(
+          NavigatorRoutes.infoFormBuilder,
+          extra: {RoutingArgumentKey.form: form},
+        );
+        if (result == true) {
+          _reloadApplicantDashboard(showErrorOnFailure: false);
+        }
+      }
     }
   }
 
