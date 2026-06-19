@@ -192,6 +192,8 @@ flutter:
 
     # Glyph fallback so emoji render identically across devices/OS versions
     # instead of relying on each platform's emoji font. See AppFontFamily.emoji.
+    # COLRv1 (vector) build — renders on iOS (Skia/Impeller) AND Android. The
+    # CBDT bitmap build of Noto Color Emoji does NOT render on iOS, so avoid it.
     - family: Noto Color Emoji
       fonts:
-        - asset: assets/fonts/noto-color-emoji/NotoColorEmoji.ttf
+        - asset: assets/fonts/noto-color-emoji/Noto-COLRv1.ttf
