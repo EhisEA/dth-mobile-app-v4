@@ -96,8 +96,10 @@ class _BookedShowDescriptionState extends State<BookedShowDescription> {
           );
         }
 
+        final chars = text.characters;
+
         InlineSpan spanForPrefix(int len) {
-          final prefix = text.substring(0, len);
+          final prefix = chars.take(len).toString();
           return TextSpan(
             style: bodyStyle,
             children: [
@@ -113,7 +115,7 @@ class _BookedShowDescriptionState extends State<BookedShowDescription> {
         }
 
         var lo = 0;
-        var hi = text.length;
+        var hi = chars.length;
         while (lo < hi) {
           final mid = (lo + hi + 1) ~/ 2;
           if (_fitsTwoLines(spanForPrefix(mid), maxW, dir)) {
@@ -123,8 +125,8 @@ class _BookedShowDescriptionState extends State<BookedShowDescription> {
           }
         }
 
-        final best = lo.clamp(0, text.length);
-        final prefix = text.substring(0, best);
+        final best = lo.clamp(0, chars.length);
+        final prefix = chars.take(best).toString();
 
         return Text.rich(
           TextSpan(

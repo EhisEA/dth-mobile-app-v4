@@ -2,9 +2,9 @@ import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/data/models/application_draft.dart';
 import 'package:dth_v4/data/models/application_process_models.dart';
 import 'package:dth_v4/features/application/components/review_section_card.dart';
+import 'package:dth_v4/features/application/components/sponsor_footer.dart';
 import 'package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart';
 import 'package:dth_v4/features/application/view_model/application_view_model.dart';
-import 'package:dth_v4/widgets/text/textstyles.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -265,31 +265,7 @@ class _ApplicationReviewViewState extends ConsumerState<ApplicationReviewView> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Proudly sponsored by ',
-                          style: AppTextStyle.regular.copyWith(
-                            fontSize: 12,
-                            color: AppColors.blackTint20,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'Vent Africa',
-                          style: AppTextStyle.regular.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xff009DF9),
-                          ),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                const SponsorFooter(),
               ],
             ),
           ),

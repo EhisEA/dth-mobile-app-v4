@@ -96,7 +96,7 @@ class _AuditionVideoStepState extends ConsumerState<AuditionVideoStep>
     super.build(context);
     return Form(
       key: widget.formKey,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      autovalidateMode: AutovalidateMode.disabled,
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [

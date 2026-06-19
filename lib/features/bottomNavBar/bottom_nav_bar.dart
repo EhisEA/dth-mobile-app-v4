@@ -163,6 +163,56 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
     _tabController.jumpToTab(newIndex);
   }
 
+  /// Switches to a bottom-nav tab by server module name (e.g. `subscriptions`)
+  /// or banner API screen alias (e.g. `subscription`).
+  void changeTabByModuleName(String moduleName) {
+    final targets = _moduleNameAliases(moduleName);
+    final navItems =
+        ref.read(appModulesStateProvider).appModules.value?.navigation ??
+        const <AppModuleNavItem>[];
+
+    if (navItems.isNotEmpty) {
+      var bindingIndex = 0;
+      for (final item in navItems) {
+        if (_bindNavItem(item) == null) continue;
+        if (targets.contains(item.name)) {
+          changeTab(bindingIndex);
+          return;
+        }
+        bindingIndex++;
+      }
+      return;
+    }
+
+    const fallbackOrder = [
+      'timeline',
+      'search',
+      'tickets',
+      'subscriptions',
+      'profile',
+    ];
+    for (final target in targets) {
+      final index = fallbackOrder.indexOf(target);
+      if (index >= 0) {
+        changeTab(index);
+        return;
+      }
+    }
+  }
+
+  static Set<String> _moduleNameAliases(String moduleName) {
+    switch (moduleName) {
+      case 'subscription':
+      case 'subscriptions':
+        return {'subscriptions', 'subscription'};
+      case 'ticket':
+      case 'tickets':
+        return {'tickets', 'ticket'};
+      default:
+        return {moduleName};
+    }
+  }
+
   void _onPopInvoked(bool didPop, Object? result) {
     if (didPop) return;
     final onDashboard = _tabController.index == 0;

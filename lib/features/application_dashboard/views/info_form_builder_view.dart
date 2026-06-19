@@ -365,6 +365,7 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
       case InfoFormFieldType.select:
         return AppDropdownFormField<String>(
           title: field.required ? "${field.label} *" : field.label,
+          titleSize: 12,
           hint: "Select an option",
           options: [
             for (final o in field.options)
@@ -378,9 +379,11 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
         return AppTextField(
           hint: field.placeholder ?? "",
           title: field.required ? "${field.label} *" : field.label,
+          titleSize: 12,
           controller: _controllers[field.key],
           focusNode: _focusNodes[field.key],
           minLines: 3,
+          titleColor: AppColors.greyTint55,
           maxLines: 6,
           keyboardType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
@@ -390,6 +393,7 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
         return AppTextField(
           hint: field.placeholder ?? "",
           title: field.required ? "${field.label} *" : field.label,
+          titleSize: 12,
           controller: _controllers[field.key],
           focusNode: _focusNodes[field.key],
           keyboardType: TextInputType.number,
@@ -402,6 +406,7 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
         return AppTextField(
           hint: field.placeholder ?? "",
           title: field.required ? "${field.label} *" : field.label,
+          titleSize: 12,
           controller: _controllers[field.key],
           focusNode: _focusNodes[field.key],
           keyboardType: TextInputType.text,

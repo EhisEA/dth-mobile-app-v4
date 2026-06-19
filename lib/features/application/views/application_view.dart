@@ -8,6 +8,7 @@ import 'package:dth_v4/features/application/views/steps/contact_information_step
 import 'package:dth_v4/features/application/views/steps/personal_information_step.dart';
 import 'package:dth_v4/features/application/views/steps/talent_showcase_step.dart';
 import 'package:dth_v4/features/application/components/application_segmented_progress.dart';
+import 'package:dth_v4/features/application/components/sponsor_footer.dart';
 import 'package:dth_v4/features/support/support.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -300,35 +301,7 @@ class _ApplicationViewState extends ConsumerState<ApplicationView> {
                   subtitle: _primaryButtonSubtitle(process),
                 ),
               ),
-              // Padding(
-              //   padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-              //   child: Text.rich(
-              //     TextSpan(
-              //       style: AppTextStyle.regular.copyWith(
-              //         fontSize: 11,
-              //         color: AppColors.blackTint20,
-              //       ),
-              //       children: [
-              //         TextSpan(
-              //           text: 'Proudly sponsored by ',
-              //           style: AppTextStyle.regular.copyWith(
-              //             fontSize: 12,
-              //             color: AppColors.blackTint20,
-              //           ),
-              //         ),
-              //         TextSpan(
-              //           text: 'Vent Africa',
-              //           style: AppTextStyle.regular.copyWith(
-              //             fontSize: 12,
-              //             fontWeight: FontWeight.w600,
-              //             color: const Color(0xff009DF9),
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     textAlign: TextAlign.center,
-              //   ),
-              // ),
+              const SponsorFooter(),
             ],
           ),
         ),

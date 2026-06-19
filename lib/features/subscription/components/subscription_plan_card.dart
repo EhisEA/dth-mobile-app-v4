@@ -98,6 +98,7 @@ class SubscriptionPlanCard extends StatelessWidget {
                         color: AppColors.mainBlack,
                         height: 0,
                       ),
+                      Gap.w(2),
                       AppText.matterBold(
                         priceLabel,
                         fontSize: 26,
