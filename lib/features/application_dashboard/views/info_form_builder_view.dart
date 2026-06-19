@@ -44,6 +44,10 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
   /// Current value of each `select` field, keyed by [InfoFormField.key].
   final Map<String, String?> _selectValues = {};
 
+  /// Last snapshot persisted to the backend (seeded from saved `value`s), used
+  /// to skip redundant saves when a step's answers are unchanged.
+  late Map<String, dynamic> _lastSavedValues;
+
   int _currentIndex = 0;
 
   @override
@@ -52,12 +56,18 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
     _pageController = PageController(initialPage: 0);
     for (final field in widget.form.allFields) {
       if (field.type == InfoFormFieldType.select) {
-        _selectValues[field.key] = null;
+        // Prefill a saved selection only when it's still a valid option.
+        final saved = field.valueAsString;
+        _selectValues[field.key] = field.options.contains(saved) ? saved : null;
       } else {
-        _controllers[field.key] = TextEditingController();
+        _controllers[field.key] = TextEditingController(
+          text: field.valueAsString,
+        );
         _focusNodes[field.key] = FocusNode();
       }
     }
+    // Baseline = what the server already has, so an untouched step won't re-save.
+    _lastSavedValues = _collectValues();
   }
 
   @override
@@ -99,11 +109,15 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
     final formState = _formKeys[_currentIndex].currentState;
     if (formState == null || !formState.validate()) return;
 
-    // Persist the draft before advancing; stay on this step if the save fails.
-    final saved = await ref
-        .read(applicantDashboardViewModelProvider)
-        .saveInfoFormFields(_collectValues());
-    if (!saved || !mounted) return;
+    // Persist the draft only when answers changed; stay put if the save fails.
+    final values = _collectValues();
+    if (!_answersUnchanged(values)) {
+      final saved = await ref
+          .read(applicantDashboardViewModelProvider)
+          .saveInfoFormFields(values);
+      if (!saved || !mounted) return;
+      _lastSavedValues = values;
+    }
 
     // Advancing past the final form step lands on the preview page.
     await _pageController.animateToPage(
@@ -111,6 +125,15 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  /// True when [values] matches the last persisted snapshot (nothing to save).
+  bool _answersUnchanged(Map<String, dynamic> values) {
+    if (values.length != _lastSavedValues.length) return false;
+    for (final entry in values.entries) {
+      if (_lastSavedValues[entry.key] != entry.value) return false;
+    }
+    return true;
   }
 
   void _goToStep(int index) {
@@ -172,8 +195,7 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
     // Loader for the primary button: saving a step draft, or final submit.
     final actionBusy = ref.watch(
       applicantDashboardViewModelProvider.select(
-        (m) =>
-            m.submitInfoFormState.isBusy || m.saveInfoFormFieldsState.isBusy,
+        (m) => m.submitInfoFormState.isBusy || m.saveInfoFormFieldsState.isBusy,
       ),
     );
     return GestureDetector(

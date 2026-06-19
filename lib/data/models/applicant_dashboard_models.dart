@@ -323,6 +323,7 @@ class InfoFormField {
     this.helpText,
     this.required = false,
     this.placeholder,
+    this.value,
   });
 
   final String key;
@@ -333,7 +334,15 @@ class InfoFormField {
   final bool required;
   final String? placeholder;
 
+  /// Previously-saved answer for this field (`null` when unanswered). May be a
+  /// String (text/textarea/select) or a num (number); use [valueAsString] for
+  /// text controllers.
+  final dynamic value;
+
   bool get isValid => key.isNotEmpty;
+
+  /// [value] as a display/edit string ("" when unanswered).
+  String get valueAsString => value == null ? "" : value.toString();
 
   factory InfoFormField.fromJson(Map<String, dynamic> json) {
     final rawOptions = json["options"];
@@ -348,6 +357,7 @@ class InfoFormField {
       helpText: (json["helpText"] ?? json["help_text"]) as String?,
       required: json["required"] as bool? ?? false,
       placeholder: json["placeholder"] as String?,
+      value: json["value"],
     );
   }
 }
@@ -421,11 +431,13 @@ class InfoFormSubmit {
 
 class InfoFormStep {
   const InfoFormStep({
+    required this.key,
     required this.page,
     required this.submit,
     required this.sections,
   });
 
+  final String key;
   final InfoFormPage page;
   final InfoFormSubmit submit;
   final List<InfoFormSection> sections;
@@ -445,6 +457,7 @@ class InfoFormStep {
               .toList(growable: false)
         : const <InfoFormSection>[];
     return InfoFormStep(
+      key: json["key"] as String? ?? "",
       page: InfoFormPage.fromJson(json["page"] as Map<String, dynamic>?),
       submit: InfoFormSubmit.fromJson(json["submit"] as Map<String, dynamic>?),
       sections: sections,
