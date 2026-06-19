@@ -19,6 +19,12 @@ abstract class ApplicationRepo {
     required Map<String, dynamic> answers,
   });
 
+  /// Saves a partial draft of the info form (called on each step Proceed).
+  /// Same `{ "answers": answers }` shape as [postApplicantInfoForm].
+  Future<ApiResponse<void>> postApplicantInfoFormFields({
+    required Map<String, dynamic> answers,
+  });
+
   Future<ApiResponse<InterviewPickerData>> getInterviewSlots();
 
   Future<ApiResponse<InterviewBookingConfirmation>>

@@ -99,6 +99,12 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
     final formState = _formKeys[_currentIndex].currentState;
     if (formState == null || !formState.validate()) return;
 
+    // Persist the draft before advancing; stay on this step if the save fails.
+    final saved = await ref
+        .read(applicantDashboardViewModelProvider)
+        .saveInfoFormFields(_collectValues());
+    if (!saved || !mounted) return;
+
     // Advancing past the final form step lands on the preview page.
     await _pageController.animateToPage(
       _currentIndex + 1,
@@ -163,9 +169,11 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
     if (_stepCount == 0) {
       return _emptyScaffold(context);
     }
-    final submitBusy = ref.watch(
+    // Loader for the primary button: saving a step draft, or final submit.
+    final actionBusy = ref.watch(
       applicantDashboardViewModelProvider.select(
-        (m) => m.submitInfoFormState.isBusy,
+        (m) =>
+            m.submitInfoFormState.isBusy || m.saveInfoFormFieldsState.isBusy,
       ),
     );
     return GestureDetector(
@@ -193,7 +201,7 @@ class _InfoFormBuilderViewState extends ConsumerState<InfoFormBuilderView> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: AppButton.primary(
                   text: _primaryButtonLabel(),
-                  isLoading: _isReviewPage && submitBusy,
+                  isLoading: actionBusy,
                   press: _onProceed,
                 ),
               ),

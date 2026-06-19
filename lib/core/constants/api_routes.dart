@@ -40,6 +40,8 @@ class ApiRoute {
   static String get applicantAuditionVideos =>
       "$baseUrl/applicant/audition-videos";
   static String get applicantInfoForm => "$baseUrl/applicant/info-form";
+  static String get applicantInfoFormFields =>
+      "$baseUrl/applicant/info-form/fields";
 
   ///SUBSCRIPTION
   static String get subscriptionPlans => "$baseUrl/subscription/plans";

@@ -28,10 +28,15 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
   bool _silentDashboardBootstrapInFlight = false;
 
   static const String _submitInfoFormKey = "submit_info_form";
+  static const String _saveInfoFormFieldsKey = "save_info_form_fields";
 
   /// State of [submitInfoForm] (drives the preview submit button's loader).
   ViewModelState get submitInfoFormState =>
       getState(_submitInfoFormKey) ?? const ViewModelState.idle();
+
+  /// State of [saveInfoFormFields] (drives the per-step Proceed loader).
+  ViewModelState get saveInfoFormFieldsState =>
+      getState(_saveInfoFormFieldsKey) ?? const ViewModelState.idle();
 
   /// True while [getInterviewSlots] is running for the interview picker opened
   /// from the journey card with this [journeyCardKey].
@@ -121,6 +126,22 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       return true;
     } on ApiFailure catch (e) {
       setState(_submitInfoFormKey, ViewModelState.error(e));
+      DthFlushBar.instance.showError(message: e.message, title: "Failed");
+      return false;
+    }
+  }
+
+  /// Saves the current info-form answers as a draft (called on each Proceed).
+  /// Returns true on success; shows an error toast on failure.
+  Future<bool> saveInfoFormFields(Map<String, dynamic> answers) async {
+    if (saveInfoFormFieldsState.isBusy) return false;
+    setState(_saveInfoFormFieldsKey, const ViewModelState.busy());
+    try {
+      await _applicationRepo.postApplicantInfoFormFields(answers: answers);
+      setState(_saveInfoFormFieldsKey, const ViewModelState.idle());
+      return true;
+    } on ApiFailure catch (e) {
+      setState(_saveInfoFormFieldsKey, ViewModelState.error(e));
       DthFlushBar.instance.showError(message: e.message, title: "Failed");
       return false;
     }
