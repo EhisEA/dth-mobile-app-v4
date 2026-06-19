@@ -4,4 +4,13 @@ abstract final class AppFontFamily {
   static const String secondary = 'Matter';
   static const String cascadiaMono = 'Cascadia Mono';
   static const String hanson = 'Hanson';
+
+  /// Bundled emoji typeface used as a glyph fallback so emoji render the same
+  /// on every device, instead of relying on each OS's (version-dependent)
+  /// emoji font. Applied to every [AppTextStyle]. Must match the `family` under
+  /// `flutter.fonts` in [pubspec.yaml].
+  static const String emoji = 'Noto Color Emoji';
+
+  /// Fallback chain for text styles: try the primary glyph, then [emoji].
+  static const List<String> fallback = [emoji];
 }

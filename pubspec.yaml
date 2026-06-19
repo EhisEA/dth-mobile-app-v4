@@ -189,3 +189,9 @@ flutter:
       fonts:
         - asset: assets/fonts/hanson-bold/Hanson-Bold.ttf
           weight: 700
+
+    # Glyph fallback so emoji render identically across devices/OS versions
+    # instead of relying on each platform's emoji font. See AppFontFamily.emoji.
+    - family: Noto Color Emoji
+      fonts:
+        - asset: assets/fonts/noto-color-emoji/NotoColorEmoji.ttf

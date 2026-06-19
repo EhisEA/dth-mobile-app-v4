@@ -9,6 +9,7 @@ class AppTextStyle {
   /// Weight 200 — `HankenGrotesk-ExtraLight.ttf` in pubspec.
   static const TextStyle extraLight = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w200,
@@ -17,6 +18,7 @@ class AppTextStyle {
   /// Weight 300 — `HankenGrotesk-Light.ttf`.
   static const TextStyle light = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w300,
@@ -25,6 +27,7 @@ class AppTextStyle {
   /// Weight 400 — `HankenGrotesk-Regular.ttf`.
   static const TextStyle regular = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w400,
@@ -33,6 +36,7 @@ class AppTextStyle {
   /// Weight 500 — `HankenGrotesk-Medium.ttf`.
   static const TextStyle medium = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w500,
@@ -41,6 +45,7 @@ class AppTextStyle {
   /// Weight 600 — `HankenGrotesk-SemiBold.ttf`.
   static const TextStyle semiBold = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 18,
     letterSpacing: _ls,
     fontWeight: FontWeight.w600,
@@ -49,6 +54,7 @@ class AppTextStyle {
   /// Weight 700 — `HankenGrotesk-Bold.ttf`.
   static const TextStyle bold = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 22,
     letterSpacing: _ls,
     fontWeight: FontWeight.w700,
@@ -57,6 +63,7 @@ class AppTextStyle {
   /// Weight 900 — `HankenGrotesk-Black.ttf`.
   static const TextStyle black = TextStyle(
     fontFamily: AppFontFamily.primary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 24,
     letterSpacing: _ls,
     fontWeight: FontWeight.w900,
@@ -65,6 +72,7 @@ class AppTextStyle {
   /// Weight 300 — `Matter-Light.ttf`.
   static const TextStyle matterLight = TextStyle(
     fontFamily: AppFontFamily.secondary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w300,
@@ -73,6 +81,7 @@ class AppTextStyle {
   /// Weight 400 — `Matter-Regular.ttf`.
   static const TextStyle matterRegular = TextStyle(
     fontFamily: AppFontFamily.secondary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w400,
@@ -81,6 +90,7 @@ class AppTextStyle {
   /// Weight 500 — `Matter-Medium.ttf`.
   static const TextStyle matterMedium = TextStyle(
     fontFamily: AppFontFamily.secondary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w500,
@@ -89,6 +99,7 @@ class AppTextStyle {
   /// Weight 600 — `Matter-SemiBold.ttf`.
   static const TextStyle matterSemiBold = TextStyle(
     fontFamily: AppFontFamily.secondary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w600,
@@ -97,6 +108,7 @@ class AppTextStyle {
   /// Weight 700 — `Matter-Bold.ttf`.
   static const TextStyle matterBold = TextStyle(
     fontFamily: AppFontFamily.secondary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w700,
@@ -105,6 +117,7 @@ class AppTextStyle {
   /// Weight 800 — `Matter-Heavy.ttf`.
   static const TextStyle matterHeavy = TextStyle(
     fontFamily: AppFontFamily.secondary,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w800,
@@ -113,6 +126,7 @@ class AppTextStyle {
   /// Weight 200 — `CascadiaMono-ExtraLight.ttf`.
   static const TextStyle cascadiaMonoExtraLight = TextStyle(
     fontFamily: AppFontFamily.cascadiaMono,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w200,
@@ -121,6 +135,7 @@ class AppTextStyle {
   /// Weight 300 — `CascadiaMono-Light.ttf`.
   static const TextStyle cascadiaMonoLight = TextStyle(
     fontFamily: AppFontFamily.cascadiaMono,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w300,
@@ -129,6 +144,7 @@ class AppTextStyle {
   /// Weight 400 — `CascadiaMono-Regular.ttf`.
   static const TextStyle cascadiaMonoRegular = TextStyle(
     fontFamily: AppFontFamily.cascadiaMono,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w400,
@@ -137,6 +153,7 @@ class AppTextStyle {
   /// Weight 500 — `CascadiaMono-Medium.ttf`.
   static const TextStyle cascadiaMonoMedium = TextStyle(
     fontFamily: AppFontFamily.cascadiaMono,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w500,
@@ -145,6 +162,7 @@ class AppTextStyle {
   /// Weight 600 — `CascadiaMono-SemiBold.ttf`.
   static const TextStyle cascadiaMonoSemiBold = TextStyle(
     fontFamily: AppFontFamily.cascadiaMono,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w600,
@@ -153,6 +171,7 @@ class AppTextStyle {
   /// Weight 700 — `CascadiaMono-Bold.ttf`.
   static const TextStyle cascadiaMonoBold = TextStyle(
     fontFamily: AppFontFamily.cascadiaMono,
+    fontFamilyFallback: AppFontFamily.fallback,
     fontSize: 16,
     letterSpacing: _ls,
     fontWeight: FontWeight.w700,
