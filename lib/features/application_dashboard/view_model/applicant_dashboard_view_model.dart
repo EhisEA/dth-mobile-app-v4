@@ -260,13 +260,12 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
     if (action == "open_info_form" || target == "info_form") {
       final form = card.form;
       if (form != null && !form.isEmpty) {
-        final result = await MobileNavigationService.instance.navigateTo(
+        await MobileNavigationService.instance.navigateTo(
           NavigatorRoutes.infoFormBuilder,
           extra: {RoutingArgumentKey.form: form},
         );
-        if (result == true) {
-          _reloadApplicantDashboard(showErrorOnFailure: false);
-        }
+
+        _reloadApplicantDashboard(showErrorOnFailure: false);
       }
     }
   }
