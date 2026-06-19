@@ -221,6 +221,7 @@ class _FullReelBodyState extends State<FullReelBody> {
                                             maxChars:
                                                 FullReelBody._previewMaxChars,
                                           ),
+                                    recognizer: _toggleTap,
                                   ),
                                   if (isLong)
                                     TextSpan(

@@ -147,7 +147,10 @@ class _PostDescriptionState extends State<PostDescription> {
           text: TextSpan(
             style: _bodyStyle,
             children: [
-              TextSpan(text: "$visible$suffix"),
+              TextSpan(
+                text: "$visible$suffix",
+                recognizer: widget.shouldReadMoreAction ? _toggleTap : null,
+              ),
               TextSpan(
                 text: linkText,
                 style: _linkStyle,
