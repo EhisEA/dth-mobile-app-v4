@@ -288,6 +288,195 @@ class ApplicantDashboardHeroBanner {
   }
 }
 
+/// Server-driven form embedded in a journey card's `meta.form` (e.g. the
+/// `info_required` card). Schema only — user input is captured separately,
+/// keyed by [InfoFormField.key].
+enum InfoFormFieldType {
+  text,
+  textarea,
+  number,
+  select,
+  unknown;
+
+  static InfoFormFieldType fromRaw(String? raw) {
+    switch ((raw ?? "").trim().toLowerCase()) {
+      case "text":
+        return InfoFormFieldType.text;
+      case "textarea":
+        return InfoFormFieldType.textarea;
+      case "number":
+        return InfoFormFieldType.number;
+      case "select":
+        return InfoFormFieldType.select;
+      default:
+        return InfoFormFieldType.unknown;
+    }
+  }
+}
+
+class InfoFormField {
+  const InfoFormField({
+    required this.key,
+    required this.type,
+    required this.label,
+    this.options = const [],
+    this.helpText,
+    this.required = false,
+    this.placeholder,
+  });
+
+  final String key;
+  final InfoFormFieldType type;
+  final String label;
+  final List<String> options;
+  final String? helpText;
+  final bool required;
+  final String? placeholder;
+
+  bool get isValid => key.isNotEmpty;
+
+  factory InfoFormField.fromJson(Map<String, dynamic> json) {
+    final rawOptions = json["options"];
+    final options = rawOptions is List
+        ? rawOptions.map((e) => e.toString()).toList(growable: false)
+        : const <String>[];
+    return InfoFormField(
+      key: json["key"] as String? ?? "",
+      type: InfoFormFieldType.fromRaw(json["type"] as String?),
+      label: json["label"] as String? ?? "",
+      options: options,
+      helpText: (json["helpText"] ?? json["help_text"]) as String?,
+      required: json["required"] as bool? ?? false,
+      placeholder: json["placeholder"] as String?,
+    );
+  }
+}
+
+class InfoFormSection {
+  const InfoFormSection({this.title, this.subtitle, required this.rows});
+
+  final String? title;
+  final String? subtitle;
+
+  /// 2D layout: a list of rows, each row a list of side-by-side fields.
+  final List<List<InfoFormField>> rows;
+
+  /// Flattened fields in render order.
+  List<InfoFormField> get fields =>
+      rows.expand((r) => r).toList(growable: false);
+
+  factory InfoFormSection.fromJson(Map<String, dynamic> json) {
+    final rawRows = json["rows"];
+    final rows = <List<InfoFormField>>[];
+    if (rawRows is List) {
+      for (final row in rawRows) {
+        if (row is! List) continue;
+        final fields = row
+            .whereType<Map>()
+            .map((e) => InfoFormField.fromJson(Map<String, dynamic>.from(e)))
+            .where((f) => f.isValid)
+            .toList(growable: false);
+        if (fields.isNotEmpty) rows.add(fields);
+      }
+    }
+    return InfoFormSection(
+      title: json["title"] as String?,
+      subtitle: json["subtitle"] as String?,
+      rows: rows,
+    );
+  }
+}
+
+class InfoFormPage {
+  const InfoFormPage({this.title, this.description});
+
+  final String? title;
+  final String? description;
+
+  factory InfoFormPage.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const InfoFormPage();
+    return InfoFormPage(
+      title: json["title"] as String?,
+      description: json["description"] as String?,
+    );
+  }
+}
+
+class InfoFormSubmit {
+  const InfoFormSubmit({required this.label, required this.variant});
+
+  final String label;
+  final String variant;
+
+  factory InfoFormSubmit.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const InfoFormSubmit(label: "Submit", variant: "primary");
+    }
+    return InfoFormSubmit(
+      label: json["label"] as String? ?? "Submit",
+      variant: json["variant"] as String? ?? "primary",
+    );
+  }
+}
+
+class InfoFormStep {
+  const InfoFormStep({
+    required this.page,
+    required this.submit,
+    required this.sections,
+  });
+
+  final InfoFormPage page;
+  final InfoFormSubmit submit;
+  final List<InfoFormSection> sections;
+
+  /// Flattened fields across all sections in this step.
+  List<InfoFormField> get fields =>
+      sections.expand((s) => s.fields).toList(growable: false);
+
+  factory InfoFormStep.fromJson(Map<String, dynamic> json) {
+    final rawSections = json["sections"];
+    final sections = rawSections is List
+        ? rawSections
+              .whereType<Map>()
+              .map(
+                (e) => InfoFormSection.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .toList(growable: false)
+        : const <InfoFormSection>[];
+    return InfoFormStep(
+      page: InfoFormPage.fromJson(json["page"] as Map<String, dynamic>?),
+      submit: InfoFormSubmit.fromJson(json["submit"] as Map<String, dynamic>?),
+      sections: sections,
+    );
+  }
+}
+
+class InfoForm {
+  const InfoForm({required this.steps});
+
+  final List<InfoFormStep> steps;
+
+  bool get isEmpty => steps.isEmpty;
+
+  /// Every field across every step, keyed for value capture by [InfoFormField.key].
+  List<InfoFormField> get allFields =>
+      steps.expand((s) => s.fields).toList(growable: false);
+
+  factory InfoForm.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const InfoForm(steps: []);
+    final rawSteps = json["steps"];
+    final steps = rawSteps is List
+        ? rawSteps
+              .whereType<Map>()
+              .map((e) => InfoFormStep.fromJson(Map<String, dynamic>.from(e)))
+              .where((s) => s.sections.isNotEmpty)
+              .toList(growable: false)
+        : const <InfoFormStep>[];
+    return InfoForm(steps: steps);
+  }
+}
+
 class JourneyCard {
   const JourneyCard({
     required this.key,
@@ -300,6 +489,7 @@ class JourneyCard {
     this.cta,
     this.progress,
     this.footer,
+    this.meta,
   });
 
   final String key;
@@ -312,6 +502,7 @@ class JourneyCard {
   final JourneyCta? cta;
   final JourneyProgress? progress;
   final JourneyCardFooter? footer;
+  final Map? meta;
 
   factory JourneyCard.fromJson(Map<String, dynamic> json) {
     JourneyStatusChip? chip;
@@ -359,19 +550,34 @@ class JourneyCard {
       cta: cta,
       progress: progress,
       footer: footer,
+      meta: json["meta"] as Map<String, dynamic>?,
     );
+  }
+
+  /// Typed view of `meta.form` when present (e.g. the `info_required` card).
+  InfoForm? get form {
+    final m = meta;
+    if (m == null) return null;
+    final rawForm = m["form"];
+    if (rawForm is Map) {
+      final f = InfoForm.fromJson(Map<String, dynamic>.from(rawForm));
+      if (!f.isEmpty) return f;
+    }
+    return null;
   }
 
   bool get hasDisplayableContent {
     final t = title?.trim() ?? "";
     final b = body?.trim() ?? "";
     final f = footer?.label.trim() ?? "";
+    final m = meta?.isNotEmpty ?? false;
     return t.isNotEmpty ||
         b.isNotEmpty ||
         f.isNotEmpty ||
         cta != null ||
         (statusChip != null && !statusChip!.isEmpty) ||
-        (progress != null && progress!.isRenderable);
+        (progress != null && progress!.isRenderable) ||
+        m;
   }
 }
 

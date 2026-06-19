@@ -83,6 +83,7 @@ class RoutingArgumentKey {
 
   /// @deprecated Use [purchasedTicket]. Legacy route map for [YourTicketsView].
   static const String yourTicketsArgs = "yourTicketsArgs";
+  static const String form = "form";
 }
 
 abstract class OtpFlowArg {

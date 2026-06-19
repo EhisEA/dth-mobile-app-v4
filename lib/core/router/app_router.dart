@@ -5,6 +5,7 @@ import 'package:dth_v4/features/application/views/application_landing_view.dart'
 import 'package:dth_v4/features/application/views/application_review_view.dart';
 import 'package:dth_v4/features/application/views/application_view.dart';
 import 'package:dth_v4/features/application_dashboard/applicant_dashboard.dart';
+import 'package:dth_v4/features/application_dashboard/views/info_form_builder_view.dart';
 import 'package:dth_v4/features/authentication/views/create_account_view.dart';
 import 'package:dth_v4/features/authentication/views/get_started_view.dart';
 import 'package:dth_v4/features/authentication/views/login_view.dart';
@@ -136,6 +137,13 @@ class AppRouter {
           viewToShow: const ApplicationLandingView(),
         );
 
+      case InfoFormBuilderView.path:
+        final form = routeArgs[RoutingArgumentKey.form] as InfoForm;
+
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: InfoFormBuilderView(form: form),
+        );
       case ApplicationView.path:
         return _getPageRoute(
           settings: settings,

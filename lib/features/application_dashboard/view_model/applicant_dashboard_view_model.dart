@@ -212,8 +212,17 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       unawaited(_openMeetingLinkFromJourneyCard(context, card.key));
       return;
     }
-    if (target == "application_form" || action == "submit") {
+    if (target == "application_form" || action.toLowerCase() == "submit") {
       MobileNavigationService.instance.navigateTo(NavigatorRoutes.application);
+    }
+    if (action == "open_info_form" || target == "info_form") {
+      final form = card.form;
+      if (form != null && !form.isEmpty) {
+        MobileNavigationService.instance.navigateTo(
+          NavigatorRoutes.infoFormBuilder,
+          extra: {RoutingArgumentKey.form: form},
+        );
+      }
     }
   }
 
