@@ -86,9 +86,12 @@ class ApplicationRepoImpl implements ApplicationRepo {
   }
 
   @override
-  Future<ApiResponse<InterviewPickerData>> getInterviewSlots() async {
+  Future<ApiResponse<InterviewPickerData>> getInterviewSlots({
+    String? date,
+  }) async {
     final response = await _networkService.get(
       ApiRoute.applicantInterviewSlots,
+      queryParams: date != null ? <String, dynamic>{"date": date} : null,
     );
     final root = response.data as Map<String, dynamic>;
     final data = root["data"];

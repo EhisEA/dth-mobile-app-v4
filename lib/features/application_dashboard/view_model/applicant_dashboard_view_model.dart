@@ -282,8 +282,8 @@ class ApplicantDashboardViewModel extends BaseChangeNotifierViewModel {
       if (data == null) throw ApiFailure("No data");
       if (!context.mounted) return;
 
-      Future<InterviewPickerData> loadPicker() async {
-        final r2 = await _applicationRepo.getInterviewSlots();
+      Future<InterviewPickerData> loadPicker({String? date}) async {
+        final r2 = await _applicationRepo.getInterviewSlots(date: date);
         final d = r2.data;
         if (d == null) throw ApiFailure("No data");
         return d;

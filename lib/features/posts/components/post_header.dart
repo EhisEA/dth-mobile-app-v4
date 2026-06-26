@@ -71,8 +71,6 @@ class PostDetailsHeader extends StatelessWidget {
 
   final Post post;
 
-  static const Color _muted = Color(0xff8F8F8F);
-
   @override
   Widget build(BuildContext context) {
     return Column(

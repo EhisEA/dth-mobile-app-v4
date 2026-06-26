@@ -1,4 +1,6 @@
-// Models for `GET /applicant/interview-slots` (no query/body) and booking confirmation.
+// Models for `GET /applicant/interview-slots` and booking confirmation.
+// Initial load: no query params (dates + times for the default selected date).
+// Date change: `?date=YYYY-MM-DD` returns updated times for that day.
 
 class InterviewPickerDate {
   const InterviewPickerDate({

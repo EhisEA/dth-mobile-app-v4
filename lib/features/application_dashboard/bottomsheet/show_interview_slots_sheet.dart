@@ -19,7 +19,7 @@ const String _kAlrightDefault = "Alright. Got it!";
 Future<void> showInterviewSlotsSheet(
   BuildContext anchorContext, {
   InterviewPickerData? preloadedData,
-  required Future<InterviewPickerData> Function() loadPicker,
+  required Future<InterviewPickerData> Function({String? date}) loadPicker,
   required Future<InterviewBookingConfirmation> Function(String slotUid)
   bookSlot,
   required Future<void> Function() onBookedRefreshDashboard,
@@ -158,7 +158,7 @@ class _InterviewSlotsSheetBody extends StatefulWidget {
 
   final BuildContext anchorContext;
   final InterviewPickerData? preloadedData;
-  final Future<InterviewPickerData> Function() loadPicker;
+  final Future<InterviewPickerData> Function({String? date}) loadPicker;
   final Future<InterviewBookingConfirmation> Function(String slotUid) bookSlot;
   final Future<void> Function() onBookedRefreshDashboard;
   final Future<void> Function()? onInterviewConfirmationDismiss;
@@ -175,7 +175,9 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
 
   bool _loading = true;
   bool _booking = false;
+  bool _timesLoading = false;
   String? _loadError;
+  String? _timesLoadError;
   InterviewPickerData? _data;
 
   String? _dateIso;
@@ -206,8 +208,49 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
       _dateIso = _initialDateIso(d);
       _slotUid = emptyTimes ? null : _initialSlotUid(d);
       _loadError = null;
+      _timesLoadError = null;
+      _timesLoading = false;
       _loading = false;
     });
+  }
+
+  void _applyTimesForDate(
+    InterviewPickerData d, {
+    required String preserveDateIso,
+  }) {
+    _inlineDropdownCoordinator.value = null;
+    setState(() {
+      _data = d;
+      _dateIso = preserveDateIso;
+      _slotUid = null;
+      _timesLoadError = null;
+      _timesLoading = false;
+    });
+  }
+
+  Future<void> _loadTimesForDate(String dateIso) async {
+    setState(() {
+      _timesLoading = true;
+      _timesLoadError = null;
+      _slotUid = null;
+    });
+    try {
+      final d = await widget.loadPicker(date: dateIso);
+      if (!mounted) return;
+      _applyTimesForDate(d, preserveDateIso: dateIso);
+    } on ApiFailure catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _timesLoading = false;
+        _timesLoadError = e.message;
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _timesLoading = false;
+        _timesLoadError = "Something went wrong";
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -375,12 +418,14 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
         .where((t) => t.available && t.slotUid.isNotEmpty)
         .map((t) => AppDropdownOption<String>(value: t.slotUid, label: t.label))
         .toList();
-    final emptyTimes = _showEmptyTimesUi(d);
+    final emptyTimes = _dateIso != null && _showEmptyTimesUi(d);
     final both =
         _dateIso != null &&
         _slotUid != null &&
         !emptyTimes &&
-        dateOptions.isNotEmpty;
+        dateOptions.isNotEmpty &&
+        !_timesLoading &&
+        _timesLoadError == null;
     final canSend = both && d.submit.enabled;
     final submitLabel = !both ? _kSelectDateTimeToProceed : d.submit.label;
 
@@ -460,14 +505,59 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
                   initialValue: _dateIso,
                   autovalidateMode: AutovalidateMode.disabled,
                   validator: (_) => null,
-                  onChanged: (v) => setState(() => _dateIso = v),
+                  onChanged: (v) {
+                    if (v == null || v == _dateIso) return;
+                    setState(() => _dateIso = v);
+                    unawaited(_loadTimesForDate(v));
+                  },
                   presentation: AppDropdownPresentation.inlineExpand,
                   splitLabelOnDash: true,
                   inlineExpandCoordinator: _inlineDropdownCoordinator,
                   inlineExpandSlotId: _InterviewInlineSlot.date,
                 ),
               Gap.h16,
-              if (timeOptions.isEmpty || emptyTimes)
+              if (_timesLoading)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xffEDEDED)),
+                    color: AppColors.white,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.regular(
+                        "Preferred Time",
+                        fontSize: 10,
+                        color: AppColors.black,
+                      ),
+                      Gap.h16,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          Gap.w12,
+                          AppText.regular(
+                            "Loading times…",
+                            fontSize: 14,
+                            color: AppColors.blackTint20,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              else if (_timesLoadError != null)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -498,7 +588,86 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
                         ],
                       ),
                     ),
-                    if (emptyTimes) ...[
+                    Gap.h12,
+                    AppText.regular(
+                      _timesLoadError!,
+                      fontSize: 13,
+                      color: AppColors.blackTint20,
+                      textAlign: TextAlign.center,
+                      multiText: true,
+                    ),
+                    Gap.h12,
+                    AppButton.secondary(
+                      text: "Try again",
+                      width: double.infinity,
+                      height: 40,
+                      radius: 100,
+                      press: _dateIso == null
+                          ? null
+                          : () => unawaited(_loadTimesForDate(_dateIso!)),
+                    ),
+                  ],
+                )
+              else if (_dateIso == null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xffEDEDED)),
+                    color: AppColors.white,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.regular(
+                        "Preferred Time",
+                        fontSize: 10,
+                        color: AppColors.black,
+                      ),
+                      Gap.h8,
+                      AppText.regular(
+                        "Select a preferred time",
+                        fontSize: 14,
+                        color: const Color(0xffB5B5B5),
+                      ),
+                    ],
+                  ),
+                )
+              else if (timeOptions.isEmpty || emptyTimes)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xffEDEDED)),
+                        color: AppColors.white,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText.regular(
+                            "Preferred Time",
+                            fontSize: 10,
+                            color: AppColors.black,
+                          ),
+                          Gap.h8,
+                          AppText.regular(
+                            "Select a preferred time",
+                            fontSize: 14,
+                            color: const Color(0xffB5B5B5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (emptyTimes && _dateIso != null) ...[
                       Gap.h16,
                       Container(
                         padding: const EdgeInsets.all(20),
@@ -509,12 +678,6 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
                         ),
                         child: Column(
                           children: [
-                            Icon(
-                              Icons.event_busy_outlined,
-                              size: 40,
-                              color: AppColors.tint15,
-                            ),
-                            Gap.h12,
                             AppText.medium(
                               emptyTitle,
                               fontSize: 14,
@@ -537,7 +700,9 @@ class _InterviewSlotsSheetBodyState extends State<_InterviewSlotsSheetBody> {
                 )
               else
                 AppDropdownFormField<String>(
-                  key: ValueKey<String>("time_${d.title}_${_slotUid ?? ""}"),
+                  key: ValueKey<String>(
+                    "time_${d.title}_${_dateIso ?? ""}_${_slotUid ?? ""}",
+                  ),
                   title: "Preferred Time",
                   hint: "Select a preferred time",
                   options: timeOptions,

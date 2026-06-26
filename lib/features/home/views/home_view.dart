@@ -2,7 +2,6 @@ import "dart:async";
 
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
-import "package:dth_v4/features/application/views/application_view.dart";
 import "package:dth_v4/features/application_dashboard/applicant_dashboard.dart";
 import "package:dth_v4/features/home/home.dart";
 import "package:dth_v4/features/livestream/components/livestream_banner.dart";

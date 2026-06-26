@@ -25,7 +25,8 @@ abstract class ApplicationRepo {
     required Map<String, dynamic> answers,
   });
 
-  Future<ApiResponse<InterviewPickerData>> getInterviewSlots();
+  /// [date] when set is sent as `?date=YYYY-MM-DD` to load times for that day.
+  Future<ApiResponse<InterviewPickerData>> getInterviewSlots({String? date});
 
   Future<ApiResponse<InterviewBookingConfirmation>>
   postApplicantInterviewBooking({required String slotUid});
