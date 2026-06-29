@@ -38,7 +38,7 @@ class ContestantPill extends StatelessWidget {
         if (u == null) return const SizedBox.shrink();
         return _withProfileSpacing(
           _UnifiedDualPill(
-            label: 'APPLICANT',
+            label: 'APPLICANT ID',
             user: u,
             padding: _chipPadding,
             radius: _pillRadius,
