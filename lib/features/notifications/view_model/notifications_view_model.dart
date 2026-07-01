@@ -36,7 +36,9 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
   }
 
   void _setItems(List<NotificationItem> items, {String? nextCursor}) {
-    _items = _withLocalReadState(items);
+    _items = _withLocalReadState(
+      items.where((n) => n.hasDisplayContent).toList(growable: false),
+    );
     if (nextCursor != null) {
       _nextCursor = nextCursor;
     }

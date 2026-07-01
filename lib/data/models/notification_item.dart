@@ -27,6 +27,9 @@ class NotificationItem {
     return name.isEmpty && avatar.isEmpty;
   }
 
+  /// False when both [title] and [description] are empty (hide from the list).
+  bool get hasDisplayContent => title.isNotEmpty || description.isNotEmpty;
+
   /// Bold prefix when [title] starts with the actor's name.
   String? get titleBoldPrefix {
     final name = user?.name?.trim();
