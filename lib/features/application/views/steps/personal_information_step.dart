@@ -168,7 +168,7 @@ class _PersonalInformationStepState
       context: context,
       initialDate: initial,
       firstDate: DateTime(1940),
-      lastDate: DateTime(now.year - 16, now.month, now.day),
+      lastDate: DateTime(now.year, now.month, now.day),
     );
     if (picked != null && mounted) {
       setState(() {
