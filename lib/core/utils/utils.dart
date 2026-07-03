@@ -4,4 +4,5 @@ export "device_info.dart";
 export 'format_count.dart';
 export 'number_formatter.dart';
 export 'preload_images.dart';
+export 'subscription_required.dart';
 export 'text_formatter.dart';

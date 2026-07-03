@@ -12,6 +12,7 @@ import "package:dth_v4/features/posts/posts.dart";
 import "package:dth_v4/features/notifications/notifications.dart";
 import "package:dth_v4/features/stories/stories.dart";
 import "package:dth_v4/features/polls/polls.dart";
+import "package:dth_v4/features/subscription/subscription.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -56,43 +57,88 @@ class _HomeViewState extends ConsumerState<HomeView> {
     cache.upsert(current.copyWith(shareCount: current.shareCount + 1));
   }
 
-  /// Reads the pre-fetched active-livestream state and routes off the
-  /// cached AsyncValue. Never issues a fresh HTTP call from the tap path:
-  /// - loading  → flushbar ("still checking")
-  /// - error    → flushbar (the error message)
-  /// - null     → flushbar ("no active livestream")
-  /// - present  → upsert into [livestreamsCacheProvider] for instant
-  ///              render, then navigate.
+  /// Reads the pre-fetched active-livestream state and routes off the cached
+  /// AsyncValue (refetches when subscribed but cache still has subscription_required).
   void _onLiveTap() {
-    final state = ref.read(activeLivestreamProvider);
-    state.when(
-      loading: () => DthFlushBar.instance.showGeneric(
+    unawaited(_handleLiveTap());
+  }
+
+  void _routeForActiveStream(Livestream? stream) {
+    if (stream == null) {
+      DthFlushBar.instance.showGeneric(
+        title: "Live",
+        message: "There's no active livestream right now.",
+      );
+      return;
+    }
+    ref.read(livestreamsCacheProvider).upsert(stream);
+    unawaited(
+      MobileNavigationService.instance.navigateTo(
+        LivestreamView.path,
+        extra: {RoutingArgumentKey.livestreamUid: stream.uid},
+      ),
+    );
+  }
+
+  Future<void> _handleLiveTap() async {
+    final asyncState = ref.read(activeLivestreamProvider);
+
+    if (asyncState.isLoading) {
+      DthFlushBar.instance.showGeneric(
         title: "Live",
         message: "Checking for an active livestream…",
-      ),
-      error: (err, _) => DthFlushBar.instance.showError(
+      );
+      return;
+    }
+
+    if (asyncState.hasError) {
+      final err = asyncState.error;
+      if (isSubscriptionRequiredFailure(err)) {
+        final isSubscribed =
+            ref.read(userStateProvider).user.value?.isSubscribed ?? false;
+        if (isSubscribed) {
+          ref.invalidate(activeLivestreamProvider);
+          try {
+            final stream = await ref.read(activeLivestreamProvider.future);
+            if (!mounted) return;
+            _routeForActiveStream(stream);
+          } on ApiFailure catch (e) {
+            if (!mounted) return;
+            DthFlushBar.instance.showError(title: "Live", message: e.message);
+          } on Object {
+            if (!mounted) return;
+            DthFlushBar.instance.showError(
+              title: "Live",
+              message: "Could not check livestream right now.",
+            );
+          }
+          return;
+        }
+        if (!mounted) return;
+        await showSubscriptionRequiredSheet(context);
+        return;
+      }
+      DthFlushBar.instance.showError(
         title: "Live",
         message: err is ApiFailure
             ? err.message
             : "Could not check livestream right now.",
-      ),
-      data: (stream) {
-        if (stream == null) {
-          DthFlushBar.instance.showGeneric(
-            title: "Live",
-            message: "There's no active livestream right now.",
-          );
-          return;
-        }
-        ref.read(livestreamsCacheProvider).upsert(stream);
-        unawaited(
-          MobileNavigationService.instance.navigateTo(
-            LivestreamView.path,
-            extra: {RoutingArgumentKey.livestreamUid: stream.uid},
-          ),
-        );
-      },
-    );
+      );
+      return;
+    }
+
+    if (asyncState.hasValue) {
+      _routeForActiveStream(asyncState.value);
+    }
+  }
+
+  Future<void> _refreshActiveLivestream() async {
+    ref.invalidate(activeLivestreamProvider);
+    try {
+      await ref.read(activeLivestreamProvider.future);
+    } on Object {
+      // Banner/icon read valueOrNull; errors stay silent until live tap.
+    }
   }
 
   @override
@@ -113,6 +159,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
       valueListenable: vm.userModel,
       builder: (context, value, child) {
         return Scaffold(
+          backgroundColor: AppColors.white,
           body: SafeArea(
             bottom: false,
             child: Padding(
@@ -161,10 +208,13 @@ class _HomeViewState extends ConsumerState<HomeView> {
                       ),
                       idle: () => RefreshIndicator(
                         onRefresh: () async {
-                          await vm.refreshTimeline();
-                          await pollVm.loadPoll();
-                          await bannersVm.loadBanners();
-                          await ref.read(userStateProvider).getUserDetails();
+                          await Future.wait([
+                            vm.refreshTimeline(),
+                            pollVm.loadPoll(),
+                            bannersVm.loadBanners(),
+                            ref.read(userStateProvider).getUserDetails(),
+                            _refreshActiveLivestream(),
+                          ]);
                         },
                         child: NotificationListener<ScrollNotification>(
                           onNotification: (n) {
@@ -193,12 +243,15 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                 child: () {
                                   final live = ref
                                       .watch(activeLivestreamProvider)
-                                      .value;
+                                      .valueOrNull;
                                   if (live == null) {
                                     return const SizedBox.shrink();
                                   }
                                   return Padding(
-                                    padding: const EdgeInsets.only(top: 12),
+                                    padding: const EdgeInsets.only(
+                                      top: 12,
+                                      bottom: 12,
+                                    ),
                                     child: LivestreamBanner(
                                       stream: live,
                                       onTap: _onLiveTap,

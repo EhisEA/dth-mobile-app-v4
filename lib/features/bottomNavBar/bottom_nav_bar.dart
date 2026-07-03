@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:io";
 
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
@@ -359,7 +360,7 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
                     for (final b in bindings)
                       CustomNavBarScreen(screen: b.screen),
                   ],
-                  confineToSafeArea: false,
+                  confineToSafeArea: Platform.isAndroid ? true : false,
                   navBarHeight: 84,
                   itemCount: bindings.length,
                   bottomScreenMargin: 0,

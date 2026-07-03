@@ -14,6 +14,7 @@ Future<T?> showBlurredModalBottomSheet<T>({
   bool isDismissible = true,
   bool useSafeArea = true,
   bool enableDrag = true,
+  bool? isCentered,
   RouteSettings? routeSettings,
   AnimationController? transitionAnimationController,
   AnimationStyle? sheetAnimationStyle,
@@ -35,6 +36,7 @@ Future<T?> showBlurredModalBottomSheet<T>({
     builder: (modalContext) => _BlurredBottomSheetFrame(
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
+      isCentered: isCentered == true,
       child: builder(modalContext),
     ),
   );
@@ -45,26 +47,42 @@ class _BlurredBottomSheetFrame extends StatelessWidget {
     required this.child,
     required this.useSafeArea,
     required this.isDismissible,
+    this.isCentered = false,
   });
 
   final Widget child;
   final bool useSafeArea;
   final bool isDismissible;
+  final bool isCentered;
 
   static final ImageFilter _blur = ImageFilter.blur(sigmaX: 12, sigmaY: 12);
 
   @override
   Widget build(BuildContext context) {
     final sheet = Material(
-      color: AppColors.white,
-      elevation: 8,
-      shadowColor: Colors.black26,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      clipBehavior: Clip.antiAlias,
+      color: isCentered ? Colors.transparent : AppColors.white,
+      elevation: isCentered ? 0 : 8,
+      shadowColor: isCentered ? Colors.transparent : Colors.black26,
+      borderRadius: isCentered
+          ? null
+          : const BorderRadius.vertical(top: Radius.circular(24)),
+      clipBehavior: isCentered ? Clip.none : Clip.antiAlias,
       child: child,
     );
 
-    final sheetSlot = useSafeArea ? SafeArea(top: false, child: sheet) : sheet;
+    final Widget sheetSlot;
+    if (isCentered) {
+      sheetSlot = useSafeArea ? SafeArea(child: sheet) : sheet;
+    } else {
+      sheetSlot = useSafeArea ? SafeArea(top: false, child: sheet) : sheet;
+    }
+
+    final alignedSheet = isCentered
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: sheetSlot,
+          )
+        : sheetSlot;
 
     return Stack(
       fit: StackFit.expand,
@@ -81,7 +99,10 @@ class _BlurredBottomSheetFrame extends StatelessWidget {
             ),
           ),
         ),
-        Align(alignment: Alignment.bottomCenter, child: sheetSlot),
+        Align(
+          alignment: isCentered ? Alignment.center : Alignment.bottomCenter,
+          child: alignedSheet,
+        ),
       ],
     );
   }

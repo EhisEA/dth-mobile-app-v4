@@ -43,9 +43,7 @@ class AppHeader extends ConsumerWidget {
                 behavior: HitTestBehavior.opaque,
                 // Icon mirrors whatever the active-livestream pre-fetch
                 // resolved to: the "live" variant when a stream is up,
-                // the neutral variant when none / loading / errored. Reads
-                // off the same cached provider as [LivestreamBanner] —
-                // no extra HTTP.
+                // the neutral variant when none / loading / errored.
                 child: SvgPicture.asset(
                   ref.watch(activeLivestreamProvider).valueOrNull != null
                       ? SvgAssets.livestreamLives

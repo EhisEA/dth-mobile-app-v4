@@ -55,6 +55,8 @@ class ImageAssets {
   /////////////////////SUBSCRIPTION//////////////////////
   static const String subscriptionBg =
       "$imagePath/subscription/subscription_bg.png";
+  static const String subscribeError =
+      "$imagePath/subscription/subcribe_error.png";
   static const String phoneBg = "$imagePath/subscription/phone_bg.png";
 
   /////////////////////APPLICATION//////////////////////

@@ -13,6 +13,7 @@ class UserModel {
     required this.updatedAt,
     this.eligible = false,
     this.applicationStatus,
+    this.isSubscribed = false,
   });
 
   final String uid;
@@ -32,6 +33,9 @@ class UserModel {
 
   /// Profile `application_status` (e.g. variant + label from GET /profile).
   final ApplicationStatus? applicationStatus;
+
+  /// Whether the user has an active subscription (`is_subscribed` from GET /profile).
+  final bool isSubscribed;
 
   /// Parsed [participationType.name] as [ParticipationRole].
   ParticipationRole get participationRole =>
@@ -57,6 +61,7 @@ class UserModel {
       updatedAt: _stringField(json['updated_at']),
       eligible: _boolField(json['eligible']),
       applicationStatus: _parseApplicationStatus(json['application_status']),
+      isSubscribed: _boolField(json['is_subscribed']),
     );
   }
 
@@ -96,6 +101,7 @@ class UserModel {
       'created_at': createdAt,
       'updated_at': updatedAt,
       'eligible': eligible,
+      'is_subscribed': isSubscribed,
       if (applicationStatus != null)
         'application_status': applicationStatus!.toJson(),
     };
@@ -115,6 +121,7 @@ class UserModel {
     String? updatedAt,
     bool? eligible,
     ApplicationStatus? applicationStatus,
+    bool? isSubscribed,
     bool clearApplicationStatus = false,
   }) {
     return UserModel(
@@ -133,6 +140,7 @@ class UserModel {
       applicationStatus: clearApplicationStatus
           ? null
           : (applicationStatus ?? this.applicationStatus),
+      isSubscribed: isSubscribed ?? this.isSubscribed,
     );
   }
 
@@ -153,7 +161,8 @@ class UserModel {
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
         other.eligible == eligible &&
-        other.applicationStatus == applicationStatus;
+        other.applicationStatus == applicationStatus &&
+        other.isSubscribed == isSubscribed;
   }
 
   @override
@@ -172,11 +181,12 @@ class UserModel {
     updatedAt,
     eligible,
     applicationStatus,
+    isSubscribed,
   );
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus)';
+    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed)';
   }
 }
 

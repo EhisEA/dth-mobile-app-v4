@@ -1,5 +1,6 @@
 import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
+import "package:dth_v4/features/livestream/view_model/active_livestream_provider.dart";
 import "package:dth_v4/features/app_web_view/app_web_view.dart";
 import "package:dth_v4/features/subscription/views/confirmation_view.dart";
 import "package:dth_v4/widgets/widgets.dart";
@@ -12,11 +13,13 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
     this._repo,
     this._subscriptionPlansState,
     this._userState,
+    this._invalidateActiveLivestream,
   );
 
   final SubscriptionRepo _repo;
   final SubscriptionPlansState _subscriptionPlansState;
   final UserProfileState _userState;
+  final void Function() _invalidateActiveLivestream;
 
   Future<void> purchasePlan(SubscriptionModel plan) async {
     if (plan.isActiveSubscription) return;
@@ -43,6 +46,7 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
               RoutingArgumentKey.title: "Subscribe",
               RoutingArgumentKey.initialURl: data.authorizationUrl,
               RoutingArgumentKey.callbackUrl: data.callbackUrl,
+              RoutingArgumentKey.showOpenInExternalBrowser: false,
             },
           );
 
@@ -51,6 +55,7 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
         await _repo.verifyPayment(reference: data.reference);
         await _subscriptionPlansState.fetchPlans();
         await _userState.getUserDetails();
+        _invalidateActiveLivestream();
         DthFlushBar.instance.showSuccess(
           title: "Subscription",
           message: "Your payment was confirmed.",
@@ -83,5 +88,6 @@ final subscriptionCheckoutViewModelProvider =
         ref.read(subscriptionRepositoryProvider),
         ref.read(subscriptionPlansStateProvider),
         ref.read(userStateProvider),
+        () => ref.invalidate(activeLivestreamProvider),
       );
     });
