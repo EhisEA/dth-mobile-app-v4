@@ -4,12 +4,18 @@ import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/authentication/views/get_started_view.dart";
 import "package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart";
+import "package:dth_v4/features/home/home.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class SplashViewModel extends BaseChangeNotifierViewModel {
   final LocalCache _localCache;
   final AppModulesState _appModulesState;
-  SplashViewModel(this._localCache, this._appModulesState);
+  final SponsorshipsViewModel _sponsorshipsViewModel;
+  SplashViewModel(
+    this._localCache,
+    this._appModulesState,
+    this._sponsorshipsViewModel,
+  );
   final MobileNavigationService _navigationService =
       MobileNavigationService.instance;
 
@@ -18,12 +24,19 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
   // Cached so the animation can kick off the fetch in parallel and the
   // route handler can just await the same future.
   Future<void>? _modulesPreload;
+  Future<void>? _sponsorshipsPreload;
 
   /// Fire the modules fetch (idempotent — only one network call regardless
   /// of how many times this is called).
   Future<void> preloadModules() {
     _modulesPreload ??= _fetchModules();
     return _modulesPreload!;
+  }
+
+  /// Fire the sponsorships fetch (idempotent).
+  Future<void> preloadSponsorships() {
+    _sponsorshipsPreload ??= _fetchSponsorships();
+    return _sponsorshipsPreload!;
   }
 
   Future<void> _fetchModules() async {
@@ -35,16 +48,26 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
+  Future<void> _fetchSponsorships() async {
+    try {
+      await _sponsorshipsViewModel.load();
+      _log.d(
+        "[sponsorships] voting sponsors: "
+        "${_sponsorshipsViewModel.voting?.sponsors.length ?? 0}",
+      );
+    } on ApiFailure catch (e) {
+      _log.d("[sponsorships] fetch failed: ${e.message}");
+    }
+  }
+
   Future<void> routeFromSplash() async {
     // _localCache.clearCache();
     _log.d(_localCache.getToken());
     _log.d(_localCache.getUserData());
 
-    // Block navigation until modules are resolved so the bottom nav has
-    // its tab list ready on first paint. In practice this is almost a
-    // no-op because the fetch was kicked off in parallel with the splash
-    // animation.
-    await preloadModules();
+    // Block navigation until modules + sponsorships are resolved so the
+    // bottom nav and voting sheets have data ready on first paint.
+    await Future.wait([preloadModules(), preloadSponsorships()]);
 
     final bool isLoggedIn = _localCache.getToken() != null;
 

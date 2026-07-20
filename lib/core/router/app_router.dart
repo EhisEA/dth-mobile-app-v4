@@ -25,6 +25,7 @@ import 'package:dth_v4/features/search/views/search_view.dart';
 import 'package:dth_v4/features/splash/views/splash_view.dart';
 import 'package:dth_v4/features/subscription/subscription.dart';
 import 'package:dth_v4/features/tickets/tickets.dart';
+import 'package:dth_v4/features/voting/views/about_contestant_view.dart';
 import 'package:flutter/material.dart';
 
 class AppRouter {
@@ -278,6 +279,15 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: LivestreamView(uid: uid),
+        );
+
+      ////////////////VOTING VIEW////////////////////
+      case AboutContestantView.path:
+        final contestantUid =
+            routeArgs[RoutingArgumentKey.contestantUid] as String? ?? "";
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: AboutContestantView(contestantUid: contestantUid),
         );
 
       default:

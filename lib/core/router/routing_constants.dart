@@ -27,6 +27,11 @@ class NavigatorRoutes {
   ///
   static const String search = "/search";
 
+  ////////////////VOTING////////////////////
+  ///
+  static const String voting = "/voting";
+  static const String aboutContestant = "/about-contestant";
+
   ////////////////PROFILE////////////////////
   ///
   static const String profile = "/profile";

@@ -7,4 +7,7 @@ abstract class TimelineRepo {
 
   /// Fetches one page of timeline reels. Pass [cursor] for the next page.
   Future<PaginatedResult<TimelineReel>> fetchTimelineReels({String? cursor});
+
+  /// Pinned timeline posts for the home horizontal strip.
+  Future<List<TimelinePost>> fetchPinnedPosts();
 }

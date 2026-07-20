@@ -1,10 +1,8 @@
-import "dart:math" as math;
-
-import "package:confetti/confetti.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/polls/components/poll_option_data.dart";
 import "package:dth_v4/features/polls/components/poll_option_tile.dart";
+import "package:dth_v4/features/voting/components/voting_sponsor_footer.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
@@ -30,41 +28,11 @@ class PollComponent extends StatefulWidget {
 }
 
 class _PollComponentState extends State<PollComponent> {
-  static const Duration _confettiDuration = Duration(milliseconds: 2200);
-  static const Duration _confettiCleanup = Duration(milliseconds: 5500);
-
-  static const List<Color> _confettiColors = [
-    Color(0xFF00AD55), // primary green
-    Color(0xFF284FEB), // secondary blue
-    Color(0xFFF2A257), // secondary orange
-    Color(0xFFFE5349), // red tint
-    Color(0xFFFFD700), // celebratory gold
-    Color(0xFFE94B92), // pink pop
-    Color(0xFF7C4DFF), // violet pop
-  ];
-
-  static const Size _confettiMinSize = Size(8, 4);
-  static const Size _confettiMaxSize = Size(18, 10);
-
-  late final ConfettiController _centerController;
-  late final ConfettiController _leftController;
-  late final ConfettiController _rightController;
   OverlayEntry? _overlayEntry;
-
-  @override
-  void initState() {
-    super.initState();
-    _centerController = ConfettiController(duration: _confettiDuration);
-    _leftController = ConfettiController(duration: _confettiDuration);
-    _rightController = ConfettiController(duration: _confettiDuration);
-  }
 
   @override
   void dispose() {
     _removeOverlay();
-    _centerController.dispose();
-    _leftController.dispose();
-    _rightController.dispose();
     super.dispose();
   }
 
@@ -86,77 +54,10 @@ class _PollComponentState extends State<PollComponent> {
     _removeOverlay();
     final overlay = Overlay.of(context, rootOverlay: true);
     final entry = OverlayEntry(
-      builder: (_) => IgnorePointer(
-        child: Stack(
-          children: [
-            // Big center burst — radiates outward, fills the screen
-            Align(
-              alignment: const Alignment(0, -0.7),
-              child: ConfettiWidget(
-                confettiController: _centerController,
-                blastDirectionality: BlastDirectionality.explosive,
-                emissionFrequency: 0.08,
-                numberOfParticles: 45,
-                minBlastForce: 25,
-                maxBlastForce: 55,
-                gravity: 0.35,
-                particleDrag: 0.04,
-                shouldLoop: false,
-                colors: _confettiColors,
-                minimumSize: _confettiMinSize,
-                maximumSize: _confettiMaxSize,
-              ),
-            ),
-            // Left shower — wide cone aimed down-right
-            Align(
-              alignment: const Alignment(-0.9, -0.95),
-              child: ConfettiWidget(
-                confettiController: _leftController,
-                blastDirection: math.pi / 3, // 60° (down + slightly right)
-                blastDirectionality: BlastDirectionality.directional,
-                emissionFrequency: 0.1,
-                numberOfParticles: 30,
-                minBlastForce: 30,
-                maxBlastForce: 55,
-                gravity: 0.35,
-                particleDrag: 0.04,
-                shouldLoop: false,
-                colors: _confettiColors,
-                minimumSize: _confettiMinSize,
-                maximumSize: _confettiMaxSize,
-              ),
-            ),
-            // Right shower — wide cone aimed down-left
-            Align(
-              alignment: const Alignment(0.9, -0.95),
-              child: ConfettiWidget(
-                confettiController: _rightController,
-                blastDirection: 2 * math.pi / 3, // 120° (down + slightly left)
-                blastDirectionality: BlastDirectionality.directional,
-                emissionFrequency: 0.1,
-                numberOfParticles: 30,
-                minBlastForce: 30,
-                maxBlastForce: 55,
-                gravity: 0.35,
-                particleDrag: 0.04,
-                shouldLoop: false,
-                colors: _confettiColors,
-                minimumSize: _confettiMinSize,
-                maximumSize: _confettiMaxSize,
-              ),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => TopConfettiCelebration(onFinished: _removeOverlay),
     );
     _overlayEntry = entry;
     overlay.insert(entry);
-
-    _centerController.play();
-    _leftController.play();
-    _rightController.play();
-
-    Future.delayed(_confettiCleanup, _removeOverlay);
   }
 
   @override
@@ -413,7 +314,15 @@ class _PollComponentState extends State<PollComponent> {
                 ),
               ],
             ),
-            Gap.h16,
+            Center(
+              child: const VotingSponsorFooter(
+                sectionName: "poll",
+                includeSafeAreaPadding: false,
+                horizontalPadding: 0,
+                topPadding: 12,
+                bottomPadding: 16,
+              ),
+            ),
             Container(
               height: 1,
               width: double.infinity,
@@ -422,6 +331,7 @@ class _PollComponentState extends State<PollComponent> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
+            Gap.h16,
           ],
         );
       },

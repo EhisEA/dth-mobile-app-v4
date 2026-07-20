@@ -16,6 +16,7 @@ export "registration_models.dart";
 export "user_model.dart";
 export "subscription_model.dart";
 export "sponsor_info.dart";
+export "sponsorships_models.dart";
 export "banner_model.dart";
 export "subscription_purchase_init.dart";
 export "support_web_session.dart";

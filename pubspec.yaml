@@ -105,6 +105,7 @@ flutter:
     - assets/images/application/
     - assets/images/empty_state/
     - assets/images/tickets/
+    - assets/images/voting/
     - assets/svgs/
     - assets/svgs/application/
     - assets/svgs/auth/
@@ -115,6 +116,7 @@ flutter:
     - assets/svgs/subscription/
     - assets/svgs/tickets/
     - assets/svgs/notifications/
+    - assets/svgs/voting/
     - assets/audio/
     - shorebird.yaml
     # - assets/lotties/

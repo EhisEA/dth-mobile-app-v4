@@ -38,6 +38,9 @@ class HomeViewModel extends BaseChangeNotifierViewModel {
   List<Story> _stories = const [];
   List<Story> get stories => _stories;
 
+  List<String> _pinnedPostUids = const [];
+  List<String> get pinnedPostUids => _pinnedPostUids;
+
   String? _nextCursor;
   bool get hasMore => _nextCursor != null;
 
@@ -61,6 +64,8 @@ class HomeViewModel extends BaseChangeNotifierViewModel {
       } on ApiFailure {
         _stories = const [];
       }
+
+      await _loadPinnedPosts();
 
       changeBaseState(const ViewModelState.idle());
     } on ApiFailure catch (e) {
@@ -90,7 +95,20 @@ class HomeViewModel extends BaseChangeNotifierViewModel {
       // Reels are a secondary strip — silent on refresh failure.
     }
 
+    await _loadPinnedPosts();
+
     notifyListeners();
+  }
+
+  Future<void> _loadPinnedPosts() async {
+    try {
+      final pinned = await _timelineRepo.fetchPinnedPosts();
+      final posts = pinned.map(postFromTimelinePost).toList();
+      _postsCache.upsertAll(posts);
+      _pinnedPostUids = posts.map((p) => p.uid).toList();
+    } on ApiFailure {
+      _pinnedPostUids = const [];
+    }
   }
 
   /// Optimistic like/unlike for any post in the feed. Mirrors the detail

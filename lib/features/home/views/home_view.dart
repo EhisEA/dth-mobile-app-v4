@@ -35,6 +35,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
       unawaited(ref.read(homeViewModelProvider).loadTimeline());
       unawaited(ref.read(pollViewModelProvider).loadPoll());
       unawaited(ref.read(bannersViewModelProvider).loadBanners());
+      unawaited(ref.read(sponsorshipsViewModelProvider).load());
       unawaited(
         ref.read(applicantDashboardViewModelProvider).prefetchForHomeUser(),
       );
@@ -153,6 +154,10 @@ class _HomeViewState extends ConsumerState<HomeView> {
         .map(cache.get)
         .whereType<Post>()
         .toList(growable: false);
+    final pinnedPosts = vm.pinnedPostUids
+        .map(cache.get)
+        .whereType<Post>()
+        .toList(growable: false);
     final pollVm = ref.watch(pollViewModelProvider);
     final bannersVm = ref.watch(bannersViewModelProvider);
     return ValueListenableBuilder(
@@ -212,6 +217,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                             vm.refreshTimeline(),
                             pollVm.loadPoll(),
                             bannersVm.loadBanners(),
+                            ref.read(sponsorshipsViewModelProvider).load(),
                             ref.read(userStateProvider).getUserDetails(),
                             _refreshActiveLivestream(),
                           ]);
@@ -283,6 +289,48 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                                     },
                                                   );
                                             },
+                                          ),
+                                          Gap.h16,
+                                        ],
+                                      ),
+                              ),
+                              SliverToBoxAdapter(
+                                child: pinnedPosts.isEmpty
+                                    ? const SizedBox.shrink()
+                                    : Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          PinnedPostsBar(
+                                            posts: pinnedPosts,
+                                            onTap: (post) =>
+                                                MobileNavigationService.instance
+                                                    .push(
+                                                      PostDetailView.path,
+                                                      extra: {
+                                                        RoutingArgumentKey
+                                                                .postUid:
+                                                            post.uid,
+                                                      },
+                                                    ),
+                                            onLike: (uid) => unawaited(
+                                              vm.togglePostLike(uid),
+                                            ),
+                                            onShare: (post) =>
+                                                LinkShareHelper.sharePost(
+                                                  postUid: post.uid,
+                                                  title: post.title,
+                                                  description: post.description,
+                                                  imageUrl:
+                                                      post.imageUrls.isNotEmpty
+                                                      ? post.imageUrls.first
+                                                      : "",
+                                                  onShared: () =>
+                                                      _bumpPostShareCount(
+                                                        post.uid,
+                                                      ),
+                                                ),
                                           ),
                                           Gap.h16,
                                         ],

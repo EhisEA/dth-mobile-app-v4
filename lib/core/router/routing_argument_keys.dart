@@ -83,6 +83,10 @@ class RoutingArgumentKey {
 
   /// @deprecated Use [purchasedTicket]. Legacy route map for [YourTicketsView].
   static const String yourTicketsArgs = "yourTicketsArgs";
+
+  /// [AboutContestantView] — uid of the contestant to load.
+  static const String contestantUid = "contestantUid";
+
   static const String form = "form";
 }
 
