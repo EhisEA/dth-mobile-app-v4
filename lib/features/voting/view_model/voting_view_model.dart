@@ -33,6 +33,10 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
   DateTime? weekEndsAt;
   VotingContestantDetail? contestantDetail;
   String? _detailUid;
+  bool _weekLoaded = false;
+
+  /// True after [preloadWeek] or a successful week fetch in [load]/silentRefresh].
+  bool get weekLoaded => _weekLoaded;
 
   ViewModelState get loadState =>
       getState(_loadKey) ?? const ViewModelState.busy();
@@ -51,6 +55,17 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
       tab == VotingFilter.upForEviction ? upForEviction : allContestants;
 
   bool get canVote => credits.hasCreditsRemaining && !isVoteBusy;
+
+  /// Splash prefetch: week/credits/tutorial only (no contestant lists).
+  Future<void> preloadWeek() async {
+    try {
+      final week = await _repo.fetchVotingWeek();
+      _applyWeek(week);
+      notifyListeners();
+    } on ApiFailure {
+      // Background prefetch — VotingView will load normally if this fails.
+    }
+  }
 
   Future<void> load() async {
     setState(_loadKey, const ViewModelState.busy());
@@ -97,6 +112,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
     weekUid = week.uid;
     weekTitle = week.title;
     weekEndsAt = week.endsAt;
+    _weekLoaded = true;
   }
 
   void setFilter(VotingFilter next) {

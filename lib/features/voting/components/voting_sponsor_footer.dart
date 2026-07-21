@@ -19,6 +19,7 @@ class VotingSponsorFooter extends ConsumerWidget {
     this.horizontalPadding = 16,
     this.topPadding = 0,
     this.bottomPadding = 14,
+    this.backgroundColor,
   });
 
   /// Key under `SponsorshipsData.sections` (e.g. `voting`, `poll`).
@@ -30,6 +31,7 @@ class VotingSponsorFooter extends ConsumerWidget {
   final double horizontalPadding;
   final double topPadding;
   final double bottomPadding;
+  final Color? backgroundColor;
 
   static const _fallbackPrefix = "PROUDLY BROUGHT TO YOU BY";
 
@@ -54,7 +56,7 @@ class VotingSponsorFooter extends ConsumerWidget {
         : 0.0;
 
     return DecoratedBox(
-      decoration: BoxDecoration(color: AppColors.white),
+      decoration: BoxDecoration(color: backgroundColor ?? AppColors.white),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           horizontalPadding,
@@ -65,8 +67,8 @@ class VotingSponsorFooter extends ConsumerWidget {
         child: Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 6,
+          runSpacing: 4,
           children: [
             AppText.bold(
               prefix,

@@ -20,9 +20,9 @@ class PollProgressBar extends StatelessWidget {
         final clampedProgress = progress.clamp(0.0, 1.0);
         final fillColor = !pollHasVoted
             ? AppColors.primary
-            : (isSelected ? AppColors.primary : AppColors.tint10);
+            : (isSelected ? AppColors.primary : AppColors.greyTint30);
         return Container(
-          height: 4,
+          height: 6,
           width: double.infinity,
           decoration: BoxDecoration(
             color: AppColors.greyTint30,

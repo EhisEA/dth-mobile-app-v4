@@ -26,6 +26,7 @@ class _VotingViewState extends ConsumerState<VotingView> {
   late final PageController _pageController;
   Timer? _silentRefreshTimer;
   bool _ignorePageCallback = false;
+  bool _didOfferTutorial = false;
 
   static const _silentRefreshInterval = Duration(minutes: 5);
 
@@ -40,9 +41,13 @@ class _VotingViewState extends ConsumerState<VotingView> {
   }
 
   Future<void> _bootstrap() async {
+    // Greet ASAP from splash-prefetched week data (no tutorial loading).
+    unawaited(_maybeShowWelcomeTutorial());
     await ref.read(votingViewModelProvider).load();
     if (!mounted) return;
     _startSilentRefreshTimer();
+    // Cold path: week wasn't ready at first paint — try again after load.
+    await _maybeShowWelcomeTutorial();
   }
 
   void _startSilentRefreshTimer() {
@@ -50,6 +55,46 @@ class _VotingViewState extends ConsumerState<VotingView> {
     _silentRefreshTimer = Timer.periodic(_silentRefreshInterval, (_) {
       unawaited(ref.read(votingViewModelProvider).silentRefresh());
     });
+  }
+
+  bool get _tutorialAlreadySeen =>
+      ref
+          .read(localCacheProvider)
+          .getFromLocalCache(CacheKeys.votingTutorialSeen) ==
+      true;
+
+  Future<void> _markTutorialSeen() async {
+    await ref
+        .read(localCacheProvider)
+        .saveToLocalCache(key: CacheKeys.votingTutorialSeen, value: true);
+  }
+
+  Future<void> _openVotingTutorial() async {
+    if (!mounted) return;
+    final vm = ref.read(votingViewModelProvider);
+    await showWeeklyVotingCreditsSheet(
+      context,
+      credits: vm.credits,
+      tutorial: vm.tutorial,
+      onCompleted: () => unawaited(_markTutorialSeen()),
+    );
+  }
+
+  /// Auto-shows the welcome sheet once per install until the user finishes
+  /// the final CTA. Only runs while this tab is actively ticking (visible).
+  Future<void> _maybeShowWelcomeTutorial() async {
+    if (_didOfferTutorial || !mounted) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
+    if (_tutorialAlreadySeen) {
+      _didOfferTutorial = true;
+      return;
+    }
+
+    final vm = ref.read(votingViewModelProvider);
+    if (!vm.weekLoaded) return;
+
+    _didOfferTutorial = true;
+    await _openVotingTutorial();
   }
 
   @override
@@ -88,6 +133,14 @@ class _VotingViewState extends ConsumerState<VotingView> {
     final vm = ref.watch(votingViewModelProvider);
     final listBottomPad = _bottomNavScrollPadding(context);
 
+    // When the user first switches onto this tab, TickerMode flips on — offer
+    // the greeting if splash already warmed week data.
+    if (TickerMode.valuesOf(context).enabled && !_didOfferTutorial) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_maybeShowWelcomeTutorial());
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -100,11 +153,7 @@ class _VotingViewState extends ConsumerState<VotingView> {
               Gap.h10,
               VotingHeader(
                 credits: vm.credits,
-                onTap: () => showWeeklyVotingCreditsSheet(
-                  context,
-                  credits: vm.credits,
-                  tutorial: vm.tutorial,
-                ),
+                onTap: () => unawaited(_openVotingTutorial()),
               ),
               Gap.h10,
               AppText.regular(

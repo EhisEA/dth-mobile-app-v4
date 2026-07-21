@@ -4,6 +4,7 @@ import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/home/home.dart";
 import "package:dth_v4/features/splash/view_model/splash_view_model.dart";
+import "package:dth_v4/features/voting/view_model/voting_view_model.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -14,6 +15,7 @@ final _splashViewModel = ChangeNotifierProvider.autoDispose<SplashViewModel>((
     ref.read(localCacheProvider),
     ref.read(appModulesStateProvider),
     ref.read(sponsorshipsViewModelProvider),
+    ref.read(votingViewModelProvider),
   );
 });
 
@@ -89,10 +91,11 @@ class _SplashViewState extends ConsumerState<SplashView>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _animationController.forward(from: 0);
-      // Start fetching modules + sponsorships in parallel with the splash
-      // animation so tabs and voting sponsors are ready by navigation time.
+      // Start fetching modules + sponsorships + voting week (when needed) in
+      // parallel with the splash animation so tabs and greeting are ready.
       unawaited(ref.read(_splashViewModel).preloadModules());
       unawaited(ref.read(_splashViewModel).preloadSponsorships());
+      unawaited(ref.read(_splashViewModel).preloadVotingWeekIfNeeded());
     });
   }
 

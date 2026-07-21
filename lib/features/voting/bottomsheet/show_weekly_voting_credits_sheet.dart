@@ -12,14 +12,18 @@ Future<void> showWeeklyVotingCreditsSheet(
   BuildContext context, {
   required VotingCredits credits,
   VotingTutorial? tutorial,
+  VoidCallback? onCompleted,
 }) {
   return showBlurredModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
     useSafeArea: false,
-    builder: (sheetContext) =>
-        _WeeklyVotingCreditsSheetBody(credits: credits, tutorial: tutorial),
+    builder: (sheetContext) => _WeeklyVotingCreditsSheetBody(
+      credits: credits,
+      tutorial: tutorial,
+      onCompleted: onCompleted,
+    ),
   );
 }
 
@@ -27,10 +31,12 @@ class _WeeklyVotingCreditsSheetBody extends StatefulWidget {
   const _WeeklyVotingCreditsSheetBody({
     required this.credits,
     required this.tutorial,
+    this.onCompleted,
   });
 
   final VotingCredits credits;
   final VotingTutorial? tutorial;
+  final VoidCallback? onCompleted;
 
   @override
   State<_WeeklyVotingCreditsSheetBody> createState() =>
@@ -85,6 +91,7 @@ class _WeeklyVotingCreditsSheetBodyState
       _goToPage(_pageIndex + 1);
       return;
     }
+    widget.onCompleted?.call();
     Navigator.of(context).maybePop();
   }
 

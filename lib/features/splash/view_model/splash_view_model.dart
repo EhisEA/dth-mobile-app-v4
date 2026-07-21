@@ -1,20 +1,24 @@
 import "dart:async";
 
+import "package:dth_v4/core/constants/cache_keys.dart";
 import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/authentication/views/get_started_view.dart";
 import "package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart";
 import "package:dth_v4/features/home/home.dart";
+import "package:dth_v4/features/voting/view_model/voting_view_model.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class SplashViewModel extends BaseChangeNotifierViewModel {
   final LocalCache _localCache;
   final AppModulesState _appModulesState;
   final SponsorshipsViewModel _sponsorshipsViewModel;
+  final VotingViewModel _votingViewModel;
   SplashViewModel(
     this._localCache,
     this._appModulesState,
     this._sponsorshipsViewModel,
+    this._votingViewModel,
   );
   final MobileNavigationService _navigationService =
       MobileNavigationService.instance;
@@ -25,6 +29,7 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
   // route handler can just await the same future.
   Future<void>? _modulesPreload;
   Future<void>? _sponsorshipsPreload;
+  Future<void>? _votingWeekPreload;
 
   /// Fire the modules fetch (idempotent — only one network call regardless
   /// of how many times this is called).
@@ -37,6 +42,13 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
   Future<void> preloadSponsorships() {
     _sponsorshipsPreload ??= _fetchSponsorships();
     return _sponsorshipsPreload!;
+  }
+
+  /// Prefetch voting week (credits + tutorial) when voting is enabled and the
+  /// welcome sheet has not been completed yet.
+  Future<void> preloadVotingWeekIfNeeded() {
+    _votingWeekPreload ??= _fetchVotingWeekIfNeeded();
+    return _votingWeekPreload!;
   }
 
   Future<void> _fetchModules() async {
@@ -60,14 +72,33 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
+  Future<void> _fetchVotingWeekIfNeeded() async {
+    await preloadModules();
+    final votingEnabled = _appModulesState.appModules.value?.voting == true;
+    if (!votingEnabled) return;
+    if (_localCache.getFromLocalCache(CacheKeys.votingTutorialSeen) == true) {
+      return;
+    }
+    try {
+      await _votingViewModel.preloadWeek();
+      _log.d("[voting] week preloaded for tutorial greeting");
+    } on ApiFailure catch (e) {
+      _log.d("[voting] week preload failed: ${e.message}");
+    }
+  }
+
   Future<void> routeFromSplash() async {
     // _localCache.clearCache();
     _log.d(_localCache.getToken());
     _log.d(_localCache.getUserData());
 
-    // Block navigation until modules + sponsorships are resolved so the
-    // bottom nav and voting sheets have data ready on first paint.
-    await Future.wait([preloadModules(), preloadSponsorships()]);
+    // Block navigation until modules, sponsorships, and (when needed) voting
+    // week are resolved so tabs and the voting greeting have data ready.
+    await Future.wait([
+      preloadModules(),
+      preloadSponsorships(),
+      preloadVotingWeekIfNeeded(),
+    ]);
 
     final bool isLoggedIn = _localCache.getToken() != null;
 

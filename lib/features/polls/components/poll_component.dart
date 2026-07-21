@@ -9,7 +9,6 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
-import "package:intl/intl.dart";
 
 class PollComponent extends StatefulWidget {
   const PollComponent({
@@ -112,33 +111,26 @@ class _PollComponentState extends State<PollComponent> {
                       Gap.h2,
                       Row(
                         children: [
-                          SvgPicture.asset(
-                            SvgAssets.blackLogo,
-                            height: 16,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.primary,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          Gap.w4,
                           AppText.regular(
-                            "with",
-                            fontSize: 10,
+                            "Polls",
+                            fontSize: 12,
                             height: 0,
-
+                            letterSpacing: -0.25,
                             color: AppColors.blackTint20,
                           ),
                           Gap.w4,
                           AppText.medium(
                             "All Contestants",
-                            fontSize: 10,
+                            fontSize: 12,
+                            letterSpacing: -0.25,
                             color: AppColors.black,
                           ),
                           Gap.w4,
-                          AppText.medium(
+                          AppText.regular(
                             poll.createdAt,
-                            fontSize: 10,
-                            color: Color(0xff8F8F8F),
+                            fontSize: 12,
+                            letterSpacing: -0.25,
+                            color: AppColors.blackTint20,
                           ),
                         ],
                       ),
@@ -162,13 +154,14 @@ class _PollComponentState extends State<PollComponent> {
                 ),
               ],
             ),
-            Gap.h10,
+            Gap.h8,
             AppText.regular(
-              '${poll.question} ${poll.description}'.trim(),
-              fontSize: 12,
+              '${poll.question}  ${poll.description}'.trim(),
+              fontSize: 13,
               color: AppColors.black,
               multiText: true,
               maxLines: 5,
+              letterSpacing: -0.25,
               overflow: TextOverflow.ellipsis,
             ),
             Gap.h8,
@@ -185,7 +178,9 @@ class _PollComponentState extends State<PollComponent> {
                           height: 14,
                           width: 14,
                           decoration: BoxDecoration(
-                            color: const Color(0xffD2D2D2),
+                            color: hasVoted
+                                ? AppColors.dthBlue
+                                : const Color(0xffD2D2D2),
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: AppColors.white,
@@ -199,51 +194,94 @@ class _PollComponentState extends State<PollComponent> {
                           ),
                         ),
                       ),
-                      Positioned(
-                        left: 8,
-                        child: Container(
-                          height: 14,
-                          width: 14,
-                          decoration: BoxDecoration(
-                            color: const Color(0xffD2D2D2),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.white,
-                              width: 1,
+                      hasVoted
+                          ? SizedBox(
+                              width: 24,
+                              height: 16,
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    left: 0,
+                                    child: Container(
+                                      height: 16,
+                                      width: 16,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: SvgPicture.asset(
+                                        SvgAssets.verifyActive,
+                                        height: 12,
+                                        width: 12,
+                                        colorFilter: ColorFilter.mode(
+                                          AppColors.dthBlue,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 8,
+                                    child: Container(
+                                      height: 16,
+                                      width: 16,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: SvgPicture.asset(
+                                        SvgAssets.verifyActive,
+                                        height: 12,
+                                        width: 12,
+                                        colorFilter: ColorFilter.mode(
+                                          AppColors.dthBlue,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Positioned(
+                              left: 8,
+                              child: Container(
+                                height: 14,
+                                width: 14,
+                                decoration: BoxDecoration(
+                                  color: hasVoted
+                                      ? AppColors.dthBlue
+                                      : const Color(0xffD2D2D2),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.white,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  size: 8,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
-                          ),
-                          child: const Icon(
-                            Icons.check,
-                            size: 8,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
                 Gap.w4,
-                AppText.regular(
-                  poll.hasVoted ? "Vote submitted" : "Select one",
-                  fontSize: 10,
-                  color: AppColors.blackTint20,
-                ),
-                const Spacer(),
-                SvgPicture.asset(
-                  SvgAssets.verifyActive,
-                  height: 12,
-                  width: 12,
-                  colorFilter: ColorFilter.mode(
-                    AppColors.tint10,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                Gap.w2,
-                AppText.regular(
-                  "${NumberFormat.decimalPattern().format(poll.totalVotes)} total points",
-                  fontSize: 10,
-                  color: AppColors.blackTint20,
-                ),
+                hasVoted
+                    ? AppText.regular(
+                        poll.totalVotesDescription,
+                        letterSpacing: -0.3,
+                        fontSize: 10,
+                        color: AppColors.blackTint20,
+                      )
+                    : AppText.regular(
+                        "Select one",
+                        fontSize: 10,
+                        letterSpacing: -0.3,
+                        color: AppColors.blackTint20,
+                      ),
               ],
             ),
             Gap.h16,
@@ -255,72 +293,22 @@ class _PollComponentState extends State<PollComponent> {
               ),
               Gap.h16,
             ],
-            Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 16,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 0,
-                        child: Container(
-                          height: 16,
-                          width: 16,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: SvgPicture.asset(
-                            SvgAssets.verifyActive,
-                            height: 12,
-                            width: 12,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.dthBlue,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 8,
-                        child: Container(
-                          height: 16,
-                          width: 16,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: SvgPicture.asset(
-                            SvgAssets.verifyActive,
-                            height: 12,
-                            width: 12,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.dthBlue,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: AssetImage(ImageAssets.sponsorBg),
+                  fit: BoxFit.fill,
                 ),
-                Gap.w4,
-                AppText.regular(
-                  poll.totalVotesDescription,
-                  fontSize: 10,
-                  color: AppColors.blackTint20,
-                  letterSpacing: -0.3,
-                ),
-              ],
-            ),
-            Center(
+              ),
               child: const VotingSponsorFooter(
                 sectionName: "poll",
                 includeSafeAreaPadding: false,
                 horizontalPadding: 0,
-                topPadding: 12,
-                bottomPadding: 16,
+                topPadding: 8,
+                backgroundColor: Colors.transparent,
+                bottomPadding: 8,
               ),
             ),
             Container(

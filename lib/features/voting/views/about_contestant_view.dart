@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:ui";
 
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
@@ -145,6 +146,7 @@ class _AboutContestantBody extends StatelessWidget {
           fontSize: 18,
           color: AppColors.mainBlack,
           maxLines: 3,
+          letterSpacing: -0.4,
           overflow: TextOverflow.ellipsis,
         ),
         Gap.h4,
@@ -152,7 +154,8 @@ class _AboutContestantBody extends StatelessWidget {
         Gap.h24,
         AppText.medium(
           "Contestant's Biography",
-          fontSize: 14,
+          fontSize: 13,
+          letterSpacing: -0.15,
           color: AppColors.mainBlack,
         ),
         Gap.h8,
@@ -160,7 +163,7 @@ class _AboutContestantBody extends StatelessWidget {
           detail.biography,
           fontSize: 14,
           height: 1.5,
-          color: AppColors.blackTint20,
+          color: AppColors.tint25,
           multiText: true,
         ),
         const VotingSponsorImageCarousel(),
@@ -201,34 +204,30 @@ class _UserIdRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AppText.semiBold(
-          "Contestant ID: ",
-          fontSize: 13,
-          color: AppColors.blackTint20,
-        ),
         AppText.regular(
           code.toUpperCase(),
           fontSize: 13,
+          letterSpacing: -0.4,
           color: AppColors.blackTint20,
         ),
-        Gap.w6,
-        GestureDetector(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: code));
-            HapticFeedback.lightImpact();
-            DthFlushBar.instance.showCopySuccess(
-              title: "Copied to clipboard",
-              message: "The ID has been copied to your clipboard",
-            );
-          },
-          behavior: HitTestBehavior.opaque,
-          child: SvgPicture.asset(
-            SvgAssets.copyOutline,
-            width: 16,
-            height: 16,
-            colorFilter: ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
-          ),
-        ),
+        // Gap.w6,
+        // GestureDetector(
+        //   onTap: () {
+        //     Clipboard.setData(ClipboardData(text: code));
+        //     HapticFeedback.lightImpact();
+        //     DthFlushBar.instance.showCopySuccess(
+        //       title: "Copied to clipboard",
+        //       message: "The ID has been copied to your clipboard",
+        //     );
+        //   },
+        //   behavior: HitTestBehavior.opaque,
+        //   child: SvgPicture.asset(
+        //     SvgAssets.copyOutline,
+        //     width: 16,
+        //     height: 16,
+        //     colorFilter: ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+        //   ),
+        // ),
       ],
     );
   }
@@ -239,8 +238,8 @@ class _PerformanceCard extends ConsumerWidget {
 
   final VotingContestantPerformance performance;
 
-  static const double _width = 120;
-  static const double _height = 180;
+  static const double _width = 137;
+  static const double _height = 164;
 
   /// Past performances are voting records with a YouTube `video_link`, not
   /// timeline reel uids. Seed [ReelsCache] so [StoriesView] / [ReelPage] can
@@ -320,13 +319,24 @@ class _PerformanceCard extends ConsumerWidget {
               Positioned(
                 top: 8,
                 left: 8,
-                child: SvgPicture.asset(
-                  SvgAssets.play,
-                  width: 16,
-                  height: 16,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
+                child: ClipOval(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      alignment: Alignment.center,
+                      color: AppColors.scaffold.withValues(alpha: 0.35),
+                      child: SvgPicture.asset(
+                        SvgAssets.play,
+                        width: 10,
+                        height: 10,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

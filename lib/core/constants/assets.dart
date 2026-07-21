@@ -75,6 +75,7 @@ class ImageAssets {
   static const String votingTutorialHeader = "$imagePath/voting/header.png";
   static const String voteEmpty = "$imagePath/voting/vote_empty.png";
   static const String evicted = "$imagePath/voting/evicted.png";
+  static const String sponsorBg = "$imagePath/voting/sponsor_bg.png";
 }
 
 class SvgAssets {
