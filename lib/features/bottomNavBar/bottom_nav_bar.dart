@@ -377,6 +377,16 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
                   itemCount: bindings.length,
                   bottomScreenMargin: 0,
                   customWidget: _buildCustomNavBar(bindings),
+                  animationSettings: const NavBarAnimationSettings(
+                    screenTransitionAnimation:
+                        ScreenTransitionAnimationSettings(
+                          animateTabTransition: true,
+                          duration: Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                          screenTransitionAnimationType:
+                              ScreenTransitionAnimationType.slide,
+                        ),
+                  ),
                 ),
               ),
             );
