@@ -78,6 +78,14 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(title: "Error", message: e.message);
+    } catch (e) {
+      // A non-ApiFailure (e.g. verify/parse/timeout) must not leave the VM
+      // stuck busy after a real payment — reset state and surface an error.
+      changeBaseState(ViewModelState.error(ApiFailure(e.toString())));
+      DthFlushBar.instance.showError(
+        title: "Error",
+        message: "Something went wrong confirming your payment.",
+      );
     }
   }
 }

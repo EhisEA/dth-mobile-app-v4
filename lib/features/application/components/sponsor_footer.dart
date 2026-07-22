@@ -17,6 +17,10 @@ class SponsorFooter extends ConsumerStatefulWidget {
 }
 
 class _SponsorFooterState extends ConsumerState<SponsorFooter> {
+  // Owned once and disposed with the State — building a new recognizer inside
+  // build() on every provider notify would orphan (leak) the previous ones.
+  final TapGestureRecognizer _tapRecognizer = TapGestureRecognizer();
+
   @override
   void initState() {
     super.initState();
@@ -24,6 +28,12 @@ class _SponsorFooterState extends ConsumerState<SponsorFooter> {
       if (!mounted) return;
       unawaited(ref.read(sponsorViewModelProvider).load());
     });
+  }
+
+  @override
+  void dispose() {
+    _tapRecognizer.dispose();
+    super.dispose();
   }
 
   @override
@@ -36,6 +46,20 @@ class _SponsorFooterState extends ConsumerState<SponsorFooter> {
     final prefix = sponsor.prefix.trim();
     final label = sponsor.label.trim();
     final link = sponsor.link.trim();
+
+    _tapRecognizer.onTap = link.isEmpty
+        ? null
+        : () {
+            unawaited(
+              MobileNavigationService.instance.navigateTo(
+                AppWebView.path,
+                extra: {
+                  RoutingArgumentKey.title: label,
+                  RoutingArgumentKey.initialURl: link,
+                },
+              ),
+            );
+          };
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
@@ -61,20 +85,7 @@ class _SponsorFooterState extends ConsumerState<SponsorFooter> {
                 fontWeight: FontWeight.w600,
                 color: sponsor.accentColor,
               ),
-              recognizer: link.isNotEmpty
-                  ? (TapGestureRecognizer()
-                      ..onTap = () {
-                        unawaited(
-                          MobileNavigationService.instance.navigateTo(
-                            AppWebView.path,
-                            extra: {
-                              RoutingArgumentKey.title: label,
-                              RoutingArgumentKey.initialURl: link,
-                            },
-                          ),
-                        );
-                      })
-                  : null,
+              recognizer: link.isNotEmpty ? _tapRecognizer : null,
             ),
           ],
         ),

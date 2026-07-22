@@ -18,6 +18,11 @@ class VotingWeekData {
   final List<int> voteValues;
   final VotingTutorial? tutorial;
 
+  /// True for the [empty] sentinel returned when the response body is missing
+  /// or malformed — lets callers distinguish "no data" from a real week so a
+  /// transient bad response doesn't overwrite good state.
+  bool get isEmpty => uid.isEmpty;
+
   factory VotingWeekData.fromJson(Map<String, dynamic> json) {
     final week = json["voting_week"];
     final weekMap = week is Map

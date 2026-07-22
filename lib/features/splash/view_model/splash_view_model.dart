@@ -69,6 +69,9 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
       );
     } on ApiFailure catch (e) {
       _log.d("[sponsorships] fetch failed: ${e.message}");
+    } catch (e) {
+      // Optional strip — never let it block splash navigation.
+      _log.d("[sponsorships] fetch errored: $e");
     }
   }
 
@@ -84,6 +87,9 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
       _log.d("[voting] week preloaded for tutorial greeting");
     } on ApiFailure catch (e) {
       _log.d("[voting] week preload failed: ${e.message}");
+    } catch (e) {
+      // Optional prefetch — never let it block splash navigation.
+      _log.d("[voting] week preload errored: $e");
     }
   }
 
@@ -94,11 +100,18 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
 
     // Block navigation until modules, sponsorships, and (when needed) voting
     // week are resolved so tabs and the voting greeting have data ready.
+    // Guarded so an unexpected error in any optional preload can never strand
+    // the app on the splash screen — we still route below.
+
+    // try {
     await Future.wait([
-      preloadModules(),
+      preloadModules(), // App cannot start without this
       preloadSponsorships(),
       preloadVotingWeekIfNeeded(),
     ]);
+    // } catch (e) {
+    //   _log.d("[splash] preload failed, routing anyway: $e");
+    // }
 
     final bool isLoggedIn = _localCache.getToken() != null;
 

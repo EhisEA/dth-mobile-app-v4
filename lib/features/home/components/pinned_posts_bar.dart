@@ -50,22 +50,32 @@ class PinnedPostsBar extends StatelessWidget {
         separatorBuilder: (_, __) => Gap.w12,
         itemBuilder: (context, index) {
           final post = posts[index];
-          return SizedBox(
-            width: cardWidth,
-            height: barHeight,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.greyTint35),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(_cardPadding),
-              child: PostCard(
-                post: post,
-                compact: true,
-                showDivider: false,
-                onTap: () => onTap(post),
-                onLike: () => onLike(post.uid),
-                onShare: () => onShare(post),
+          // The card layout budgets fixed pixel heights (header/description/…),
+          // so OS font-scaling above 1.0 would overflow the fixed [barHeight].
+          // Cap the scale for these compact cards to keep them within budget.
+          final media = MediaQuery.of(context);
+          final scale = media.textScaler.scale(1) > 1.0
+              ? 1.0
+              : media.textScaler.scale(1);
+          return MediaQuery(
+            data: media.copyWith(textScaler: TextScaler.linear(scale)),
+            child: SizedBox(
+              width: cardWidth,
+              height: barHeight,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.greyTint35),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(_cardPadding),
+                child: PostCard(
+                  post: post,
+                  compact: true,
+                  showDivider: false,
+                  onTap: () => onTap(post),
+                  onLike: () => onLike(post.uid),
+                  onShare: () => onShare(post),
+                ),
               ),
             ),
           );

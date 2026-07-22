@@ -42,13 +42,15 @@ class _AboutContestantViewState extends ConsumerState<AboutContestantView> {
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(votingViewModelProvider);
+    final detailState = vm.detailStateFor(widget.contestantUid);
+    final scopedDetail = vm.contestantDetailFor(widget.contestantUid);
 
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: const DthAppBar(title: "About Contestant"),
-      bottomNavigationBar: vm.detailLoadState.maybeWhen(
+      bottomNavigationBar: detailState.maybeWhen(
         idle: () {
-          final detail = vm.contestantDetail;
+          final detail = scopedDetail;
           if (detail == null ||
               !detail.isVotable ||
               (detail.votingWeekContestantUid?.trim().isEmpty ?? true)) {
@@ -70,7 +72,7 @@ class _AboutContestantViewState extends ConsumerState<AboutContestantView> {
         },
         orElse: () => null,
       ),
-      body: vm.detailLoadState.when(
+      body: detailState.when(
         busy: () => const _AboutContestantSkeleton(),
         error: (failure) => EmptyState(
           illustration: Icon(
@@ -88,7 +90,7 @@ class _AboutContestantViewState extends ConsumerState<AboutContestantView> {
           ),
         ),
         idle: () {
-          final detail = vm.contestantDetail;
+          final detail = scopedDetail;
           if (detail == null) {
             return EmptyState(
               illustration: Icon(

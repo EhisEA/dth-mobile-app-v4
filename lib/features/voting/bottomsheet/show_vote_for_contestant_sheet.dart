@@ -241,9 +241,13 @@ class _VoteForContestantSheetBodyState
     if (!ok || !mounted) return;
 
     final contestantName = widget.contestant.name;
-    Navigator.of(context).pop();
+    // Capture the root navigator's (always-mounted) context before popping —
+    // reusing this sheet's own context after its route is popped is fragile and
+    // breaks if the pop ever completes synchronously.
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    rootNavigator.pop();
     await showVoteSuccessSheet(
-      context,
+      rootNavigator.context,
       voteCount: voteCount,
       contestantName: contestantName,
     );

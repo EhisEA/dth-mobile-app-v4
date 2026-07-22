@@ -33,6 +33,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
   DateTime? weekEndsAt;
   VotingContestantDetail? contestantDetail;
   String? _detailUid;
+  String? _loadedDetailUid;
   bool _weekLoaded = false;
 
   /// True after [preloadWeek] or a successful week fetch in [load]/silentRefresh].
@@ -43,6 +44,18 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
 
   ViewModelState get detailLoadState =>
       getState(_detailKey) ?? const ViewModelState.idle();
+
+  /// The loaded detail, but only when it belongs to [uid]. Returns null while a
+  /// different (stale) contestant's detail is still in [contestantDetail], so a
+  /// freshly-opened view never paints the previous contestant.
+  VotingContestantDetail? contestantDetailFor(String uid) =>
+      _loadedDetailUid == uid.trim() ? contestantDetail : null;
+
+  /// Detail load state scoped to [uid]. Reports busy until this uid becomes the
+  /// most-recently-requested one, so the first frame of a newly-opened view
+  /// shows the skeleton instead of another contestant's cached data or state.
+  ViewModelState detailStateFor(String uid) =>
+      _detailUid == uid.trim() ? detailLoadState : const ViewModelState.busy();
 
   bool get isVoteBusy =>
       getState(_voteKey)?.maybeWhen(busy: () => true, orElse: () => false) ??
@@ -94,7 +107,10 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
         _repo.fetchContestants(filter: "up_for_eviction"),
         _repo.fetchContestants(filter: "all"),
       ]);
-      _applyWeek(results[0] as VotingWeekData);
+      final week = results[0] as VotingWeekData;
+      // A malformed/empty background response must not wipe good credits or the
+      // week title/tutorial — keep the last good week when the fetch is empty.
+      if (!week.isEmpty) _applyWeek(week);
       upForEviction = results[1] as List<VotingContestant>;
       allContestants = results[2] as List<VotingContestant>;
       notifyListeners();
@@ -125,7 +141,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
     final trimmed = uid.trim();
     if (trimmed.isEmpty) return;
 
-    if (_detailUid == trimmed &&
+    if (_loadedDetailUid == trimmed &&
         contestantDetail != null &&
         detailLoadState.maybeWhen(idle: () => true, orElse: () => false)) {
       return;
@@ -134,10 +150,16 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
     _detailUid = trimmed;
     setState(_detailKey, const ViewModelState.busy());
     try {
-      contestantDetail = await _repo.fetchContestantDetail(trimmed);
+      final detail = await _repo.fetchContestantDetail(trimmed);
+      // Ignore a late response that a newer request has superseded.
+      if (_detailUid != trimmed) return;
+      contestantDetail = detail;
+      _loadedDetailUid = trimmed;
       setState(_detailKey, const ViewModelState.idle());
     } on ApiFailure catch (e) {
+      if (_detailUid != trimmed) return;
       contestantDetail = null;
+      _loadedDetailUid = null;
       setState(_detailKey, ViewModelState.error(e));
     }
   }
