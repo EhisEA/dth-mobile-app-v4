@@ -40,6 +40,8 @@ Future<void> _handleInAppNavigation(
       _switchBottomNavTab('subscription');
     case BannerNavigationScreen.ticket:
       _switchBottomNavTab('ticket');
+    case BannerNavigationScreen.voting:
+      _switchBottomNavTab('voting');
     case BannerNavigationScreen.unknown:
       return;
   }

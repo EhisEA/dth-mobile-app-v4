@@ -30,8 +30,8 @@ class PollOptionTile extends StatelessWidget {
           child: GestureDetector(
             onTap: canTap ? onTap : null,
             child: Container(
-              height: 20,
-              width: 20,
+              height: 24,
+              width: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: data.selected ? AppColors.primary : Colors.transparent,
@@ -51,7 +51,7 @@ class PollOptionTile extends StatelessWidget {
                           strokeWidth: 1.3,
                           color: data.selected
                               ? Colors.white
-                              : AppColors.blackTint20,
+                              : const Color(0xffD2D2D2),
                         ),
                       ),
                     )
@@ -60,10 +60,8 @@ class PollOptionTile extends StatelessWidget {
                       tween: Tween(begin: 0, end: 1),
                       duration: const Duration(milliseconds: 650),
                       curve: Curves.elasticOut,
-                      builder: (context, value, child) => Transform.scale(
-                        scale: value,
-                        child: child,
-                      ),
+                      builder: (context, value, child) =>
+                          Transform.scale(scale: value, child: child),
                       child: const Icon(
                         Icons.check_rounded,
                         size: 14,
@@ -85,16 +83,16 @@ class PollOptionTile extends StatelessWidget {
                   Expanded(
                     child: AppText.regular(
                       data.title,
-                      fontSize: 12,
+                      fontSize: 14,
+                      letterSpacing: -0.25,
                       color: AppColors.black,
                       overflow: TextOverflow.visible,
                     ),
                   ),
                   Gap.w8,
-
                   AppText.regular(
                     '${data.percentage}%',
-                    fontSize: 10,
+                    fontSize: 12,
                     color: AppColors.black,
                     letterSpacing: -0.25,
                   ),

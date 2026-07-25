@@ -53,6 +53,9 @@ class ApiRoute {
   static String paymentVerify(String reference) =>
       "$baseUrl/payment/verify/$reference";
 
+  ///SPONSORSHIPS
+  static String get sponsorships => "$baseUrl/sponsorships";
+
   ///PROFILE
   static String get user => "$baseUrl/profile";
   static String get profilePhone => "$baseUrl/profile/phone";
@@ -67,6 +70,7 @@ class ApiRoute {
 
   ///TIMELINE
   static String get timeline => "$baseUrl/timeline-posts";
+  static String get timelinePinnedPosts => "$baseUrl/timeline-posts/pinned";
   static String timelinePostDetail(String uid) =>
       "$baseUrl/timeline-posts/$uid";
   static String timelinePostReact(String uid) =>
@@ -99,6 +103,13 @@ class ApiRoute {
   ///POLLS
   static String get polls => "$baseUrl/polls";
   static String pollVote(String pollUid) => "$baseUrl/polls/$pollUid";
+
+  /// VOTING
+  static String get votingWeek => "$baseUrl/voting/week";
+  static String get votingContestants => "$baseUrl/voting/contestants";
+  static String votingContestantDetail(String contestantUid) =>
+      "$baseUrl/voting/contestants/$contestantUid";
+  static String get votingCast => "$baseUrl/voting/cast";
 
   ///EVENTS & TICKETS
   static String get eventsUpcoming => "$baseUrl/events/upcoming";

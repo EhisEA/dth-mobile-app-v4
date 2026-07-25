@@ -35,6 +35,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
       unawaited(ref.read(homeViewModelProvider).loadTimeline());
       unawaited(ref.read(pollViewModelProvider).loadPoll());
       unawaited(ref.read(bannersViewModelProvider).loadBanners());
+      unawaited(ref.read(sponsorshipsViewModelProvider).load());
       unawaited(
         ref.read(applicantDashboardViewModelProvider).prefetchForHomeUser(),
       );
@@ -153,6 +154,10 @@ class _HomeViewState extends ConsumerState<HomeView> {
         .map(cache.get)
         .whereType<Post>()
         .toList(growable: false);
+    final pinnedPosts = vm.pinnedPostUids
+        .map(cache.get)
+        .whereType<Post>()
+        .toList(growable: false);
     final pollVm = ref.watch(pollViewModelProvider);
     final bannersVm = ref.watch(bannersViewModelProvider);
     return ValueListenableBuilder(
@@ -162,136 +167,214 @@ class _HomeViewState extends ConsumerState<HomeView> {
           backgroundColor: AppColors.white,
           body: SafeArea(
             bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Gap.h14,
-                  AppHeader(onLiveTap: _onLiveTap),
-                  Gap.h10,
-                  Expanded(
-                    child: vm.baseState.when(
-                      busy: () => const Center(
-                        child: CircularProgressIndicator.adaptive(),
-                      ),
-                      error: (Failure failure) => Center(
-                        child: Center(
-                          child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(vertical: 48),
-                            children: [
-                              AppText.semiBold(
-                                "Could not load timeline",
-                                fontSize: 16,
-                                color: AppColors.mainBlack,
-                                textAlign: TextAlign.center,
-                              ),
-                              Gap.h12,
-                              AppText.regular(
-                                failure.message,
-                                fontSize: 14,
-                                color: AppColors.blackTint20,
-                                textAlign: TextAlign.center,
-                              ),
-                              Gap.h24,
-                              Center(
-                                child: AppButton.primary(
-                                  text: "Retry",
-                                  height: 48,
-                                  press: () => unawaited(vm.loadTimeline()),
-                                ),
-                              ),
-                            ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Gap.h14,
+                      AppHeader(onLiveTap: _onLiveTap),
+                      Gap.h10,
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: vm.baseState.when(
+                    busy: () => const Center(
+                      child: CircularProgressIndicator.adaptive(),
+                    ),
+                    error: (Failure failure) => Center(
+                      child: Center(
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 48,
+                            horizontal: 16,
                           ),
+                          children: [
+                            AppText.semiBold(
+                              "Could not load timeline",
+                              fontSize: 16,
+                              color: AppColors.mainBlack,
+                              textAlign: TextAlign.center,
+                            ),
+                            Gap.h12,
+                            AppText.regular(
+                              failure.message,
+                              fontSize: 14,
+                              color: AppColors.blackTint20,
+                              textAlign: TextAlign.center,
+                            ),
+                            Gap.h24,
+                            Center(
+                              child: AppButton.primary(
+                                text: "Retry",
+                                height: 48,
+                                press: () => unawaited(vm.loadTimeline()),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      idle: () => RefreshIndicator(
-                        onRefresh: () async {
-                          await Future.wait([
-                            vm.refreshTimeline(),
-                            pollVm.loadPoll(),
-                            bannersVm.loadBanners(),
-                            ref.read(userStateProvider).getUserDetails(),
-                            _refreshActiveLivestream(),
-                          ]);
+                    ),
+                    idle: () => RefreshIndicator(
+                      onRefresh: () async {
+                        await Future.wait([
+                          vm.refreshTimeline(),
+                          pollVm.loadPoll(),
+                          bannersVm.loadBanners(),
+                          ref.read(sponsorshipsViewModelProvider).load(),
+                          ref.read(userStateProvider).getUserDetails(),
+                          _refreshActiveLivestream(),
+                        ]);
+                      },
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (n) {
+                          // Ignore nested horizontal lists (banners, reels)
+                          // — their scroll metrics would otherwise trigger
+                          // timeline pagination.
+                          if (n.metrics.axis != Axis.vertical) return false;
+                          // Trigger loadMore ~400px before the end.
+                          // Guards inside loadMoreTimeline (hasMore +
+                          // _loadingMore flag) make the firing here
+                          // idempotent.
+                          if (n.metrics.pixels >=
+                              n.metrics.maxScrollExtent - 400) {
+                            unawaited(vm.loadMoreTimeline());
+                          }
+                          return false;
                         },
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (n) {
-                            // Ignore nested horizontal lists (banners, reels)
-                            // — their scroll metrics would otherwise trigger
-                            // timeline pagination.
-                            if (n.metrics.axis != Axis.vertical) return false;
-                            // Trigger loadMore ~400px before the end.
-                            // Guards inside loadMoreTimeline (hasMore +
-                            // _loadingMore flag) make the firing here
-                            // idempotent.
-                            if (n.metrics.pixels >=
-                                n.metrics.maxScrollExtent - 400) {
-                              unawaited(vm.loadMoreTimeline());
-                            }
-                            return false;
-                          },
-                          child: CustomScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            slivers: [
-                              // Active-livestream banner. Reads the cached
-                              // active-livestream state (warmed in initState)
-                              // so it renders synchronously off whatever the
-                              // pre-fetch resolved to — no tap-time HTTP.
-                              SliverToBoxAdapter(
-                                child: () {
-                                  final live = ref
-                                      .watch(activeLivestreamProvider)
-                                      .valueOrNull;
-                                  if (live == null) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 12,
-                                      bottom: 12,
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            // Active-livestream banner. Reads the cached
+                            // active-livestream state (warmed in initState)
+                            // so it renders synchronously off whatever the
+                            // pre-fetch resolved to — no tap-time HTTP.
+                            SliverToBoxAdapter(
+                              child: () {
+                                final live = ref
+                                    .watch(activeLivestreamProvider)
+                                    .valueOrNull;
+                                if (live == null) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    12,
+                                  ),
+                                  child: LivestreamBanner(
+                                    stream: live,
+                                    onTap: _onLiveTap,
+                                  ),
+                                );
+                              }(),
+                            ),
+                            SliverToBoxAdapter(
+                              child:
+                                  vm.stories.isEmpty ||
+                                      appModules.appModules.value?.reel != true
+                                  ? const SizedBox.shrink()
+                                  : Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        // Full-bleed horizontally; left inset
+                                        // lives on the ListView so cards can
+                                        // scroll flush to the phone edge.
+                                        StoriesBar(
+                                          stories: vm.stories,
+                                          onStoryTap: (story) {
+                                            MobileNavigationService.instance
+                                                .push(
+                                                  StoriesView.path,
+                                                  extra: {
+                                                    RoutingArgumentKey.reelUid:
+                                                        story.uid,
+                                                  },
+                                                );
+                                          },
+                                        ),
+                                        Gap.h16,
+                                      ],
                                     ),
-                                    child: LivestreamBanner(
-                                      stream: live,
-                                      onTap: _onLiveTap,
-                                    ),
-                                  );
-                                }(),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: PollComponent(
+                                  pollListenable: pollVm.poll,
+                                  isVoteBusy: pollVm.isVoteBusy,
+                                  onVoteTap: (optionUid) {
+                                    unawaited(pollVm.vote(optionUid));
+                                  },
+                                ),
                               ),
-                              SliverToBoxAdapter(
-                                child:
-                                    vm.stories.isEmpty ||
-                                        appModules.appModules.value?.reel !=
-                                            true
-                                    ? const SizedBox.shrink()
-                                    : Column(
+                            ),
+                            SliverToBoxAdapter(
+                              child: pinnedPosts.isEmpty
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
                                         children: [
-                                          StoriesBar(
-                                            stories: vm.stories,
-                                            onStoryTap: (story) {
-                                              MobileNavigationService.instance
-                                                  .push(
-                                                    StoriesView.path,
-                                                    extra: {
-                                                      RoutingArgumentKey
-                                                              .reelUid:
-                                                          story.uid,
-                                                    },
-                                                  );
-                                            },
+                                          PinnedPostsBar(
+                                            posts: pinnedPosts,
+                                            onTap: (post) =>
+                                                MobileNavigationService.instance
+                                                    .push(
+                                                      PostDetailView.path,
+                                                      extra: {
+                                                        RoutingArgumentKey
+                                                                .postUid:
+                                                            post.uid,
+                                                      },
+                                                    ),
+                                            onLike: (uid) => unawaited(
+                                              vm.togglePostLike(uid),
+                                            ),
+                                            onShare: (post) =>
+                                                LinkShareHelper.sharePost(
+                                                  postUid: post.uid,
+                                                  title: post.title,
+                                                  description: post.description,
+                                                  imageUrl:
+                                                      post.imageUrls.isNotEmpty
+                                                      ? post.imageUrls.first
+                                                      : "",
+                                                  onShared: () =>
+                                                      _bumpPostShareCount(
+                                                        post.uid,
+                                                      ),
+                                                ),
                                           ),
                                           Gap.h16,
                                         ],
                                       ),
-                              ),
-                              SliverToBoxAdapter(
-                                child: bannersVm.banners.isEmpty
-                                    ? const SizedBox.shrink()
-                                    : Column(
+                                    ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: bannersVm.banners.isEmpty
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
@@ -302,148 +385,143 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                           Gap.h16,
                                         ],
                                       ),
-                              ),
+                                    ),
+                            ),
 
-                              // SliverToBoxAdapter(
-                              //   child:
-                              //       value?.participationRole ==
-                              //               ParticipationRole.user &&
-                              //           appModules
-                              //                   .appModules
-                              //                   .value
-                              //                   ?.application ==
-                              //               true
-                              //       ? Column(
-                              //           mainAxisSize: MainAxisSize.min,
-                              //           crossAxisAlignment:
-                              //               CrossAxisAlignment.stretch,
-                              //           children: [
-                              //             // Gap.h10,
-                              //             GestureDetector(
-                              //               behavior: HitTestBehavior.opaque,
-                              //               onTap: () {
-                              //                 MobileNavigationService.instance
-                              //                     .navigateTo(
-                              //                       ApplicationView.path,
-                              //                     );
-                              //               },
-                              //               child: Container(
-                              //                 height: 108,
-                              //                 width: double.infinity,
-                              //                 decoration: BoxDecoration(
-                              //                   image: DecorationImage(
-                              //                     image: AssetImage(
-                              //                       ImageAssets.applyimg,
-                              //                     ),
-                              //                     fit: BoxFit.fill,
-                              //                   ),
-                              //                 ),
-                              //               ),
-                              //             ),
-                              //             Gap.h16,
-                              //           ],
-                              //         )
-                              //       : const SizedBox.shrink(),
-                              // ),
-                              SliverToBoxAdapter(
-                                child: PollComponent(
-                                  pollListenable: pollVm.poll,
-                                  isVoteBusy: pollVm.isVoteBusy,
-                                  onVoteTap: (optionUid) {
-                                    unawaited(pollVm.vote(optionUid));
-                                  },
+                            // SliverToBoxAdapter(
+                            //   child:
+                            //       value?.participationRole ==
+                            //               ParticipationRole.user &&
+                            //           appModules
+                            //                   .appModules
+                            //                   .value
+                            //                   ?.application ==
+                            //               true
+                            //       ? Column(
+                            //           mainAxisSize: MainAxisSize.min,
+                            //           crossAxisAlignment:
+                            //               CrossAxisAlignment.stretch,
+                            //           children: [
+                            //             // Gap.h10,
+                            //             GestureDetector(
+                            //               behavior: HitTestBehavior.opaque,
+                            //               onTap: () {
+                            //                 MobileNavigationService.instance
+                            //                     .navigateTo(
+                            //                       ApplicationView.path,
+                            //                     );
+                            //               },
+                            //               child: Container(
+                            //                 height: 108,
+                            //                 width: double.infinity,
+                            //                 decoration: BoxDecoration(
+                            //                   image: DecorationImage(
+                            //                     image: AssetImage(
+                            //                       ImageAssets.applyimg,
+                            //                     ),
+                            //                     fit: BoxFit.fill,
+                            //                   ),
+                            //                 ),
+                            //               ),
+                            //             ),
+                            //             Gap.h16,
+                            //           ],
+                            //         )
+                            //       : const SizedBox.shrink(),
+                            // ),
+                            if (vm.postUids.isEmpty)
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Padding(
+                                  padding: EdgeInsets.only(
+                                    left: 16,
+                                    right: 16,
+                                    bottom: bottomInset,
+                                  ),
+                                  child: Center(
+                                    child: AppText.regular(
+                                      "No posts yet.",
+                                      fontSize: 14,
+                                      color: AppColors.blackTint20,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: EdgeInsets.only(
+                                  left: 16,
+                                  right: 16,
+                                  bottom: bottomInset,
+                                ),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    // Footer slot: loading spinner while
+                                    // fetching the next page; nothing once
+                                    // we've reached the end.
+                                    if (index >= posts.length) {
+                                      if (vm.loadingMore) {
+                                        return const Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 24,
+                                          ),
+                                          child: Center(
+                                            child:
+                                                CircularProgressIndicator.adaptive(),
+                                          ),
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    }
+                                    final post = posts[index];
+                                    final isLast = index == posts.length - 1;
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                        top: index == 0 ? 2 : 0,
+                                        bottom: isLast ? 0 : 12,
+                                      ),
+                                      child: PostCard(
+                                        post: post,
+                                        onLike: () => unawaited(
+                                          vm.togglePostLike(post.uid),
+                                        ),
+                                        onShare: () =>
+                                            LinkShareHelper.sharePost(
+                                              postUid: post.uid,
+                                              title: post.title,
+                                              description: post.description,
+                                              imageUrl:
+                                                  post.imageUrls.isNotEmpty
+                                                  ? post.imageUrls.first
+                                                  : "",
+                                              onShared: () =>
+                                                  _bumpPostShareCount(post.uid),
+                                            ),
+                                        onTap: () => MobileNavigationService
+                                            .instance
+                                            .push(
+                                              PostDetailView.path,
+                                              extra: {
+                                                RoutingArgumentKey.postUid:
+                                                    post.uid,
+                                              },
+                                            ),
+                                      ),
+                                    );
+                                  }, childCount: posts.length + 1),
                                 ),
                               ),
-                              if (vm.postUids.isEmpty)
-                                SliverFillRemaining(
-                                  hasScrollBody: false,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: bottomInset,
-                                    ),
-                                    child: Center(
-                                      child: AppText.regular(
-                                        "No posts yet.",
-                                        fontSize: 14,
-                                        color: AppColors.blackTint20,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else
-                                SliverPadding(
-                                  padding: EdgeInsets.only(bottom: bottomInset),
-                                  sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate((
-                                      context,
-                                      index,
-                                    ) {
-                                      // Footer slot: loading spinner while
-                                      // fetching the next page; nothing once
-                                      // we've reached the end.
-                                      if (index >= posts.length) {
-                                        if (vm.loadingMore) {
-                                          return const Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              vertical: 24,
-                                            ),
-                                            child: Center(
-                                              child:
-                                                  CircularProgressIndicator.adaptive(),
-                                            ),
-                                          );
-                                        }
-                                        return const SizedBox.shrink();
-                                      }
-                                      final post = posts[index];
-                                      final isLast = index == posts.length - 1;
-                                      return Padding(
-                                        padding: EdgeInsets.only(
-                                          top: index == 0 ? 2 : 0,
-                                          bottom: isLast ? 0 : 12,
-                                        ),
-                                        child: PostCard(
-                                          post: post,
-                                          onLike: () => unawaited(
-                                            vm.togglePostLike(post.uid),
-                                          ),
-                                          onShare: () =>
-                                              LinkShareHelper.sharePost(
-                                                postUid: post.uid,
-                                                title: post.title,
-                                                description: post.description,
-                                                imageUrl:
-                                                    post.imageUrls.isNotEmpty
-                                                    ? post.imageUrls.first
-                                                    : "",
-                                                onShared: () =>
-                                                    _bumpPostShareCount(
-                                                      post.uid,
-                                                    ),
-                                              ),
-                                          onTap: () => MobileNavigationService
-                                              .instance
-                                              .push(
-                                                PostDetailView.path,
-                                                extra: {
-                                                  RoutingArgumentKey.postUid:
-                                                      post.uid,
-                                                },
-                                              ),
-                                        ),
-                                      );
-                                    }, childCount: posts.length + 1),
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );

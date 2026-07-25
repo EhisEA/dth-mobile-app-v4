@@ -10,6 +10,7 @@ class ImageAssets {
   static const String logo = "$imagePath/logo.png";
   static const String logo2 = "$imagePath/logo2.png";
   static const String line = "$imagePath/line.png";
+  static const String confirmed = "$imagePath/confirmed.png";
   static const String logoWhite = "$imagePath/logo_white.png";
   static const String updateIcon = "$imagePath/update_icon.png";
   static const String ticketCardOutline =
@@ -67,6 +68,14 @@ class ImageAssets {
   static const String redBg = "$imagePath/application/red_bg.png";
   static const String applicantBanner =
       "$imagePath/application/applicant_banner.png";
+
+  /////////////////////VOTING//////////////////////
+  static const String maltaGuinness = "$imagePath/voting/malta_guinness.png";
+  static const String sendApp = "$imagePath/voting/send_app.png";
+  static const String votingTutorialHeader = "$imagePath/voting/header.png";
+  static const String voteEmpty = "$imagePath/voting/vote_empty.png";
+  static const String evicted = "$imagePath/voting/evicted.png";
+  static const String sponsorBg = "$imagePath/voting/sponsor_bg.png";
 }
 
 class SvgAssets {
@@ -89,6 +98,8 @@ class SvgAssets {
   static const String verifyActive = "$svgPath/bottomNavBar/verify_filled.svg";
   static const String ticket = "$svgPath/bottomNavBar/ticket.svg";
   static const String ticketActive = "$svgPath/bottomNavBar/ticket_filled.svg";
+  static const String voting = "$svgPath/bottomNavBar/vote.svg";
+  static const String votingActive = "$svgPath/bottomNavBar/vote_filled.svg";
   static const String profile = "$svgPath/bottomNavBar/profile.svg";
   static const String profileActive =
       "$svgPath/bottomNavBar/profile_filled.svg";
@@ -163,6 +174,15 @@ class SvgAssets {
   static const String check = "$svgPath/subscription/check.svg";
   static const String confirmed = "$svgPath/subscription/confirmed.svg";
   static const String failed = "$svgPath/subscription/failed.svg";
+
+  /////////////////////VOTING//////////////////////
+  ///
+  static const String voteStar = "$svgPath/voting/stars.svg";
+  static const String question = "$svgPath/voting/question.svg";
+  static const String voteCircleStar = "$svgPath/voting/circle_star.svg";
+  static const String voteForwardArrow = "$svgPath/voting/arrow_right.svg";
+  static const String voteChoose = "$svgPath/voting/choose.svg";
+  static const String voteCast = "$svgPath/voting/cast.svg";
 }
 
 class LottieAssets {

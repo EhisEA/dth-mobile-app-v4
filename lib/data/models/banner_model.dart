@@ -20,6 +20,7 @@ enum BannerNavigationScreen {
   application,
   subscription,
   ticket,
+  voting,
   applicantDashboard,
   unknown;
 
@@ -31,6 +32,9 @@ enum BannerNavigationScreen {
         return BannerNavigationScreen.subscription;
       case 'ticket':
         return BannerNavigationScreen.ticket;
+      case 'voting':
+      case 'vote':
+        return BannerNavigationScreen.voting;
       case 'applicant-dashboard':
         return BannerNavigationScreen.applicantDashboard;
       default:

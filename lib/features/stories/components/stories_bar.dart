@@ -18,6 +18,9 @@ class StoriesBar extends StatelessWidget {
       height: 180,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        // Left aligns with page content; right gives the last card breathing
+        // room when scrolled to the end (mid-scroll still reaches the edge).
+        padding: const EdgeInsets.only(left: 16, right: 16),
         itemCount: stories.length,
         separatorBuilder: (_, __) => Gap.w8,
         itemBuilder: (context, index) {

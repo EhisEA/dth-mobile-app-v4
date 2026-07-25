@@ -14,3 +14,4 @@ export "app_header.dart";
 export "blurred_modal_bottom_sheet.dart";
 export "inline_tagged_text.dart";
 export "shimmer_box.dart";
+export "top_confetti_celebration.dart";

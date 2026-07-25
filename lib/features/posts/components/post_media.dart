@@ -14,6 +14,7 @@ class PostMedia extends StatelessWidget {
     required this.post,
     this.onPlayVideo,
     this.enableHero = false,
+    this.height,
   });
 
   final Post post;
@@ -29,16 +30,23 @@ class PostMedia extends StatelessWidget {
   /// simultaneously-alive tabs, which Flutter asserts on.
   final bool enableHero;
 
+  /// Overrides the default feed media height (160). Pinned cards use 194.
+  final double? height;
+
   static const double _mediaHeight = 160;
   static const double _radius = 12;
 
   @override
   Widget build(BuildContext context) {
     final heroPrefix = enableHero ? post.uid : null;
+    return _buildMedia(height: height ?? _mediaHeight, heroPrefix: heroPrefix);
+  }
+
+  Widget _buildMedia({required double height, required String? heroPrefix}) {
     if (post.isVideo && post.video != null) {
       return _VideoBlock(
         thumbnailUrl: post.video!.thumbnailUrl,
-        height: _mediaHeight,
+        height: height,
         radius: _radius,
         onPlay: onPlayVideo,
         heroTag: heroPrefix == null ? null : postVideoHeroTag(heroPrefix),
@@ -50,7 +58,7 @@ class PostMedia extends StatelessWidget {
     }
     return _ImageGalleryBlock(
       urls: urls,
-      height: _mediaHeight,
+      height: height,
       radius: _radius,
       heroPrefix: heroPrefix,
     );
@@ -84,8 +92,9 @@ class _VideoBlock extends StatelessWidget {
         color: Colors.black,
         child: InkWell(
           onTap: onPlay,
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
+          child: SizedBox(
+            height: height,
+            width: double.infinity,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -179,8 +188,9 @@ class _ImageGalleryBlock extends StatelessWidget {
 
     final extra = n - 3;
     final r = Radius.circular(radius);
-    return AspectRatio(
-      aspectRatio: 16 / 12,
+    return SizedBox(
+      height: height,
+      width: double.infinity,
       child: ClipRRect(
         borderRadius: BorderRadius.all(r),
         child: Row(
@@ -210,9 +220,13 @@ class _ImageGalleryBlock extends StatelessWidget {
   }
 
   Widget _one(String url, BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: _heroCell(url, context),
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: _heroCell(url, context),
+      ),
     );
   }
 

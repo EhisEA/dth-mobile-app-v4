@@ -13,6 +13,7 @@ import "package:dth_v4/features/search/views/search_view.dart";
 import "package:dth_v4/features/subscription/components/pro_badge_icon.dart";
 import "package:dth_v4/features/subscription/views/subscription_view.dart";
 import "package:dth_v4/features/tickets/tickets.dart";
+import "package:dth_v4/features/voting/voting.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -59,6 +60,13 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
         assetInactive: SvgAssets.search,
         assetActive: SvgAssets.searchActive,
         screen: const SearchView(),
+      );
+    case 'voting':
+      return _NavBinding(
+        label: item.label,
+        assetInactive: SvgAssets.voting,
+        assetActive: SvgAssets.votingActive,
+        screen: const VotingView(),
       );
     case 'tickets':
       return _NavBinding(
@@ -189,6 +197,7 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
       'timeline',
       'search',
       'tickets',
+      'voting',
       'subscriptions',
       'profile',
     ];
@@ -209,6 +218,9 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
       case 'ticket':
       case 'tickets':
         return {'tickets', 'ticket'};
+      case 'voting':
+      case 'vote':
+        return {'voting', 'vote'};
       default:
         return {moduleName};
     }
@@ -365,6 +377,16 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
                   itemCount: bindings.length,
                   bottomScreenMargin: 0,
                   customWidget: _buildCustomNavBar(bindings),
+                  animationSettings: const NavBarAnimationSettings(
+                    screenTransitionAnimation:
+                        ScreenTransitionAnimationSettings(
+                          animateTabTransition: true,
+                          duration: Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                          screenTransitionAnimationType:
+                              ScreenTransitionAnimationType.slide,
+                        ),
+                  ),
                 ),
               ),
             );

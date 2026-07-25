@@ -20,6 +20,7 @@ class AuthRepoImpl implements AuthRepo {
   Future<void> _clearLocalAuthState() async {
     await _localCache.deleteToken();
     await _localCache.removeFromLocalCache(CacheKeys.user);
+    await _localCache.removeFromLocalCache(CacheKeys.votingTutorialSeen);
     _updateNetworkToken(null);
   }
 
@@ -127,7 +128,11 @@ class AuthRepoImpl implements AuthRepo {
   }) async {
     final response = await _networkService.post(
       ApiRoute.loginVerifyOtp,
-      data: {"token": otp, "signature": signature, "fcm_token": fcmToken, "device_name": deviceName,
+      data: {
+        "token": otp,
+        "signature": signature,
+        "fcm_token": fcmToken,
+        "device_name": deviceName,
       },
     );
     final data =

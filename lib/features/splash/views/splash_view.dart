@@ -2,7 +2,9 @@ import "dart:async";
 
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
+import "package:dth_v4/features/home/home.dart";
 import "package:dth_v4/features/splash/view_model/splash_view_model.dart";
+import "package:dth_v4/features/voting/view_model/voting_view_model.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -12,6 +14,8 @@ final _splashViewModel = ChangeNotifierProvider.autoDispose<SplashViewModel>((
   return SplashViewModel(
     ref.read(localCacheProvider),
     ref.read(appModulesStateProvider),
+    ref.read(sponsorshipsViewModelProvider),
+    ref.read(votingViewModelProvider),
   );
 });
 
@@ -33,6 +37,7 @@ class _SplashViewState extends ConsumerState<SplashView>
 
   late final AnimationController _animationController;
   late final Animation<double> _opacityAnimation;
+
   /// Last slide stays opaque (no fade-out) until navigation.
   late final Animation<double> _lastSlideOpacityAnimation;
   late final Animation<double> _translateYAnimation;
@@ -86,9 +91,11 @@ class _SplashViewState extends ConsumerState<SplashView>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _animationController.forward(from: 0);
-      // Start fetching the modules in parallel with the splash animation
-      // so the bottom nav has its tab list ready by the time we navigate.
+      // Start fetching modules + sponsorships + voting week (when needed) in
+      // parallel with the splash animation so tabs and greeting are ready.
       unawaited(ref.read(_splashViewModel).preloadModules());
+      unawaited(ref.read(_splashViewModel).preloadSponsorships());
+      unawaited(ref.read(_splashViewModel).preloadVotingWeekIfNeeded());
     });
   }
 

@@ -37,6 +37,36 @@ class TimelineRepoImpl implements TimelineRepo {
     );
   }
 
+  @override
+  Future<List<TimelinePost>> fetchPinnedPosts() async {
+    final response = await _networkService.get(ApiRoute.timelinePinnedPosts);
+    return _parseFlatList(
+      response.data,
+      listKey: "posts",
+      fromJson: TimelinePost.fromJson,
+    );
+  }
+
+  List<T> _parseFlatList<T>(
+    dynamic root, {
+    required String listKey,
+    required T Function(Map<String, dynamic>) fromJson,
+  }) {
+    if (root is! Map<String, dynamic>) return const [];
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) return const [];
+    final list = data[listKey];
+    if (list is! List<dynamic>) return const [];
+
+    return list
+        .map((e) {
+          if (e is! Map) return null;
+          return fromJson(Map<String, dynamic>.from(e));
+        })
+        .whereType<T>()
+        .toList();
+  }
+
   Map<String, dynamic>? _cursorParams(String? cursor) {
     if (cursor == null || cursor.isEmpty) return null;
     return {"cursor": cursor};

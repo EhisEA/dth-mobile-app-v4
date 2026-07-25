@@ -1,8 +1,11 @@
+import "dart:async";
+
 import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/livestream/view_model/active_livestream_provider.dart";
 import "package:dth_v4/features/app_web_view/app_web_view.dart";
 import "package:dth_v4/features/subscription/views/confirmation_view.dart";
+import "package:dth_v4/features/voting/view_model/voting_view_model.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
@@ -14,12 +17,14 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
     this._subscriptionPlansState,
     this._userState,
     this._invalidateActiveLivestream,
+    this._refreshVoting,
   );
 
   final SubscriptionRepo _repo;
   final SubscriptionPlansState _subscriptionPlansState;
   final UserProfileState _userState;
   final void Function() _invalidateActiveLivestream;
+  final Future<void> Function() _refreshVoting;
 
   Future<void> purchasePlan(SubscriptionModel plan) async {
     if (plan.isActiveSubscription) return;
@@ -56,6 +61,9 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
         await _subscriptionPlansState.fetchPlans();
         await _userState.getUserDetails();
         _invalidateActiveLivestream();
+        // Subscribing can grant/unlock voting credits — refresh the voting week
+        // so the tab reflects the new balance without waiting for its timer.
+        unawaited(_refreshVoting());
         DthFlushBar.instance.showSuccess(
           title: "Subscription",
           message: "Your payment was confirmed.",
@@ -75,19 +83,36 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
       );
 
       changeBaseState(const ViewModelState.idle());
-    } on ApiFailure catch (e) {
+    } on ApiFailure catch (e, s) {
+      // ignore: avoid_print
+      print("[checkout] ApiFailure: ${e.message}\n$s");
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(title: "Error", message: e.message);
+    } catch (e, s) {
+      // ignore: avoid_print
+      print("[checkout] NON-ApiFailure: $e (${e.runtimeType})\n$s");
+      // A non-ApiFailure (e.g. verify/parse/timeout) must not leave the VM
+      // stuck busy after a real payment — reset state and surface an error.
+      changeBaseState(ViewModelState.error(ApiFailure(e.toString())));
+      DthFlushBar.instance.showError(
+        title: "Error",
+        message: "Something went wrong confirming your payment.",
+      );
     }
   }
 }
 
 final subscriptionCheckoutViewModelProvider =
     ChangeNotifierProvider<SubscriptionCheckoutViewModel>((ref) {
+      // Read the voting VM eagerly here (ref is valid at create time). Doing a
+      // lazy `ref.read` inside the callback risks throwing when invoked later
+      // mid-payment, which would land in purchasePlan's catch.
+      final votingViewModel = ref.read(votingViewModelProvider);
       return SubscriptionCheckoutViewModel(
         ref.read(subscriptionRepositoryProvider),
         ref.read(subscriptionPlansStateProvider),
         ref.read(userStateProvider),
         () => ref.invalidate(activeLivestreamProvider),
+        votingViewModel.silentRefresh,
       );
     });
