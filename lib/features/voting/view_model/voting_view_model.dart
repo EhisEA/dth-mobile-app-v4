@@ -116,6 +116,9 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
       notifyListeners();
     } on ApiFailure {
       // Keep last good data on silent failure.
+    } catch (_) {
+      // Silent refresh must never surface an error (it is often fire-and-forget
+      // via unawaited) — keep last good data on any unexpected failure too.
     }
   }
 

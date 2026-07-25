@@ -30,6 +30,7 @@ Future<void> showVoteForContestantSheet(
     useRootNavigator: true,
     useSafeArea: false,
     builder: (sheetContext) => _VoteForContestantSheetBody(
+      anchorContext: context,
       contestant: contestant,
       initialCredits: vm.credits,
       votePresets: vm.voteValues.isNotEmpty
@@ -41,11 +42,16 @@ Future<void> showVoteForContestantSheet(
 
 class _VoteForContestantSheetBody extends ConsumerStatefulWidget {
   const _VoteForContestantSheetBody({
+    required this.anchorContext,
     required this.contestant,
     required this.initialCredits,
     required this.votePresets,
   });
 
+  /// The screen context that opened this sheet — stays mounted after the sheet
+  /// pops (unlike this sheet's own route context) and sits below the app
+  /// Overlay, so the success sheet can be shown from it safely.
+  final BuildContext anchorContext;
   final VotingContestant contestant;
   final VotingCredits initialCredits;
   final List<int> votePresets;
@@ -241,13 +247,13 @@ class _VoteForContestantSheetBodyState
     if (!ok || !mounted) return;
 
     final contestantName = widget.contestant.name;
-    // Capture the root navigator's (always-mounted) context before popping —
-    // reusing this sheet's own context after its route is popped is fragile and
-    // breaks if the pop ever completes synchronously.
-    final rootNavigator = Navigator.of(context, rootNavigator: true);
-    rootNavigator.pop();
+    Navigator.of(context).pop();
+    // Show the success sheet from the opener's still-mounted context, not this
+    // sheet's just-popped route context (which lacks an Overlay once popped).
+    final anchor = widget.anchorContext;
+    if (!anchor.mounted) return;
     await showVoteSuccessSheet(
-      rootNavigator.context,
+      anchor,
       voteCount: voteCount,
       contestantName: contestantName,
     );
