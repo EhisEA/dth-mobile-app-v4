@@ -21,6 +21,9 @@ class ImageAssets {
   static const String ticketEmptyState =
       "$imagePath/empty_state/ticket_empty_state.png";
   static const String ticketTitle = "$imagePath/tickets/ticket_title.png";
+  static const String ticket = "$imagePath/tickets/ticket.png";
+  static const String availableTicketBg =
+      "$imagePath/tickets/available_ticket_bg.png";
 
   /////////////////////NOTIFICATIONS//////////////////////
   static const String notificationsEmptyState =

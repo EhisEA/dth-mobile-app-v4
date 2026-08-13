@@ -106,6 +106,8 @@ class SponsorshipsData {
 
   SponsorshipSection? get poll => sections["poll"];
 
+  SponsorshipSection? get ticket => sections["ticket"];
+
   SponsorshipSection? section(String name) => sections[name];
 
   factory SponsorshipsData.fromJson(Map<String, dynamic> json) {

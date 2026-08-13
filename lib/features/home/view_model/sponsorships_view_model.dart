@@ -14,6 +14,8 @@ class SponsorshipsViewModel extends BaseChangeNotifierViewModel {
 
   SponsorshipSection? get poll => _data.poll;
 
+  SponsorshipSection? get ticket => _data.ticket;
+
   Future<void> load() async {
     try {
       final res = await _repo.fetchSponsorships();

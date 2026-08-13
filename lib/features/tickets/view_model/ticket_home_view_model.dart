@@ -4,6 +4,8 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
+enum TicketHomeTab { upcoming, purchased }
+
 /// Tickets tab: [EventsState] holds cached lists; this VM owns loading/error UI state.
 class TicketHomeViewModel extends BaseChangeNotifierViewModel {
   TicketHomeViewModel(this._eventsState);
@@ -12,6 +14,8 @@ class TicketHomeViewModel extends BaseChangeNotifierViewModel {
 
   static const _upcomingKey = "ticketHomeUpcoming";
   static const _bookedKey = "ticketHomeBooked";
+
+  TicketHomeTab tab = TicketHomeTab.upcoming;
 
   ViewModelState get upcomingState =>
       getState(_upcomingKey) ?? const ViewModelState.busy();
@@ -28,6 +32,12 @@ class TicketHomeViewModel extends BaseChangeNotifierViewModel {
 
   bool _bookedLoadingMore = false;
   bool get bookedLoadingMore => _bookedLoadingMore;
+
+  void setTab(TicketHomeTab next) {
+    if (tab == next) return;
+    tab = next;
+    notifyListeners();
+  }
 
   // Future<void> loadInitial() async {
   //   await Future.wait<void>([_loadUpcoming(), _loadBooked()]);

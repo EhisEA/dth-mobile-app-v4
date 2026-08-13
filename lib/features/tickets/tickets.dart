@@ -6,6 +6,8 @@ export "views/ticket_view.dart";
 export "components/ticket_empty_state.dart";
 export "components/booked_shows_component.dart";
 export "components/ticket_home_skeleton.dart";
+export "components/ticket_home_toggle.dart";
+export "components/ticket_event_card.dart";
 export "components/description_widget.dart";
 export "views/upcoming_shows_view.dart";
 export "components/upcoming_shows_component.dart";
