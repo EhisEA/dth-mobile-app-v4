@@ -223,7 +223,13 @@ class _ContestantListPage extends ConsumerWidget {
     final isAllContestants = filter == VotingFilter.allContestants;
 
     if (items.isEmpty) {
-      return VotingEmptyState(filter: filter);
+      return Column(
+        children: [
+          Gap.h32,
+          Gap.h10,
+          VotingEmptyState(filter: filter),
+        ],
+      );
     }
 
     return RefreshIndicator(

@@ -1,6 +1,6 @@
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/tickets/tickets.dart";
 import "package:dth_v4/features/voting/view_model/voting_view_model.dart";
-import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 
 /// Voting list empty state using [ImageAssets.voteEmpty].
@@ -20,12 +20,6 @@ class VotingEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EmptyState(
-      illustration: Image.asset(ImageAssets.voteEmpty, fit: BoxFit.contain),
-      title: _title,
-      subtitle: _subtitle,
-      showDashedDivider: false,
-      onRetry: onRetry,
-    );
+    return TicketEmptyState(title: _title, subtitle: _subtitle);
   }
 }
