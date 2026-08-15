@@ -207,7 +207,7 @@ class _AvailabilityPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           AppText.medium(
-            "$count  available",
+            "$count available",
             fontSize: 14,
             color: AppColors.black,
             height: 0,
