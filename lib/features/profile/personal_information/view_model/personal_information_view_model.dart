@@ -225,17 +225,20 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
     final current = _userState.user.value;
     if (current != null &&
         name == current.fullName.trim() &&
-        phoneTrimmed == current.phoneNumber.trim() &&
+        _samePhone(phoneTrimmed, current.phoneNumber) &&
         isoCode == current.isoCode) {
       return true;
     }
     try {
       savingProfile.value = true;
       notifyListeners();
+      final phoneChanged =
+          current == null || !_samePhone(phoneTrimmed, current.phoneNumber);
+      final isoChanged = current == null || isoCode != current.isoCode;
       final response = await _profileRepo.updateProfile(
         fullName: name,
-        phone: phoneTrimmed,
-        isoCode: isoCode,
+        phone: phoneChanged ? phoneTrimmed : null,
+        isoCode: isoChanged || phoneChanged ? isoCode : null,
       );
       final updated = response.data;
       if (updated == null) {
@@ -337,9 +340,10 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
 
     try {
       changeBaseState(const ViewModelState.busy());
+      // Do not resubmit `phone` — uniqueness on PUT treats the user's own
+      // number as taken.
       final response = await _profileRepo.updateProfile(
         fullName: current.fullName,
-        phone: current.phoneNumber,
         isoCode: current.isoCode,
         avatarFilePath: path,
       );
@@ -359,6 +363,11 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
         title: "Update failed",
       );
     }
+  }
+
+  static bool _samePhone(String a, String b) {
+    String digits(String raw) => raw.replaceAll(RegExp(r"\D"), "");
+    return digits(a) == digits(b);
   }
 
   @override

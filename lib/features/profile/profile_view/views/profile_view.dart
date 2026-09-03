@@ -6,12 +6,12 @@ import 'package:dth_v4/features/application/views/application_view.dart';
 import 'package:dth_v4/features/application_dashboard/applicant_dashboard.dart';
 import 'package:dth_v4/features/profile/logout/logout.dart';
 import 'package:dth_v4/features/profile/profile.dart';
+import 'package:dth_v4/features/profile/profile_view/components/profile_voting_credits_row.dart';
 import 'package:dth_v4/features/support/support.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:flutter_utils/flutter_utils.dart';
 
 String _profileBackgroundForRole(ParticipationRole role) {
@@ -54,6 +54,8 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               modulesPayload?.application == false;
           final showApplicantDashboardTile =
               (user?.eligible ?? false) && !hideApplicantDashboardTile;
+          final showVotingCredits =
+              modulesPayload?.voting == true && user != null;
           final role = user?.participationRole ?? ParticipationRole.user;
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -71,28 +73,32 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       padding: EdgeInsets.zero,
                       children: [
                         Gap.h10,
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              unawaited(
-                                ref
-                                    .read(supportSessionViewModelProvider)
-                                    .requestSupportWebSession(),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 4.0),
-                              child: SvgPicture.asset(
-                                SvgAssets.support,
-                                height: 38,
-                                width: 38,
+                        if (showVotingCredits)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              AppText.medium(
+                                "Profile",
+                                fontSize: 24,
+                                color: AppColors.tertiary60,
+                                letterSpacing: -0.4,
                               ),
+
+                              ProfileVotingCreditsRow(user: user),
+                            ],
+                          )
+                        else
+                          Center(
+                            child: AppText.medium(
+                              "Profile",
+                              fontSize: 24,
+                              centered: true,
+                              color: AppColors.tertiary60,
+                              letterSpacing: -0.4,
                             ),
                           ),
-                        ),
-                        Gap.h20,
+                        if (showVotingCredits) Gap.h10,
+                        Gap.h32,
                         Center(
                           child: ProfileImageWidget(
                             size: 64,
@@ -226,6 +232,19 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                                 RoutingArgumentKey.initialURl:
                                     AppLink.dthWebsite,
                               },
+                            );
+                          },
+                        ),
+                        Gap.h28,
+                        ProfileTlle(
+                          title: "Contact Support",
+                          description: "Get help from our support team",
+                          icon: SvgAssets.profileSupport,
+                          onTap: () {
+                            unawaited(
+                              ref
+                                  .read(supportSessionViewModelProvider)
+                                  .requestSupportWebSession(),
                             );
                           },
                         ),

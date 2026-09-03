@@ -10,6 +10,9 @@ class VotingCredits {
 
   String get label => "$remaining/$total votes";
 
+  /// Header chip copy, e.g. `500 credits`.
+  String get remainingLabel => "$remaining credits";
+
   VotingCredits copyWith({int? used, int? total}) {
     return VotingCredits(used: used ?? this.used, total: total ?? this.total);
   }

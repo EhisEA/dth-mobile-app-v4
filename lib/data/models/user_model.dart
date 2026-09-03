@@ -1,3 +1,5 @@
+import "package:dth_v4/data/models/voting_credit_breakdown.dart";
+
 class UserModel {
   const UserModel({
     required this.uid,
@@ -14,6 +16,8 @@ class UserModel {
     this.eligible = false,
     this.applicationStatus,
     this.isSubscribed = false,
+    this.votingCredit = 0,
+    this.votingCreditBreakdown,
   });
 
   final String uid;
@@ -36,6 +40,15 @@ class UserModel {
 
   /// Whether the user has an active subscription (`is_subscribed` from GET /profile).
   final bool isSubscribed;
+
+  /// Available voting credits from GET /profile (`voting_credit`).
+  final int votingCredit;
+
+  /// Credit breakdown from GET /profile (`voting_credit_breakdown`).
+  final VotingCreditBreakdown? votingCreditBreakdown;
+
+  /// Profile chip label, e.g. `120 credits`.
+  String get votingCreditLabel => "$votingCredit credits";
 
   /// Parsed [participationType.name] as [ParticipationRole].
   ParticipationRole get participationRole =>
@@ -62,7 +75,17 @@ class UserModel {
       eligible: _boolField(json['eligible']),
       applicationStatus: _parseApplicationStatus(json['application_status']),
       isSubscribed: _boolField(json['is_subscribed']),
+      votingCredit: _asInt(json['voting_credit']),
+      votingCreditBreakdown: json['voting_credit_breakdown'] == null
+          ? null
+          : VotingCreditBreakdown.fromJson(json['voting_credit_breakdown']),
     );
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? "") ?? 0;
   }
 
   static ApplicationStatus? _parseApplicationStatus(Object? json) {
@@ -102,6 +125,9 @@ class UserModel {
       'updated_at': updatedAt,
       'eligible': eligible,
       'is_subscribed': isSubscribed,
+      'voting_credit': votingCredit,
+      if (votingCreditBreakdown != null)
+        'voting_credit_breakdown': votingCreditBreakdown!.toJson(),
       if (applicationStatus != null)
         'application_status': applicationStatus!.toJson(),
     };
@@ -122,6 +148,9 @@ class UserModel {
     bool? eligible,
     ApplicationStatus? applicationStatus,
     bool? isSubscribed,
+    int? votingCredit,
+    VotingCreditBreakdown? votingCreditBreakdown,
+    bool clearVotingCreditBreakdown = false,
     bool clearApplicationStatus = false,
   }) {
     return UserModel(
@@ -141,6 +170,10 @@ class UserModel {
           ? null
           : (applicationStatus ?? this.applicationStatus),
       isSubscribed: isSubscribed ?? this.isSubscribed,
+      votingCredit: votingCredit ?? this.votingCredit,
+      votingCreditBreakdown: clearVotingCreditBreakdown
+          ? null
+          : (votingCreditBreakdown ?? this.votingCreditBreakdown),
     );
   }
 
@@ -162,7 +195,9 @@ class UserModel {
         other.updatedAt == updatedAt &&
         other.eligible == eligible &&
         other.applicationStatus == applicationStatus &&
-        other.isSubscribed == isSubscribed;
+        other.isSubscribed == isSubscribed &&
+        other.votingCredit == votingCredit &&
+        other.votingCreditBreakdown == votingCreditBreakdown;
   }
 
   @override
@@ -182,11 +217,13 @@ class UserModel {
     eligible,
     applicationStatus,
     isSubscribed,
+    votingCredit,
+    votingCreditBreakdown,
   );
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed)';
+    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed, votingCredit: $votingCredit, votingCreditBreakdown: $votingCreditBreakdown)';
   }
 }
 

@@ -110,6 +110,8 @@ class ApiRoute {
   static String votingContestantDetail(String contestantUid) =>
       "$baseUrl/voting/contestants/$contestantUid";
   static String get votingCast => "$baseUrl/voting/cast";
+  static String get votingCreditsQuote => "$baseUrl/voting/credits/quote";
+  static String get votingCreditsPurchase => "$baseUrl/voting/credits/purchase";
 
   ///EVENTS & TICKETS
   static String get eventsUpcoming => "$baseUrl/events/upcoming";

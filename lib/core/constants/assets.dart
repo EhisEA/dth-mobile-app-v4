@@ -55,6 +55,7 @@ class ImageAssets {
   static const String contestantBg = "$imagePath/profile/contestant_bg.png";
   static const String userBg = "$imagePath/profile/user_bg.png";
   static const String applicantBg = "$imagePath/profile/applicant_bg.png";
+  static const String userNew = "$imagePath/profile/user_new.png";
 
   /////////////////////SUBSCRIPTION//////////////////////
   static const String subscriptionBg =
@@ -79,6 +80,7 @@ class ImageAssets {
   static const String voteEmpty = "$imagePath/voting/vote_empty.png";
   static const String evicted = "$imagePath/voting/evicted.png";
   static const String sponsorBg = "$imagePath/voting/sponsor_bg.png";
+  static const String votingCreditsBg = "$imagePath/voting/credits_bg.png";
 }
 
 class SvgAssets {
@@ -142,6 +144,7 @@ class SvgAssets {
   static const String privacy = "$svgPath/profile/privacy.svg";
   static const String social = "$svgPath/profile/social.svg";
   static const String terms = "$svgPath/profile/terms.svg";
+  static const String profileSupport = "$svgPath/profile/profile_support.svg";
   static const String profileEdit = "$svgPath/profile/profile_edit.svg";
   static const String cup = "$svgPath/profile/cup.svg";
   static const String error = "$svgPath/profile/error.svg";
@@ -186,6 +189,7 @@ class SvgAssets {
   static const String voteForwardArrow = "$svgPath/voting/arrow_right.svg";
   static const String voteChoose = "$svgPath/voting/choose.svg";
   static const String voteCast = "$svgPath/voting/cast.svg";
+  static const String confetti = "$svgPath/voting/confetti.svg";
 }
 
 class LottieAssets {

@@ -1,4 +1,5 @@
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/voting/components/voting_credits_chip.dart";
 import "package:dth_v4/features/voting/models/voting_credits.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
@@ -7,10 +8,16 @@ import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class VotingHeader extends StatelessWidget {
-  const VotingHeader({super.key, required this.credits, this.onTap});
+  const VotingHeader({
+    super.key,
+    required this.credits,
+    this.onTap,
+    this.onCreditsTap,
+  });
 
   final VotingCredits credits;
   final VoidCallback? onTap;
+  final VoidCallback? onCreditsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -24,24 +31,11 @@ class VotingHeader extends StatelessWidget {
             color: AppColors.tertiary60,
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xffE5FBF0),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(SvgAssets.voteStar),
-              Gap.w6,
-              AppText.semiBold(
-                credits.label,
-                fontSize: 12,
-                color: const Color(0xff00AD55),
-              ),
-            ],
-          ),
+        VotingCreditsChip(
+          label: credits.remainingLabel,
+          showAddIcon: true,
+          onTap: onCreditsTap,
+          onAddTap: onCreditsTap,
         ),
         Gap.w4,
         GestureDetector(

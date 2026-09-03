@@ -203,7 +203,7 @@ class _PersonalInfomationViewState
               children: [
                 Center(
                   child: ProfileImageWidget(
-                    showEdit: !_editingProfile,
+                    showEdit: _editingProfile,
                     avatar: u.avatar,
                     onEditTap: () =>
                         unawaited(vm.pickAndUpdateProfileAvatar(u)),

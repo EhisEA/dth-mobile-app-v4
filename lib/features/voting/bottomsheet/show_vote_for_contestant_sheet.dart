@@ -300,7 +300,7 @@ class _WeeklyVotesBadge extends StatelessWidget {
               color: AppColors.primary,
             ),
             AppText.semiBold(
-              "$formatted weekly votes",
+              "$formatted voting credits",
               fontSize: 12,
               color: AppColors.primary,
             ),

@@ -176,4 +176,67 @@ class AppTextStyle {
     letterSpacing: _ls,
     fontWeight: FontWeight.w700,
   );
+
+  /// Weight 300 — `Athletics Light.otf`.
+  static const TextStyle athleticsLight = TextStyle(
+    fontFamily: AppFontFamily.athleticsSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w300,
+  );
+
+  /// Weight 400 — `Athletics Regular.otf`.
+  static const TextStyle athleticsRegular = TextStyle(
+    fontFamily: AppFontFamily.athleticsSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// Weight 500 — `Athletics Medium.otf`.
+  static const TextStyle athleticsMedium = TextStyle(
+    fontFamily: AppFontFamily.athleticsSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// Weight 700 — `Athletics Bold.otf`.
+  static const TextStyle athleticsBold = TextStyle(
+    fontFamily: AppFontFamily.athleticsSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// Weight 800 — `Athletics ExtraBold.otf`.
+  static const TextStyle athleticsExtraBold = TextStyle(
+    fontFamily: AppFontFamily.athleticsSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w800,
+  );
+
+  /// Weight 900 — `Athletics Black.otf`.
+  static const TextStyle athleticsBlack = TextStyle(
+    fontFamily: AppFontFamily.athleticsSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w900,
+  );
+
+  /// Weight 400 — `Bangers-Regular.ttf`.
+  static const TextStyle bangersRegular = TextStyle(
+    fontFamily: AppFontFamily.bangers,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w400,
+  );
 }

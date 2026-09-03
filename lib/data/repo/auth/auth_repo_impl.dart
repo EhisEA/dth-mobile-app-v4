@@ -28,7 +28,27 @@ class AuthRepoImpl implements AuthRepo {
   Future<ApiResponse<UserModel>> getUserData() async {
     final response = await _networkService.get(ApiRoute.user);
     final data = response.data as Map<String, dynamic>;
-    return ApiResponse(data: UserModel.fromJson(data["data"]["user"]));
+    final root = data["data"];
+    if (root is! Map<String, dynamic>) {
+      return ApiResponse(data: null);
+    }
+    final userRaw = root["user"];
+    if (userRaw is! Map<String, dynamic>) {
+      return ApiResponse(data: null);
+    }
+    final user = UserModel.fromJson(userRaw).copyWith(
+      votingCredit: _asInt(root["voting_credit"]),
+      votingCreditBreakdown: root["voting_credit_breakdown"] == null
+          ? null
+          : VotingCreditBreakdown.fromJson(root["voting_credit_breakdown"]),
+    );
+    return ApiResponse(data: user);
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? "") ?? 0;
   }
 
   @override

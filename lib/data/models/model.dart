@@ -14,6 +14,7 @@ export "poll_model.dart";
 export "profile_phone_submit_result.dart";
 export "registration_models.dart";
 export "user_model.dart";
+export "voting_credit_breakdown.dart";
 export "subscription_model.dart";
 export "sponsor_info.dart";
 export "sponsorships_models.dart";

@@ -402,6 +402,146 @@ class AppText extends StatelessWidget {
     this.fontStyle,
   }) : baseStyle = AppTextStyle.cascadiaMonoBold;
 
+  const AppText.athleticsLight(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.athleticsLight;
+
+  const AppText.athleticsRegular(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.athleticsRegular;
+
+  const AppText.athleticsMedium(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.athleticsMedium;
+
+  const AppText.athleticsBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.athleticsBold;
+
+  const AppText.athleticsExtraBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.athleticsExtraBold;
+
+  const AppText.athleticsBlack(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.athleticsBlack;
+
+  const AppText.bangersRegular(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.bangersRegular;
+
   @override
   Widget build(BuildContext context) {
     final effectiveStyle = (baseStyle ?? AppTextStyle.regular).copyWith(

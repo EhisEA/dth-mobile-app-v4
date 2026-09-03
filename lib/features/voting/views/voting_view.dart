@@ -154,6 +154,8 @@ class _VotingViewState extends ConsumerState<VotingView> {
               VotingHeader(
                 credits: vm.credits,
                 onTap: () => unawaited(_openVotingTutorial()),
+                onCreditsTap: () =>
+                    unawaited(showTopUpVotingCreditsSheet(context)),
               ),
               Gap.h10,
               AppText.regular(
@@ -172,16 +174,26 @@ class _VotingViewState extends ConsumerState<VotingView> {
               Expanded(
                 child: vm.loadState.when(
                   busy: () => const _VotingSkeletonList(),
-                  error: (failure) => EmptyState(
-                    illustration: Icon(
-                      Icons.how_to_vote_outlined,
-                      size: 56,
-                      color: AppColors.tint15,
+                  error: (failure) => RefreshIndicator(
+                    onRefresh: () => ref.read(votingViewModelProvider).load(),
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.only(bottom: listBottomPad),
+                      children: [
+                        Gap.h32,
+                        EmptyState(
+                          illustration: Icon(
+                            Icons.how_to_vote_outlined,
+                            size: 56,
+                            color: AppColors.tint15,
+                          ),
+                          title: "Could not load voting",
+                          subtitle: failure.message,
+                          showDashedDivider: false,
+                          onRetry: () => unawaited(_bootstrap()),
+                        ),
+                      ],
                     ),
-                    title: "Could not load voting",
-                    subtitle: failure.message,
-                    showDashedDivider: false,
-                    onRetry: () => unawaited(_bootstrap()),
                   ),
                   idle: () => PageView(
                     controller: _pageController,
@@ -223,12 +235,17 @@ class _ContestantListPage extends ConsumerWidget {
     final isAllContestants = filter == VotingFilter.allContestants;
 
     if (items.isEmpty) {
-      return Column(
-        children: [
-          Gap.h32,
-          Gap.h10,
-          VotingEmptyState(filter: filter),
-        ],
+      return RefreshIndicator(
+        onRefresh: vm.refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.only(bottom: listBottomPad),
+          children: [
+            Gap.h32,
+            Gap.h10,
+            VotingEmptyState(filter: filter),
+          ],
+        ),
       );
     }
 

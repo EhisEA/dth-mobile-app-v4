@@ -3,6 +3,7 @@ import "dart:async";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/voting/models/voting_contestant.dart";
 import "package:dth_v4/features/voting/models/voting_contestant_detail.dart";
+import "package:dth_v4/features/voting/models/voting_credit_info.dart";
 import "package:dth_v4/features/voting/models/voting_credits.dart";
 import "package:dth_v4/features/voting/models/voting_tutorial.dart";
 import "package:dth_v4/features/voting/models/voting_week_data.dart";
@@ -28,6 +29,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
   List<VotingContestant> allContestants = const [];
   List<int> voteValues = _fallbackVoteValues;
   VotingTutorial? tutorial;
+  VotingCreditInfo creditInfo = VotingCreditInfo.fallback;
   String weekUid = "";
   String weekTitle = "";
   DateTime? weekEndsAt;
@@ -99,6 +101,42 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
 
   Future<void> refresh() => silentRefresh();
 
+  /// Refreshes week metadata (credits, tutorial, vote values) without lists.
+  Future<void> refreshWeek() async {
+    try {
+      final week = await _repo.fetchVotingWeek();
+      if (!week.isEmpty) {
+        _applyWeek(week);
+        notifyListeners();
+      }
+    } on ApiFailure {
+      // Keep last good data on silent failure.
+    } catch (_) {
+      // Keep last good data on any unexpected failure too.
+    }
+  }
+
+  /// Re-fetches credits after a top-up, retrying briefly while the backend
+  /// settles, then applies an optimistic bump if the server is still stale.
+  Future<void> refreshCreditsAfterPurchase(int purchasedQuantity) async {
+    if (purchasedQuantity <= 0) return;
+
+    final expectedMinTotal = credits.total + purchasedQuantity;
+
+    for (var attempt = 0; attempt < 3; attempt++) {
+      await refreshWeek();
+      if (credits.total >= expectedMinTotal) return;
+      if (attempt < 2) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
+
+    if (credits.total < expectedMinTotal) {
+      credits = credits.copyWith(total: expectedMinTotal);
+      notifyListeners();
+    }
+  }
+
   /// Fetches week + both lists without flipping busy/skeleton states.
   Future<void> silentRefresh() async {
     try {
@@ -128,6 +166,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
         ? week.voteValues
         : _fallbackVoteValues;
     tutorial = week.tutorial;
+    creditInfo = week.creditInfo;
     weekUid = week.uid;
     weekTitle = week.title;
     weekEndsAt = week.endsAt;

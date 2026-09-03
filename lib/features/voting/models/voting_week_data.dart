@@ -1,3 +1,4 @@
+import "package:dth_v4/features/voting/models/voting_credit_info.dart";
 import "package:dth_v4/features/voting/models/voting_credits.dart";
 import "package:dth_v4/features/voting/models/voting_tutorial.dart";
 
@@ -9,6 +10,7 @@ class VotingWeekData {
     required this.credits,
     required this.voteValues,
     required this.tutorial,
+    required this.creditInfo,
   });
 
   final String uid;
@@ -17,6 +19,7 @@ class VotingWeekData {
   final VotingCredits credits;
   final List<int> voteValues;
   final VotingTutorial? tutorial;
+  final VotingCreditInfo creditInfo;
 
   /// True for the [empty] sentinel returned when the response body is missing
   /// or malformed — lets callers distinguish "no data" from a real week so a
@@ -53,6 +56,11 @@ class VotingWeekData {
         ? VotingTutorial.fromJson(Map<String, dynamic>.from(tutorialRaw))
         : null;
 
+    final creditInfoRaw = json["voting_credit_info"];
+    final creditInfo = creditInfoRaw is Map
+        ? VotingCreditInfo.fromJson(Map<String, dynamic>.from(creditInfoRaw))
+        : VotingCreditInfo.fallback;
+
     return VotingWeekData(
       uid: weekMap["uid"]?.toString() ?? "",
       title: weekMap["title"]?.toString() ?? "",
@@ -60,6 +68,7 @@ class VotingWeekData {
       credits: credits,
       voteValues: voteValues,
       tutorial: tutorial,
+      creditInfo: creditInfo,
     );
   }
 
@@ -70,5 +79,6 @@ class VotingWeekData {
     credits: VotingCredits(used: 0, total: 0),
     voteValues: [],
     tutorial: null,
+    creditInfo: VotingCreditInfo.fallback,
   );
 }

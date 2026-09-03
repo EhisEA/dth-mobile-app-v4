@@ -19,6 +19,9 @@ class ProfileImageWidget extends StatelessWidget {
   final String? avatar;
   final VoidCallback? onEditTap;
 
+  /// Badge is ~42% of avatar so it reads as a corner seal, not a full-width strip.
+  double get _badgeSize => size * 0.42;
+
   static bool _hasUsableAvatarUrl(String? raw) {
     final trimmed = raw?.trim() ?? '';
     if (trimmed.isEmpty) return false;
@@ -32,6 +35,9 @@ class ProfileImageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final useNetwork = _hasUsableAvatarUrl(avatar);
     final tint = color ?? const Color(0xffECECEC);
+    final badgeSize = _badgeSize;
+    // Pull the seal onto the top-right corner so roughly half overlaps the frame.
+    final badgeInset = badgeSize * 0.28;
 
     return Align(
       widthFactor: 1,
@@ -44,23 +50,53 @@ class ProfileImageWidget extends StatelessWidget {
           children: [
             Positioned.fill(
               child: Container(
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.baseShimmerLight,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xffFDCA03),
+                      Color(0xffFBFA69),
+                      Color(0xffBC3B03),
+                    ],
+                  ),
                 ),
-                clipBehavior: Clip.hardEdge,
-                child: useNetwork
-                    ? CachedNetworkImage(
-                        imageUrl: avatar!.trim(),
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            _placeholderImage(size: size, tint: tint),
-                        errorWidget: (context, url, error) =>
-                            _placeholderImage(size: size, tint: tint),
-                      )
-                    : Center(
-                        child: _placeholderImage(size: size, tint: tint),
-                      ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.white, width: 2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: useNetwork
+                      ? CachedNetworkImage(
+                          imageUrl: avatar!.trim(),
+                          fit: BoxFit.cover,
+                          width: size,
+                          height: size,
+                          placeholder: (context, url) =>
+                              _placeholderImage(size: size, tint: tint),
+                          errorWidget: (context, url, error) =>
+                              _placeholderImage(size: size, tint: tint),
+                        )
+                      : Center(
+                          child: _placeholderImage(size: size, tint: tint),
+                        ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: -badgeInset,
+              right: -badgeInset,
+              width: badgeSize,
+              height: badgeSize,
+              child: Image.asset(
+                ImageAssets.userNew,
+                width: badgeSize,
+                height: badgeSize,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
               ),
             ),
             if (showEdit)
