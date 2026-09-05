@@ -218,6 +218,7 @@ class _LeaderboardViewState extends ConsumerState<LeaderboardView> {
                       ],
                     ),
                   ),
+                  Gap.h16,
                   Expanded(
                     child: vm.baseState.when(
                       busy: () => const Center(

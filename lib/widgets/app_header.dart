@@ -31,7 +31,7 @@ class AppHeader extends ConsumerWidget {
                   navigationService.navigateTo(LeaderboardView.path);
                 },
                 behavior: HitTestBehavior.opaque,
-                child: SvgPicture.asset(SvgAssets.leaderboard, width: 22),
+                child: SvgPicture.asset(SvgAssets.leaderboard, width: 24),
               ),
               Gap.w16,
             ],
@@ -48,8 +48,8 @@ class AppHeader extends ConsumerWidget {
                   children: [
                     SvgPicture.asset(
                       SvgAssets.notification,
-                      height: 22,
-                      width: 22,
+                      height: 24,
+                      width: 24,
                     ),
                     if (hasUnread)
                       Positioned(

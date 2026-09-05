@@ -329,54 +329,44 @@ class _CreditSectionsBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     if (sections.isEmpty) return const SizedBox.shrink();
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            width: 30,
-            decoration: BoxDecoration(
-              gradient: VotingCreditPalette.sectionsRailGradient,
-              borderRadius: BorderRadius.circular(100),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                for (final section in sections)
-                  SvgPicture.asset(
-                    SvgAssets.voteStar,
-                    width: 16,
-                    height: 16,
-                    colorFilter: ColorFilter.mode(
-                      section.color,
-                      BlendMode.srcIn,
+    return Column(
+      children: [
+        for (var i = 0; i < sections.length; i++) ...[
+          if (i > 0) Gap.h16,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: sections[i].backgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.black.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
+                  ],
+                ),
+                child: SvgPicture.asset(
+                  SvgAssets.voteStar,
+                  width: 16,
+                  height: 16,
+                  colorFilter: ColorFilter.mode(
+                    sections[i].color,
+                    BlendMode.srcIn,
                   ),
-              ],
-            ),
-          ),
-          Gap.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var i = 0; i < sections.length; i++) ...[
-                  if (i > 0) Gap.h16,
-                  _CreditSectionText(section: sections[i]),
-                ],
-              ],
-            ),
+                ),
+              ),
+              Gap.w16,
+              Expanded(child: _CreditSectionText(section: sections[i])),
+            ],
           ),
         ],
-      ),
+      ],
     );
   }
 }

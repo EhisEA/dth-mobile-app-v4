@@ -85,6 +85,9 @@ class ImageAssets {
   /////////////////////LEADERBOARD//////////////////////
   static const String leaderboardPodium =
       "$imagePath/leaderboards/leaderboard_bg.png";
+  static const String leaderboardPodium1 = "assets/svgs/leaderboard/1.png";
+  static const String leaderboardPodium2 = "assets/svgs/leaderboard/2.png";
+  static const String leaderboardPodium3 = "assets/svgs/leaderboard/3.png";
   static const String leaderboardAddBg = "$imagePath/leaderboards/add_bg.png";
 
   /// Scalloped avatar frames (PNG assets live under `assets/svgs/leaderboard/`).
@@ -185,6 +188,7 @@ class SvgAssets {
 
   /////////////////////TICKETS//////////////////////
   ///
+  static const String calender2 = "$svgPath/tickets/calendar-2.svg";
   static const String share = "$svgPath/tickets/share.svg";
   static const String ticketEmptyState =
       "$svgPath/tickets/ticket_empty_state.svg";

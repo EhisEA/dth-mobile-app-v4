@@ -20,19 +20,66 @@ class FanRewardsGuideView extends StatefulWidget {
 }
 
 class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
+  late final PageController _pageController;
   int _pageIndex = 0;
+  bool _contentVisible = true;
+  bool _isAnimating = false;
 
   static const _pillBg = Color(0xff1B1B1B);
   static const _pillActive = Color(0xff1B1B1B);
   static const _calloutBg = Color(0xff151515);
+  static const _pageAnimDuration = Duration(milliseconds: 300);
+  static const _fadeDuration = Duration(milliseconds: 140);
+  static const _pageAnimCurve = Curves.easeOutCubic;
 
   List<FanLeaderboardGuideTab> get _tabs => widget.guide.tabs;
 
   bool get _isLast => _pageIndex >= _tabs.length - 1;
 
-  void _goTo(int index) {
-    if (index < 0 || index >= _tabs.length) return;
-    setState(() => _pageIndex = index);
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _goTo(int index) async {
+    if (index < 0 ||
+        index >= _tabs.length ||
+        index == _pageIndex ||
+        _isAnimating) {
+      return;
+    }
+
+    final distance = (index - _pageIndex).abs();
+    _isAnimating = true;
+
+    if (distance == 1) {
+      // Adjacent pages: native side-by-side slide (no stacked text).
+      await _pageController.animateToPage(
+        index,
+        duration: _pageAnimDuration,
+        curve: _pageAnimCurve,
+      );
+    } else {
+      // Non-adjacent: fade out → jump → fade in (skips the middle page).
+      setState(() => _contentVisible = false);
+      await Future<void>.delayed(_fadeDuration);
+      if (!mounted) return;
+      _pageController.jumpToPage(index);
+      setState(() {
+        _pageIndex = index;
+        _contentVisible = true;
+      });
+      await Future<void>.delayed(_fadeDuration);
+    }
+
+    if (mounted) _isAnimating = false;
   }
 
   @override
@@ -54,8 +101,7 @@ class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
       );
     }
 
-    final tab = _tabs[_pageIndex];
-    final module = fanRewardsGuideModuleFor(tab, _pageIndex);
+    final consentNote = widget.guide.consentNote.trim();
     final ctaLabel = _isLast
         ? (widget.guide.ctaLabel.trim().isEmpty
               ? "Start engaging"
@@ -97,12 +143,28 @@ class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
                   ),
                 ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
-                    child: GuideTabContent(
-                      tab: tab,
-                      module: module,
-                      calloutBg: _calloutBg,
+                  child: AnimatedOpacity(
+                    opacity: _contentVisible ? 1 : 0,
+                    duration: _fadeDuration,
+                    curve: _pageAnimCurve,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: _tabs.length,
+                      onPageChanged: (index) {
+                        setState(() => _pageIndex = index);
+                      },
+                      itemBuilder: (context, index) {
+                        final tab = _tabs[index];
+                        final module = fanRewardsGuideModuleFor(tab, index);
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+                          child: GuideTabContent(
+                            tab: tab,
+                            module: module,
+                            calloutBg: _calloutBg,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -132,16 +194,20 @@ class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
                     },
                   ),
                 ),
-                if (_isLast && widget.guide.consentNote.trim().isNotEmpty)
+                if (consentNote.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: AppText.regular(
-                      widget.guide.consentNote,
-                      fontSize: 12,
-                      height: 1.35,
-                      color: AppColors.blackTint20,
-                      textAlign: TextAlign.center,
-                      multiText: true,
+                    child: AnimatedOpacity(
+                      opacity: _isLast ? 1 : 0,
+                      duration: _pageAnimDuration,
+                      child: AppText.regular(
+                        consentNote,
+                        fontSize: 12,
+                        height: 1.35,
+                        color: AppColors.blackTint20,
+                        textAlign: TextAlign.center,
+                        multiText: true,
+                      ),
                     ),
                   )
                 else

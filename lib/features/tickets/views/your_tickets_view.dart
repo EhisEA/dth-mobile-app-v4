@@ -60,7 +60,8 @@ class _YourTicketsViewState extends State<YourTicketsView> {
   }
 
   Widget _ticketForCapture(int index) {
-    final width = MediaQuery.sizeOf(context).width * 0.88;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final width = _ticketCount <= 1 ? screenWidth - 32 : screenWidth * 0.88;
     return DthTicketCard(
       purchasedTicket: _purchased,
       ticketItem: _ticketItemAt(index),
@@ -72,7 +73,8 @@ class _YourTicketsViewState extends State<YourTicketsView> {
   Future<Uint8List?> _captureTicket(int index) async {
     final captureContext = context;
     final mediaQuery = MediaQuery.of(captureContext);
-    final width = mediaQuery.size.width * 0.88;
+    final screenWidth = mediaQuery.size.width;
+    final width = _ticketCount <= 1 ? screenWidth - 32 : screenWidth * 0.88;
 
     // Theme/MediaQuery are applied via [context] inside the screenshot package.
     return _screenshotController.captureFromLongWidget(
@@ -172,7 +174,9 @@ class _YourTicketsViewState extends State<YourTicketsView> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.88);
+    _pageController = PageController(
+      viewportFraction: _ticketCount <= 1 ? 1.0 : 0.88,
+    );
   }
 
   @override
@@ -221,14 +225,13 @@ class _YourTicketsViewState extends State<YourTicketsView> {
               controller: _pageController,
               padEnds: false,
               itemCount: count,
-
               onPageChanged: (index) => setState(() => _activeIndex = index),
               itemBuilder: (context, index) {
                 final ticketItem = index < issuedTickets.length
                     ? issuedTickets[index]
                     : null;
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 0, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return DthTicketCard(

@@ -24,14 +24,14 @@ class ProfileWalletBalancePill extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          AppText.shantellMedium(
+          AppText.semiBold(
             balance.currencySymbol,
             fontSize: 16,
             color: AppColors.mainBlack,
             height: 1,
           ),
           Gap.w(2),
-          AppText.shantellBold(
+          AppText.athleticsExtraBold(
             balance.amount,
             fontSize: 18,
             color: AppColors.primary,

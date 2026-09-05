@@ -162,13 +162,6 @@ abstract final class VotingCreditPalette {
   static const Color subscriptionBg = Color(0xffE5FBF0);
   static const Color purchasedBg = Color(0xffFFF4E5);
 
-  /// Shared rail behind subscription + purchased section icons.
-  static const LinearGradient sectionsRailGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xffE5FBF0), Color(0xffF5FDFC), Color(0xffFBF8E5)],
-  );
-
   /// Subscription green linear gradient (`#00AD55` → `#018A44`).
   static const LinearGradient subscriptionGradient = LinearGradient(
     begin: Alignment.centerLeft,

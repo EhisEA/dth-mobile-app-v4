@@ -45,7 +45,7 @@ class GuideGrandPrizeModule extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: GuideItemIcon(icon: item.icon, size: 12),
+                    child: GuideItemIcon(icon: item.icon, size: 10),
                   ),
                   Gap.w16,
                   Expanded(

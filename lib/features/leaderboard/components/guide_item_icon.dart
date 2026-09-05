@@ -27,11 +27,7 @@ class GuideItemIcon extends StatelessWidget {
           colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
         );
       case FanLeaderboardGuideIcon.medalGold:
-        return SvgPicture.asset(
-          SvgAssets.medalGold,
-          width: size,
-          height: size,
-        );
+        return SvgPicture.asset(SvgAssets.medalGold, width: size, height: size);
       case FanLeaderboardGuideIcon.medalSilver:
         return SvgPicture.asset(
           SvgAssets.medalSilver,
@@ -45,7 +41,12 @@ class GuideItemIcon extends StatelessWidget {
           height: size,
         );
       case FanLeaderboardGuideIcon.check:
-        return Icon(Icons.check, size: size, color: color);
+        return SvgPicture.asset(
+          SvgAssets.doubleTick,
+          width: size,
+          height: size,
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+        );
     }
   }
 }

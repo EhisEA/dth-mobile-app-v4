@@ -89,13 +89,13 @@ class TicketEventCard extends StatelessWidget {
               ),
             ),
           ),
-          Gap.h12,
+          Gap.h16,
           AppText.medium(
             event.title,
             fontSize: 16,
-            color: AppColors.tertiary60,
+            color: const Color(0xff202020),
             maxLines: 2,
-            height: 0,
+            height: 1.2,
             multiText: true,
           ),
           if (event.date.isNotEmpty || event.time.isNotEmpty) ...[
@@ -105,7 +105,7 @@ class TicketEventCard extends StatelessWidget {
                 if (event.date.isNotEmpty)
                   Flexible(
                     child: _MetaItem(
-                      icon: SvgAssets.calendarEdit,
+                      icon: SvgAssets.calender2,
                       label: event.date,
                     ),
                   ),
@@ -128,7 +128,7 @@ class TicketEventCard extends StatelessWidget {
               color: AppColors.tint25,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              height: 0,
+              height: 1.2,
               multiText: true,
             ),
           ],
@@ -247,6 +247,7 @@ class _MetaItem extends StatelessWidget {
             fontSize: 13,
             color: AppColors.tint25,
             maxLines: 1,
+            height: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
