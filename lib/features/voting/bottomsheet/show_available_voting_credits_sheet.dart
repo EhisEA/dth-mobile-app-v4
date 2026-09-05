@@ -90,10 +90,27 @@ class _AvailableVotingCreditsSheetBody extends ConsumerWidget {
                           fontSize: 14,
                           color: AppColors.black,
                         ),
-                        AppText.athleticsBold(
-                          breakdown.availableLabel,
-                          fontSize: 12,
-                          color: AppColors.black,
+                        Text.rich(
+                          TextSpan(
+                            style: AppTextStyle.athleticsRegular.copyWith(
+                              fontSize: 12,
+                              height: 1,
+                              letterSpacing: -0.3,
+                              color: AppColors.black,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: _numberFormat.format(available),
+                                style: AppTextStyle.athleticsBold.copyWith(
+                                  fontSize: 12,
+                                  height: 1,
+                                  letterSpacing: -0.3,
+                                  color: AppColors.black,
+                                ),
+                              ),
+                              const TextSpan(text: " available"),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -103,20 +120,18 @@ class _AvailableVotingCreditsSheetBody extends ConsumerWidget {
                       total: breakdown.available,
                     ),
                     Gap.h12,
-                    ...breakdown.segments.map(
-                      (segment) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _SegmentLegendRow(segment: segment),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < breakdown.segments.length; i++) ...[
+                          if (i > 0) Gap.w16,
+                          _SegmentLegendRow(segment: breakdown.segments[i]),
+                        ],
+                      ],
                     ),
-                    Gap.h16,
-                    ...breakdown.sections.map(
-                      (section) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: _CreditSectionCard(section: section),
-                      ),
-                    ),
-                    Gap.h8,
+                    Gap.h24,
+                    _CreditSectionsBlock(sections: breakdown.sections),
+                    Gap.h32,
                     AppButton.primary(
                       text: "Top up credit",
                       height: 55,
@@ -188,8 +203,71 @@ class _SegmentedCreditBar extends StatelessWidget {
             for (final segment in visible)
               Expanded(
                 flex: segment.amount,
-                child: Container(color: segment.color),
+                child: _SegmentFill(
+                  color: segment.color,
+                  gradient: segment.gradient,
+                  insetShadowColor: segment.insetShadowColor,
+                ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Solid/gradient fill with Figma-style inner shadow (y: 4, blur: 7).
+class _SegmentFill extends StatelessWidget {
+  const _SegmentFill({
+    required this.color,
+    required this.insetShadowColor,
+    this.gradient,
+    this.width,
+    this.height,
+    this.borderRadius,
+  });
+
+  final Color color;
+  final Color insetShadowColor;
+  final Gradient? gradient;
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = borderRadius ?? BorderRadius.zero;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: gradient,
+                color: gradient == null ? color : null,
+              ),
+            ),
+            // Inner shadow: offset (0, 4), blur 7 — soft inset glow from the top.
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: const Alignment(0, -1.2),
+                    end: const Alignment(0, 0.6),
+                    colors: [
+                      insetShadowColor.withValues(alpha: 0.7),
+                      insetShadowColor.withValues(alpha: 0.2),
+                      insetShadowColor.withValues(alpha: 0),
+                    ],
+                    stops: const [0.0, 0.35, 1.0],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -207,35 +285,34 @@ class _SegmentLegendRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        _SegmentFill(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: segment.color,
-            borderRadius: BorderRadius.circular(2),
-          ),
+          borderRadius: BorderRadius.circular(2),
+          color: segment.color,
+          gradient: segment.gradient,
+          insetShadowColor: segment.insetShadowColor,
         ),
         Gap.w4,
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              style: AppTextStyle.regular.copyWith(
-                fontSize: 10,
-                color: AppColors.black,
-                letterSpacing: -0.25,
-              ),
-              children: [
-                TextSpan(text: "${segment.label}: "),
-                TextSpan(
-                  text: _numberFormat.format(segment.amount),
-                  style: AppTextStyle.athleticsBlack.copyWith(
-                    fontSize: 10,
-                    color: AppColors.mainBlack,
-                  ),
-                ),
-              ],
+        Text.rich(
+          TextSpan(
+            style: AppTextStyle.regular.copyWith(
+              fontSize: 10,
+              color: AppColors.black,
+              letterSpacing: -0.25,
             ),
+            children: [
+              TextSpan(text: "${segment.label}: "),
+              TextSpan(
+                text: _numberFormat.format(segment.amount),
+                style: AppTextStyle.athleticsBlack.copyWith(
+                  fontSize: 10,
+                  color: AppColors.mainBlack,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -243,53 +320,91 @@ class _SegmentLegendRow extends StatelessWidget {
   }
 }
 
-class _CreditSectionCard extends StatelessWidget {
-  const _CreditSectionCard({required this.section});
+class _CreditSectionsBlock extends StatelessWidget {
+  const _CreditSectionsBlock({required this.sections});
+
+  final List<VotingCreditSection> sections;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sections.isEmpty) return const SizedBox.shrink();
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: 30,
+            decoration: BoxDecoration(
+              gradient: VotingCreditPalette.sectionsRailGradient,
+              borderRadius: BorderRadius.circular(100),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                for (final section in sections)
+                  SvgPicture.asset(
+                    SvgAssets.voteStar,
+                    width: 16,
+                    height: 16,
+                    colorFilter: ColorFilter.mode(
+                      section.color,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Gap.w16,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < sections.length; i++) ...[
+                  if (i > 0) Gap.h16,
+                  _CreditSectionText(section: sections[i]),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CreditSectionText extends StatelessWidget {
+  const _CreditSectionText({required this.section});
 
   final VotingCreditSection section;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: section.backgroundColor,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          alignment: Alignment.center,
-          child: SvgPicture.asset(
-            SvgAssets.voteStar,
-            width: 20,
-            height: 20,
-            colorFilter: ColorFilter.mode(section.color, BlendMode.srcIn),
-          ),
+        AppText.medium(
+          section.title,
+          fontSize: 14,
+          color: AppColors.black,
+          multiText: true,
         ),
-        Gap.w16,
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppText.medium(
-                section.title,
-                fontSize: 14,
-                color: AppColors.black,
-                multiText: true,
-              ),
-              Gap.h4,
-              AppText.regular(
-                section.description,
-                fontSize: 12,
-                height: 1.4,
-                letterSpacing: -0.25,
-                color: AppColors.tint25,
-                multiText: true,
-              ),
-            ],
-          ),
+        Gap.h4,
+        AppText.regular(
+          section.description,
+          fontSize: 12,
+          height: 1.4,
+          letterSpacing: -0.25,
+          color: AppColors.tint25,
+          multiText: true,
         ),
       ],
     );

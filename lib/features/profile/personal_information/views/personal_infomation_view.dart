@@ -172,123 +172,125 @@ class _PersonalInfomationViewState
     final vm = ref.watch(personalInformationViewModelProvider);
     final userState = ref.watch(userStateProvider);
 
-    return Loader.page(
-      isLoading: vm.isBlockingPageBusy && !_editingProfile,
-      child: ValueListenableBuilder<UserModel?>(
-        valueListenable: userState.user,
-        builder: (context, user, _) {
-          if (user == null) {
-            return Scaffold(
-              appBar: DthAppBar(title: "Personal Information"),
-              backgroundColor: AppColors.scaffold,
-              body: const Center(child: CircularProgressIndicator.adaptive()),
-            );
-          }
-          final u = user;
-          final displayCountry = ref
-              .watch(countriesListProvider)
-              .maybeWhen(
-                data: (countries) => DthCountry.findByIso(countries, u.isoCode),
-                orElse: () => null,
-              );
-          return Scaffold(
-            appBar: DthAppBar(title: "Personal Information"),
-            backgroundColor: AppColors.white,
-            bottomNavigationBar: Material(
-              color: AppColors.scaffold,
-              child: _profileBottomBar(vm, u, displayCountry),
-            ),
-            body: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-              children: [
-                Center(
-                  child: ProfileImageWidget(
-                    showEdit: _editingProfile,
-                    avatar: u.avatar,
-                    onEditTap: () =>
-                        unawaited(vm.pickAndUpdateProfileAvatar(u)),
+    return ValueListenableBuilder<bool>(
+      valueListenable: vm.uploadingAvatar,
+      builder: (context, uploadingAvatar, _) {
+        return Loader.page(
+          isLoading:
+              (vm.isBlockingPageBusy && !_editingProfile) || uploadingAvatar,
+          child: ValueListenableBuilder<UserModel?>(
+            valueListenable: userState.user,
+            builder: (context, user, _) {
+              if (user == null) {
+                return Scaffold(
+                  appBar: DthAppBar(title: "Personal Information"),
+                  backgroundColor: AppColors.scaffold,
+                  body: const Center(
+                    child: CircularProgressIndicator.adaptive(),
                   ),
+                );
+              }
+              final u = user;
+              final displayCountry = ref
+                  .watch(countriesListProvider)
+                  .maybeWhen(
+                    data: (countries) =>
+                        DthCountry.findByIso(countries, u.isoCode),
+                    orElse: () => null,
+                  );
+              return Scaffold(
+                appBar: DthAppBar(title: "Personal Information"),
+                backgroundColor: AppColors.white,
+                bottomNavigationBar: Material(
+                  color: AppColors.scaffold,
+                  child: _profileBottomBar(vm, u, displayCountry),
                 ),
-                Gap.h16,
-                AppText.semiBold(
-                  u.fullName,
-                  centered: true,
-                  fontSize: 20,
-                  color: AppColors.mainBlack,
+                body: ListView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 32,
+                  ),
+                  children: [
+                    Center(
+                      child: ProfileImageWidget(
+                        showEdit: _editingProfile,
+                        avatar: u.avatar,
+                        onEditTap: () =>
+                            unawaited(vm.pickAndUpdateProfileAvatar(u)),
+                      ),
+                    ),
+                    Gap.h16,
+                    AppText.semiBold(
+                      u.fullName,
+                      centered: true,
+                      fontSize: 20,
+                      color: AppColors.mainBlack,
+                    ),
+                    AppText.regular(
+                      u.email,
+                      centered: true,
+                      fontSize: 14,
+                      color: AppColors.blackTint20,
+                    ),
+                    Center(child: ContestantPill(user: u)),
+                    Gap.h32,
+                    AppTextField(
+                      key: ValueKey<bool>(_editingProfile),
+                      title: "Full Name",
+                      titleColor: AppColors.tint15,
+                      hint: u.fullName,
+                      hintColor: AppColors.black,
+                      controller: _editingProfile ? _nameController : null,
+                      focusNode: _nameFocus,
+                      enabled: _editingProfile,
+                      readOnly: !_editingProfile,
+                      maxLength: _editingProfile
+                          ? PersonalInformationViewModel.maxFullNameLength
+                          : null,
+                      textCapitalization: _editingProfile
+                          ? TextCapitalization.words
+                          : TextCapitalization.none,
+                      formatter: _editingProfile
+                          ? [FilteringTextInputFormatter.singleLineFormatter]
+                          : const [],
+                      textInputAction: _editingProfile
+                          ? TextInputAction.next
+                          : TextInputAction.done,
+                    ),
+                    Gap.h12,
+                    AppTextField(
+                      title: "Email Address",
+                      titleColor: AppColors.tint15,
+                      hint: u.email,
+                      hintColor: AppColors.black,
+                      enabled: false,
+                      readOnly: true,
+                    ),
+                    Gap.h12,
+                    PhoneNumberCountryInput(
+                      key: ValueKey<bool>(_editingProfile),
+                      readOnly: true,
+                      controller: _editingProfile ? _phoneController : null,
+                      focusNode: _editingProfile ? _phoneFocus : null,
+                      initialNationalDigits:
+                          _editingProfile ? null : u.phoneNumber,
+                      displayCountry: _editingProfile
+                          ? (_editCountry ?? displayCountry)
+                          : displayCountry,
+                      textInputAction: TextInputAction.done,
+                      onCountryTap: null,
+                      onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                      validator: _editingProfile
+                          ? (v) => validateNationalPhone(v, _editCountry)
+                          : null,
+                    ),
+                  ],
                 ),
-                AppText.regular(
-                  u.email,
-                  centered: true,
-                  fontSize: 14,
-                  color: AppColors.blackTint20,
-                ),
-                Center(child: ContestantPill(user: u)),
-                Gap.h32,
-                AppTextField(
-                  key: ValueKey<bool>(_editingProfile),
-                  title: "Full Name",
-                  titleColor: AppColors.tint15,
-                  hint: u.fullName,
-                  hintColor: AppColors.black,
-                  controller: _editingProfile ? _nameController : null,
-                  focusNode: _nameFocus,
-                  enabled: _editingProfile,
-                  readOnly: !_editingProfile,
-                  maxLength: _editingProfile
-                      ? PersonalInformationViewModel.maxFullNameLength
-                      : null,
-                  textCapitalization: _editingProfile
-                      ? TextCapitalization.words
-                      : TextCapitalization.none,
-                  formatter: _editingProfile
-                      ? [FilteringTextInputFormatter.singleLineFormatter]
-                      : const [],
-                  textInputAction: _editingProfile
-                      ? TextInputAction.next
-                      : TextInputAction.done,
-                ),
-                Gap.h12,
-                AppTextField(
-                  title: "Email Address",
-                  titleColor: AppColors.tint15,
-                  hint: u.email,
-                  hintColor: AppColors.black,
-                  enabled: false,
-                  readOnly: true,
-                ),
-                Gap.h12,
-                PhoneNumberCountryInput(
-                  key: ValueKey<bool>(_editingProfile),
-                  readOnly: true, //!_editingProfile,
-                  controller: _editingProfile ? _phoneController : null,
-                  focusNode: _editingProfile ? _phoneFocus : null,
-                  initialNationalDigits: _editingProfile ? null : u.phoneNumber,
-                  displayCountry: _editingProfile
-                      ? (_editCountry ?? displayCountry)
-                      : displayCountry,
-                  textInputAction: _editingProfile
-                      ? TextInputAction.done
-                      : TextInputAction.done,
-                  onCountryTap: null,
-                  //  _editingProfile
-                  // ? () {
-                  // showCountryPickerBottomSheet(
-                  //   context,
-                  //   initialCountry: _editCountry ?? displayCountry,
-                  //   onSelected: (c) => setState(() => _editCountry = c),
-                  // );
-                  //   }
-                  // : null,
-                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                  validator: _editingProfile
-                      ? (v) => validateNationalPhone(v, _editCountry)
-                      : null,
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

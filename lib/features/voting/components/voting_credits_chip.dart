@@ -96,9 +96,9 @@ class VotingCreditsAddButton extends StatelessWidget {
               onTap!();
             },
       child: CircleAvatar(
-        radius: 16.5,
+        radius: 13,
         backgroundColor: const Color(0xff00AD55),
-        child: Icon(Icons.add_rounded, size: 22, color: AppColors.white),
+        child: Icon(Icons.add_rounded, size: 18, color: AppColors.white),
       ),
     );
   }

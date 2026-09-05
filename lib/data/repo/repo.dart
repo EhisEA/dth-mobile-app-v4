@@ -14,6 +14,7 @@ export "reel_comment/reel_comment.dart";
 export "livestream/livestream.dart";
 export "poll/poll.dart";
 export "voting/voting.dart";
+export "fan_leaderboard/fan_leaderboard.dart";
 export "events/events.dart";
 export "tickets/tickets.dart";
 export "support/support.dart";

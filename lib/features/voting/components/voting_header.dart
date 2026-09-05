@@ -13,11 +13,13 @@ class VotingHeader extends StatelessWidget {
     required this.credits,
     this.onTap,
     this.onCreditsTap,
+    this.onAddCreditsTap,
   });
 
   final VotingCredits credits;
   final VoidCallback? onTap;
   final VoidCallback? onCreditsTap;
+  final VoidCallback? onAddCreditsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +37,7 @@ class VotingHeader extends StatelessWidget {
           label: credits.remainingLabel,
           showAddIcon: true,
           onTap: onCreditsTap,
-          onAddTap: onCreditsTap,
+          onAddTap: onAddCreditsTap ?? onCreditsTap,
         ),
         Gap.w4,
         GestureDetector(

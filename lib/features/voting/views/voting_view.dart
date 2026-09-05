@@ -1,6 +1,7 @@
 import "dart:async";
 
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/voting/voting.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
@@ -80,6 +81,22 @@ class _VotingViewState extends ConsumerState<VotingView> {
     );
   }
 
+  Future<void> _openCreditsBreakdown() async {
+    if (!mounted) return;
+    final user = ref.read(userStateProvider).user.value;
+    final remaining = ref.read(votingViewModelProvider).credits.remaining;
+    final breakdown =
+        user?.votingCreditBreakdown ??
+        VotingCreditBreakdown(
+          title: "Breakdown",
+          available: user?.votingCredit ?? remaining,
+          availableLabel: "${user?.votingCredit ?? remaining} available",
+          segments: const [],
+          sections: const [],
+        );
+    await showAvailableVotingCreditsSheet(context, breakdown: breakdown);
+  }
+
   /// Auto-shows the welcome sheet once per install until the user finishes
   /// the final CTA. Only runs while this tab is actively ticking (visible).
   Future<void> _maybeShowWelcomeTutorial() async {
@@ -154,7 +171,8 @@ class _VotingViewState extends ConsumerState<VotingView> {
               VotingHeader(
                 credits: vm.credits,
                 onTap: () => unawaited(_openVotingTutorial()),
-                onCreditsTap: () =>
+                onCreditsTap: () => unawaited(_openCreditsBreakdown()),
+                onAddCreditsTap: () =>
                     unawaited(showTopUpVotingCreditsSheet(context)),
               ),
               Gap.h10,

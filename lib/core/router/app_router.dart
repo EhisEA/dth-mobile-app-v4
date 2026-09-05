@@ -26,6 +26,7 @@ import 'package:dth_v4/features/splash/views/splash_view.dart';
 import 'package:dth_v4/features/subscription/subscription.dart';
 import 'package:dth_v4/features/tickets/tickets.dart';
 import 'package:dth_v4/features/voting/views/about_contestant_view.dart';
+import 'package:dth_v4/features/leaderboard/leaderboard.dart';
 import 'package:flutter/material.dart';
 
 class AppRouter {
@@ -288,6 +289,29 @@ class AppRouter {
         return _getPageRoute(
           settings: settings,
           viewToShow: AboutContestantView(contestantUid: contestantUid),
+        );
+
+      ////////////////LEADERBOARD////////////////////
+      case LeaderboardView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const LeaderboardView(),
+        );
+      case FanRewardsGuideView.path:
+        final guide =
+            routeArgs[RoutingArgumentKey.fanRewardsGuide]
+                as FanLeaderboardGuide?;
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: FanRewardsGuideView(
+            guide:
+                guide ??
+                const FanLeaderboardGuide(
+                  ctaLabel: "Start engaging",
+                  consentNote: "",
+                  tabs: [],
+                ),
+          ),
         );
 
       default:

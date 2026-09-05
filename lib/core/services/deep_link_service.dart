@@ -164,6 +164,23 @@ class DeepLinkService {
     );
   }
 
+  Future<String?> createLivestreamLink({
+    required String livestreamUid,
+    String title = "",
+    String description = "",
+    String imageUrl = "",
+  }) {
+    return _source.createLink(
+      canonicalIdentifier: "livestream/$livestreamUid",
+      feature: DeepLinkFeature.sharing,
+      path: DeepLinkPaths.livestream,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      data: {DeepLinkParams.livestreamUid: livestreamUid},
+    );
+  }
+
   Future<void> dispose() async {
     await _sub?.cancel();
     await _source.dispose();

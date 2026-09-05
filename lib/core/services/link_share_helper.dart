@@ -108,6 +108,27 @@ class LinkShareHelper {
     );
   }
 
+  static Future<void> shareLivestream({
+    required String livestreamUid,
+    String title = "",
+    String description = "",
+    String imageUrl = "",
+    VoidCallback? onShared,
+  }) {
+    return _shareWith(
+      () => DeepLinkService.instance.createLivestreamLink(
+        livestreamUid: livestreamUid,
+        title: title,
+        description: description,
+        imageUrl: imageUrl,
+      ),
+      subject: title,
+      modelType: ShareModelType.livestream,
+      modelId: livestreamUid,
+      onShared: onShared,
+    );
+  }
+
   static Future<void> shareEvent({
     required String eventUid,
     String title = "",

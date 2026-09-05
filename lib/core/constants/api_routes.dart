@@ -93,6 +93,9 @@ class ApiRoute {
 
   ///LIVESTREAMS
   static String get livestreams => "$baseUrl/livestreams";
+
+  /// Public status check for home banner — no subscription gate.
+  static String get livestreamsCheck => "$baseUrl/livestreams/check";
   static String livestreamReact(String uid) =>
       "$baseUrl/livestreams/$uid/react";
   static String livestreamComments(String uid) =>
@@ -112,6 +115,9 @@ class ApiRoute {
   static String get votingCast => "$baseUrl/voting/cast";
   static String get votingCreditsQuote => "$baseUrl/voting/credits/quote";
   static String get votingCreditsPurchase => "$baseUrl/voting/credits/purchase";
+
+  /// FAN LEADERBOARD
+  static String get fanLeaderboard => "$baseUrl/fan-leaderboard";
 
   ///EVENTS & TICKETS
   static String get eventsUpcoming => "$baseUrl/events/upcoming";

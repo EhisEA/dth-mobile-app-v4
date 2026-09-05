@@ -15,12 +15,12 @@ class ImageAssets {
   static const String updateIcon = "$imagePath/update_icon.png";
   static const String ticketCardOutline =
       "$imagePath/tickets/ticket_card_outline.png";
-  static const String ticketBg = "$imagePath/tickets/ticket_bg.png";
+  static const String ticketBgNew = "$imagePath/tickets/new_bg.png";
+  static const String ticketImageBg = "$imagePath/tickets/image_bg.png";
   static const String ticketQrCodeOutline =
       "$imagePath/tickets/ticket_qr_code_outline.png";
   static const String ticketEmptyState =
       "$imagePath/empty_state/ticket_empty_state.png";
-  static const String ticketTitle = "$imagePath/tickets/ticket_title.png";
   static const String ticket = "$imagePath/tickets/ticket.png";
   static const String availableTicketBg =
       "$imagePath/tickets/available_ticket_bg.png";
@@ -81,6 +81,19 @@ class ImageAssets {
   static const String evicted = "$imagePath/voting/evicted.png";
   static const String sponsorBg = "$imagePath/voting/sponsor_bg.png";
   static const String votingCreditsBg = "$imagePath/voting/credits_bg.png";
+
+  /////////////////////LEADERBOARD//////////////////////
+  static const String leaderboardPodium =
+      "$imagePath/leaderboards/leaderboard_bg.png";
+  static const String leaderboardAddBg = "$imagePath/leaderboards/add_bg.png";
+
+  /// Scalloped avatar frames (PNG assets live under `assets/svgs/leaderboard/`).
+  static const String leaderboardFrame1st = "assets/svgs/leaderboard/1ST.png";
+  static const String leaderboardFrame2nd = "assets/svgs/leaderboard/2ND.png";
+  static const String leaderboardFrame3rd = "assets/svgs/leaderboard/3RD.png";
+  static const String leaderboardFrameReg = "assets/svgs/leaderboard/REG.png";
+  static const String leaderboardFramePerson =
+      "assets/svgs/leaderboard/PERSON.png";
 }
 
 class SvgAssets {
@@ -113,6 +126,11 @@ class SvgAssets {
   /////////////////////HOME//////////////////////
   static const String livestreamLives = "$svgPath/home/livestream_live.svg";
   static const String livestream = "$svgPath/home/livestream.svg";
+  static const String leaderboard = "$svgPath/home/leaderboard.svg";
+  static const String fire = "$svgPath/leaderboard/fire.svg";
+  static const String medalGold = "$svgPath/leaderboard/gold.svg";
+  static const String medalSilver = "$svgPath/leaderboard/silver.svg";
+  static const String medalBronze = "$svgPath/leaderboard/bronze.svg";
   static const String phoneVerify = "$svgPath/home/phone_verify.svg";
   static const String notification = "$svgPath/home/notification.svg";
   static const String greyLogo = "$svgPath/home/grey_logo.svg";
@@ -171,7 +189,6 @@ class SvgAssets {
   static const String ticketEmptyState =
       "$svgPath/tickets/ticket_empty_state.svg";
   static const String dthText = "$svgPath/tickets/dth_text.svg";
-  static const String ticketTitle = "$svgPath/tickets/ticket_title.svg";
   static const String streamlineTickets =
       "$svgPath/tickets/streamline_tickets.svg";
 

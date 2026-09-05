@@ -188,7 +188,7 @@ class _YourTicketsViewState extends State<YourTicketsView> {
     final count = _ticketCount;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: AppColors.greyTint20,
       appBar: DthAppBar(
         title: "Your Tickets",
         actions: [
@@ -199,10 +199,7 @@ class _YourTicketsViewState extends State<YourTicketsView> {
                 SvgAssets.share,
                 width: 20,
                 height: 20,
-                colorFilter: ColorFilter.mode(
-                  AppColors.black,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(AppColors.black, BlendMode.srcIn),
               ),
             ),
           IconButton(
@@ -222,15 +219,16 @@ class _YourTicketsViewState extends State<YourTicketsView> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
-              padEnds: true,
+              padEnds: false,
               itemCount: count,
+
               onPageChanged: (index) => setState(() => _activeIndex = index),
               itemBuilder: (context, index) {
                 final ticketItem = index < issuedTickets.length
                     ? issuedTickets[index]
                     : null;
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 8, 6, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 0, 24),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return DthTicketCard(

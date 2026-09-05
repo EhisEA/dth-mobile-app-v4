@@ -94,6 +94,10 @@ class VotingCreditSegment {
 
   Color get color => VotingCreditPalette.colorFor(colorKey);
 
+  Gradient? get gradient => VotingCreditPalette.gradientFor(colorKey);
+
+  Color get insetShadowColor => VotingCreditPalette.insetShadowFor(colorKey);
+
   factory VotingCreditSegment.fromJson(Map<String, dynamic> json) {
     return VotingCreditSegment(
       key: json["key"]?.toString() ?? "",
@@ -151,9 +155,26 @@ class VotingCreditSection {
 
 abstract final class VotingCreditPalette {
   static const Color subscription = Color(0xff00AD55);
+  static const Color subscriptionDark = Color(0xff018A44);
+  static const Color subscriptionInsetShadow = Color(0xff18D877);
   static const Color purchased = Color(0xffFDDA38);
+  static const Color purchasedInsetShadow = Color(0xffF8CD0A);
   static const Color subscriptionBg = Color(0xffE5FBF0);
   static const Color purchasedBg = Color(0xffFFF4E5);
+
+  /// Shared rail behind subscription + purchased section icons.
+  static const LinearGradient sectionsRailGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xffE5FBF0), Color(0xffF5FDFC), Color(0xffFBF8E5)],
+  );
+
+  /// Subscription green linear gradient (`#00AD55` → `#018A44`).
+  static const LinearGradient subscriptionGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [subscription, subscriptionDark],
+  );
 
   static Color colorFor(String raw) {
     switch (raw.trim().toLowerCase()) {
@@ -163,6 +184,27 @@ abstract final class VotingCreditPalette {
         return purchased;
       default:
         return subscription;
+    }
+  }
+
+  static Gradient? gradientFor(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case "green":
+        return subscriptionGradient;
+      default:
+        return null;
+    }
+  }
+
+  /// Inner shadow color from Figma (y: 4, blur: 7).
+  static Color insetShadowFor(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case "green":
+        return subscriptionInsetShadow;
+      case "yellow":
+        return purchasedInsetShadow;
+      default:
+        return subscriptionInsetShadow;
     }
   }
 

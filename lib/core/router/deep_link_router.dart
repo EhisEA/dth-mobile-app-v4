@@ -138,6 +138,16 @@ class DeepLinkRouter {
           extra: {RoutingArgumentKey.reelUid: uid},
         );
 
+      case DeepLinkPaths.livestream:
+        final uid = link.data[DeepLinkParams.livestreamUid] as String?;
+        if (uid == null || uid.isEmpty) {
+          return _warnMissing(link, "livestreamUid");
+        }
+        await _nav.push(
+          NavigatorRoutes.livestream,
+          extra: {RoutingArgumentKey.livestreamUid: uid},
+        );
+
       case DeepLinkPaths.referral:
         // No dedicated destination view yet. The referral code is stashed via
         // [pendingDeepLinkProvider] for the onboarding/application flow to

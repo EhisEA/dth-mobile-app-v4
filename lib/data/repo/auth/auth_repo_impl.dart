@@ -21,6 +21,7 @@ class AuthRepoImpl implements AuthRepo {
     await _localCache.deleteToken();
     await _localCache.removeFromLocalCache(CacheKeys.user);
     await _localCache.removeFromLocalCache(CacheKeys.votingTutorialSeen);
+    await _localCache.removeFromLocalCache(CacheKeys.fanRewardsGuideSeen);
     _updateNetworkToken(null);
   }
 

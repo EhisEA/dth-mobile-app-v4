@@ -18,6 +18,7 @@ class UserModel {
     this.isSubscribed = false,
     this.votingCredit = 0,
     this.votingCreditBreakdown,
+    this.walletBalance,
   });
 
   final String uid;
@@ -47,8 +48,15 @@ class UserModel {
   /// Credit breakdown from GET /profile (`voting_credit_breakdown`).
   final VotingCreditBreakdown? votingCreditBreakdown;
 
+  /// Wallet balance from GET /profile (`wallet_balance` on user).
+  final WalletBalance? walletBalance;
+
   /// Profile chip label, e.g. `120 credits`.
   String get votingCreditLabel => "$votingCredit credits";
+
+  /// Formatted wallet balance for profile pill, e.g. `₦0`.
+  String get walletBalanceLabel =>
+      walletBalance?.formattedLabel ?? const WalletBalance().formattedLabel;
 
   /// Parsed [participationType.name] as [ParticipationRole].
   ParticipationRole get participationRole =>
@@ -79,6 +87,7 @@ class UserModel {
       votingCreditBreakdown: json['voting_credit_breakdown'] == null
           ? null
           : VotingCreditBreakdown.fromJson(json['voting_credit_breakdown']),
+      walletBalance: WalletBalance.tryParse(json['wallet_balance']),
     );
   }
 
@@ -128,6 +137,7 @@ class UserModel {
       'voting_credit': votingCredit,
       if (votingCreditBreakdown != null)
         'voting_credit_breakdown': votingCreditBreakdown!.toJson(),
+      if (walletBalance != null) 'wallet_balance': walletBalance!.toJson(),
       if (applicationStatus != null)
         'application_status': applicationStatus!.toJson(),
     };
@@ -150,8 +160,10 @@ class UserModel {
     bool? isSubscribed,
     int? votingCredit,
     VotingCreditBreakdown? votingCreditBreakdown,
+    WalletBalance? walletBalance,
     bool clearVotingCreditBreakdown = false,
     bool clearApplicationStatus = false,
+    bool clearWalletBalance = false,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -174,6 +186,9 @@ class UserModel {
       votingCreditBreakdown: clearVotingCreditBreakdown
           ? null
           : (votingCreditBreakdown ?? this.votingCreditBreakdown),
+      walletBalance: clearWalletBalance
+          ? null
+          : (walletBalance ?? this.walletBalance),
     );
   }
 
@@ -197,7 +212,8 @@ class UserModel {
         other.applicationStatus == applicationStatus &&
         other.isSubscribed == isSubscribed &&
         other.votingCredit == votingCredit &&
-        other.votingCreditBreakdown == votingCreditBreakdown;
+        other.votingCreditBreakdown == votingCreditBreakdown &&
+        other.walletBalance == walletBalance;
   }
 
   @override
@@ -219,12 +235,70 @@ class UserModel {
     isSubscribed,
     votingCredit,
     votingCreditBreakdown,
+    walletBalance,
   );
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed, votingCredit: $votingCredit, votingCreditBreakdown: $votingCreditBreakdown)';
+    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed, votingCredit: $votingCredit, votingCreditBreakdown: $votingCreditBreakdown, walletBalance: $walletBalance)';
   }
+}
+
+/// `wallet_balance` on profile user payload.
+class WalletBalance {
+  const WalletBalance({this.currency = "NGN", this.amount = "0"});
+
+  final String currency;
+  final String amount;
+
+  String get currencySymbol {
+    final code = currency.trim().toUpperCase();
+    if (code == "NGN" || code.isEmpty) return "₦";
+    if (code == "USD") return "\$";
+    return code;
+  }
+
+  /// e.g. `₦0`, `₦1,330.50` — amount is shown as received from the API.
+  String get formattedLabel => "$currencySymbol$amount";
+
+  static WalletBalance? tryParse(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    return WalletBalance.fromJson(json);
+  }
+
+  factory WalletBalance.fromJson(Map<String, dynamic> json) {
+    final currency = UserModel._stringField(json["currency"]);
+    return WalletBalance(
+      currency: currency.isEmpty ? "NGN" : currency,
+      amount: _amountField(json["amount"]),
+    );
+  }
+
+  /// Accepts string, num, or other — always stored as string.
+  static String _amountField(Object? value) {
+    if (value == null) return "0";
+    if (value is String) {
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? "0" : trimmed;
+    }
+    return value.toString();
+  }
+
+  Map<String, dynamic> toJson() => {"currency": currency, "amount": amount};
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WalletBalance &&
+        other.currency == currency &&
+        other.amount == amount;
+  }
+
+  @override
+  int get hashCode => Object.hash(currency, amount);
+
+  @override
+  String toString() => "WalletBalance(currency: $currency, amount: $amount)";
 }
 
 /// `application_status` on profile user payload.

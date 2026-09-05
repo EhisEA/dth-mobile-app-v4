@@ -45,7 +45,8 @@ class LivestreamCounts {
   }
 }
 
-/// API model for the active livestream (`GET /api/livestreams`).
+/// API model for an active livestream (`GET /livestreams/check` /
+/// `GET /livestreams`).
 /// Always a video — no subtitle, no image media, no replies on its comments.
 @immutable
 class Livestream {

@@ -239,4 +239,118 @@ class AppTextStyle {
     letterSpacing: _ls,
     fontWeight: FontWeight.w400,
   );
+
+  /// Weight 300 — `ShantellSans-Light.ttf`.
+  static const TextStyle shantellLight = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w300,
+  );
+
+  /// Weight 300 italic — `ShantellSans-LightItalic.ttf`.
+  static const TextStyle shantellLightItalic = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w300,
+    fontStyle: FontStyle.italic,
+  );
+
+  /// Weight 400 — `ShantellSans-Regular.ttf`.
+  static const TextStyle shantellRegular = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// Weight 400 italic — `ShantellSans-Italic.ttf`.
+  static const TextStyle shantellRegularItalic = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w400,
+    fontStyle: FontStyle.italic,
+  );
+
+  /// Weight 500 — `ShantellSans-Medium.ttf`.
+  static const TextStyle shantellMedium = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// Weight 500 italic — `ShantellSans-MediumItalic.ttf`.
+  static const TextStyle shantellMediumItalic = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w500,
+    fontStyle: FontStyle.italic,
+  );
+
+  /// Weight 600 — `ShantellSans-SemiBold.ttf`.
+  static const TextStyle shantellSemiBold = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w600,
+  );
+
+  /// Weight 600 italic — `ShantellSans-SemiBoldItalic.ttf`.
+  static const TextStyle shantellSemiBoldItalic = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  );
+
+  /// Weight 700 — `ShantellSans-Bold.ttf`.
+  static const TextStyle shantellBold = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// Weight 700 italic — `ShantellSans-BoldItalic.ttf`.
+  static const TextStyle shantellBoldItalic = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w700,
+    fontStyle: FontStyle.italic,
+  );
+
+  /// Weight 800 — `ShantellSans-ExtraBold.ttf`.
+  static const TextStyle shantellExtraBold = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w800,
+  );
+
+  /// Weight 800 italic — `ShantellSans-ExtraBoldItalic.ttf`.
+  static const TextStyle shantellExtraBoldItalic = TextStyle(
+    fontFamily: AppFontFamily.shantellSans,
+    fontFamilyFallback: AppFontFamily.fallback,
+    fontSize: 16,
+    letterSpacing: _ls,
+    fontWeight: FontWeight.w800,
+    fontStyle: FontStyle.italic,
+  );
 }

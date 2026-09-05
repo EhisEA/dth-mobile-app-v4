@@ -6,7 +6,8 @@ import 'package:dth_v4/features/application/views/application_view.dart';
 import 'package:dth_v4/features/application_dashboard/applicant_dashboard.dart';
 import 'package:dth_v4/features/profile/logout/logout.dart';
 import 'package:dth_v4/features/profile/profile.dart';
-import 'package:dth_v4/features/profile/profile_view/components/profile_voting_credits_row.dart';
+import 'package:dth_v4/features/profile/profile_view/components/profile_wallet_balance_pill.dart';
+// import 'package:dth_v4/features/profile/profile_view/components/profile_voting_credits_row.dart';
 import 'package:dth_v4/features/support/support.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -54,8 +55,11 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               modulesPayload?.application == false;
           final showApplicantDashboardTile =
               (user?.eligible ?? false) && !hideApplicantDashboardTile;
-          final showVotingCredits =
-              modulesPayload?.voting == true && user != null;
+          // Voting credits header chip — kept for possible restore.
+          // final showVotingCredits =
+          //     modulesPayload?.voting == true && user != null;
+          final showWalletBalance =
+              modulesPayload?.leaderboard == true && user != null;
           final role = user?.participationRole ?? ParticipationRole.user;
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -73,7 +77,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       padding: EdgeInsets.zero,
                       children: [
                         Gap.h10,
-                        if (showVotingCredits)
+                        if (showWalletBalance)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -83,12 +87,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                                 color: AppColors.tertiary60,
                                 letterSpacing: -0.4,
                               ),
-
-                              ProfileVotingCreditsRow(user: user),
+                              // ProfileVotingCreditsRow(user: user),
+                              ProfileWalletBalancePill(user: user),
                             ],
                           )
                         else
-                          Center(
+                          Align(
+                            alignment: Alignment.centerLeft,
                             child: AppText.medium(
                               "Profile",
                               fontSize: 24,
@@ -97,7 +102,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                               letterSpacing: -0.4,
                             ),
                           ),
-                        if (showVotingCredits) Gap.h10,
+                        if (showWalletBalance) Gap.h10,
                         Gap.h32,
                         Center(
                           child: ProfileImageWidget(

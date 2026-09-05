@@ -1,13 +1,15 @@
-import "package:barcode/barcode.dart";
+import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
-import "package:dth_v4/widgets/widgets.dart";
+import "package:dth_v4/features/tickets/components/ticket_barcode.dart";
+import "package:dth_v4/features/tickets/components/ticket_info_block.dart";
+import "package:dth_v4/features/tickets/components/ticket_qr_with_outline.dart";
+import "package:dth_v4/features/tickets/components/ticket_ref_label.dart";
 import "package:flutter/material.dart";
 import "package:flutter_svg/flutter_svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
-import "package:qr_flutter/qr_flutter.dart";
 
-/// Digital event ticket card (background, title art, QR frame assets).
+/// Digital event ticket card (white perforated background + optional advert band).
 class DthTicketCard extends StatelessWidget {
   const DthTicketCard({
     super.key,
@@ -30,11 +32,10 @@ class DthTicketCard extends StatelessWidget {
   /// [LayoutBuilder] constraints during the first frame after navigation/resume.
   final double? maxHeight;
 
-  static const Color _labelColor = Color(0xFFD0C2FF);
-  static const Color _valueColor = Color(0xFFFCFCFC);
-
   PurchasedTicketItem? get _fallbackItem =>
       purchasedTicket.tickets.isNotEmpty ? purchasedTicket.tickets.first : null;
+
+  PurchasedTicketItem? get _resolvedItem => ticketItem ?? _fallbackItem;
 
   String _field(String? primary, String? fallback) {
     final value = primary?.trim();
@@ -51,7 +52,28 @@ class DthTicketCard extends StatelessWidget {
         : purchasedTicket.displayTitle,
   );
 
-  String get _dateLabel => _field(ticketItem?.date, _fallbackItem?.date);
+  String get _dateLabel {
+    final raw = _field(ticketItem?.date, _fallbackItem?.date);
+    return _formatTicketDate(raw);
+  }
+
+  /// Ticket card dates use dotted `dd.MM.yyyy` (e.g. `05.08.2026`).
+  String _formatTicketDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty || value == "—") return value;
+
+    final match = RegExp(
+      r"^(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})$",
+    ).firstMatch(value);
+    if (match != null) {
+      final day = match.group(1)!.padLeft(2, "0");
+      final month = match.group(2)!.padLeft(2, "0");
+      final year = match.group(3)!;
+      return "$day.$month.$year";
+    }
+
+    return value.replaceAll("/", ".").replaceAll("-", ".");
+  }
 
   String get _timeLabel => _field(ticketItem?.time, _fallbackItem?.time);
 
@@ -64,7 +86,11 @@ class DthTicketCard extends StatelessWidget {
 
   String get _qrData => ticketItem?.code.trim() ?? "";
 
-  List<Widget> _buildContent() {
+  String get _advertImageUrl => _resolvedItem?.advertImageUrl.trim() ?? "";
+
+  bool get _showAdvert => _resolvedItem?.hasAdvertImage ?? false;
+
+  List<Widget> _buildBodyContent() {
     final reference = _reference;
     final valueMaxLines = forExport ? null : 3;
     final titleMaxLines = forExport ? null : 3;
@@ -74,92 +100,116 @@ class DthTicketCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SvgPicture.asset(SvgAssets.dthText, fit: BoxFit.contain),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _TicketBarcode(data: reference),
-              Gap.h4,
-              AppText.regular(
-                "REF: ${reference.isNotEmpty ? reference : "—"}",
-                fontSize: 9,
-                color: _valueColor.withValues(alpha: 0.85),
-                letterSpacing: -0.2,
-              ),
-            ],
+          Expanded(child: SvgPicture.asset(SvgAssets.dthText)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                TicketBarcode(data: reference),
+                Gap.h4,
+                TicketRefLabel(
+                  reference: reference.isNotEmpty ? reference : "—",
+                ),
+              ],
+            ),
           ),
         ],
       ),
-      Gap.h10,
-      Image.asset(ImageAssets.ticketTitle),
-      Gap.h32,
-      AppText.bold(
-        _eventTitle,
-        fontSize: 20,
-        color: _valueColor,
-        letterSpacing: -0.3,
+      Gap.h20,
+      Center(child: TicketQrWithOutline(data: _qrData)),
+      Gap.h(40),
+      TicketInfoBlock(
+        label: "EVENT",
+        value: _eventTitle,
         maxLines: titleMaxLines,
-        multiText: true,
-        height: 1.3,
       ),
-      Gap.h32,
-      Row(children: [_QrWithOutline(data: _qrData)]),
-      Gap.h12,
+      Gap.h16,
       Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _InfoBlock(
+            child: TicketInfoBlock(
               label: "DATE",
               value: _dateLabel,
               maxLines: valueMaxLines,
             ),
           ),
-          Gap.w16,
+          Gap.w10,
           Expanded(
-            child: _InfoBlock(
+            child: TicketInfoBlock(
               label: "TIME",
               value: _timeLabel,
               maxLines: valueMaxLines,
             ),
           ),
+
+          Expanded(
+            child: TicketInfoBlock(
+              label: "TYPE",
+              value: _ticketTypeLabel,
+              maxLines: valueMaxLines,
+            ),
+          ),
         ],
       ),
-      Gap.h12,
-      _InfoBlock(label: "LOCATION", value: _location, maxLines: valueMaxLines),
-      Gap.h12,
-      _InfoBlock(
-        label: "TYPE",
-        value: _ticketTypeLabel,
+      Gap.h16,
+      TicketInfoBlock(
+        label: "LOCATION",
+        value: _location,
         maxLines: valueMaxLines,
       ),
     ];
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final decoration = BoxDecoration(
-      borderRadius: BorderRadius.circular(24),
-      image: const DecorationImage(
-        image: AssetImage(ImageAssets.ticketBg),
+  Widget? _buildAdvertBand() {
+    if (!_showAdvert) return null;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(ImageAssets.ticketImageBg),
+          fit: BoxFit.fill,
+        ),
+      ),
+      child: CachedNetworkImage(
+        imageUrl: _advertImageUrl,
         fit: BoxFit.cover,
+        width: double.infinity,
+        placeholder: (context, url) => Container(color: AppColors.greyTint25),
+        errorWidget: (context, url, error) =>
+            Container(color: AppColors.greyTint25),
       ),
     );
+  }
 
-    final content = _buildContent();
-
-    if (forExport) {
-      return Container(
-        width: width,
-        padding: const EdgeInsets.all(32),
-        clipBehavior: Clip.antiAlias,
-        decoration: decoration,
+  Widget _buildTicketBody() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(ImageAssets.ticketBgNew),
+          fit: BoxFit.fill,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: content,
+          children: _buildBodyContent(),
         ),
-      );
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final advert = _buildAdvertBand();
+    final ticket = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [_buildTicketBody(), if (advert != null) advert],
+    );
+
+    if (forExport) {
+      return SizedBox(width: width, child: ticket);
     }
 
     final resolvedMaxHeight = _resolveMaxHeight(context);
@@ -168,19 +218,12 @@ class DthTicketCard extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: resolvedMaxHeight),
-        child: DecoratedBox(
-          decoration: decoration,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            clipBehavior: Clip.hardEdge,
-            child: ListView(
-              shrinkWrap: true,
-              primary: false,
-              padding: const EdgeInsets.all(32),
-              physics: const BouncingScrollPhysics(),
-              children: content,
-            ),
-          ),
+        child: ListView(
+          shrinkWrap: true,
+          primary: false,
+          padding: EdgeInsets.zero,
+          physics: const BouncingScrollPhysics(),
+          children: [_buildTicketBody(), if (advert != null) advert],
         ),
       ),
     );
@@ -194,120 +237,5 @@ class DthTicketCard extends StatelessWidget {
 
     final mediaQuery = MediaQuery.sizeOf(context);
     return mediaQuery.height * 0.72;
-  }
-}
-
-class _QrWithOutline extends StatelessWidget {
-  const _QrWithOutline({required this.data});
-
-  final String data;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 172,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Image.asset(
-            ImageAssets.ticketQrCodeOutline,
-            width: 172,
-            fit: BoxFit.contain,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(
-              top: 4,
-              bottom: 8,
-              left: 4,
-              right: 4,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: QrImageView(
-                data: data.isNotEmpty ? data : "dth-ticket",
-                size: 152,
-                backgroundColor: Colors.white,
-                eyeStyle: const QrEyeStyle(
-                  eyeShape: QrEyeShape.square,
-                  color: Colors.black,
-                ),
-                dataModuleStyle: const QrDataModuleStyle(
-                  dataModuleShape: QrDataModuleShape.circle,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoBlock extends StatelessWidget {
-  const _InfoBlock({
-    required this.label,
-    required this.value,
-    this.maxLines = 3,
-  });
-
-  final String label;
-  final String value;
-  final int? maxLines;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText.cascadiaMonoBold(
-          label,
-          fontSize: 8,
-          color: DthTicketCard._labelColor,
-          letterSpacing: 1.8,
-        ),
-        Gap.h4,
-        AppText.semiBold(
-          value,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: DthTicketCard._valueColor,
-          letterSpacing: -0.2,
-          maxLines: maxLines,
-          multiText: true,
-          height: 1.25,
-        ),
-      ],
-    );
-  }
-}
-
-class _TicketBarcode extends StatelessWidget {
-  const _TicketBarcode({required this.data});
-
-  final String data;
-
-  static final Barcode _barcode = Barcode.code128();
-
-  @override
-  Widget build(BuildContext context) {
-    final value = data.trim().isNotEmpty ? data.trim() : "0";
-
-    try {
-      final svg = _barcode.toSvg(
-        value,
-        width: 75,
-        height: 14,
-        drawText: false,
-        color: 0xFFFFFF,
-      );
-      return SizedBox(
-        width: 75,
-        height: 14,
-        child: SvgPicture.string(svg, fit: BoxFit.fill),
-      );
-    } catch (_) {
-      return const SizedBox(width: 72, height: 28);
-    }
   }
 }

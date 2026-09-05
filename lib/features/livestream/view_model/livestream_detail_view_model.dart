@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/livestream/view_model/active_livestream_provider.dart";
 import "package:dth_v4/features/livestream/view_model/livestreams_cache.dart";
@@ -76,9 +78,8 @@ class LivestreamDetailViewModel extends BaseChangeNotifierViewModel {
       final fresh = await _streamRepo.fetchActive();
       if (fresh == null) {
         _streamEnded = true;
-        // Drop the cached "active" state so the next home-icon tap re-checks
-        // (and falls through to the "no active livestream" flushbar)
-        // instead of routing into a stale, ended-stream entry.
+        // Drop the cached check so the next home banner refresh re-fetches
+        // instead of showing a stale, ended-stream entry.
         _ref.invalidate(activeLivestreamProvider);
         changeBaseState(const ViewModelState.idle());
         return;
@@ -179,6 +180,7 @@ class LivestreamDetailViewModel extends BaseChangeNotifierViewModel {
       _commentsCache.upsert(comment);
       _commentUids = [comment.uid, ..._commentUids];
       _bumpCommentCount(1);
+      _refreshProfileCredits();
       return true;
     } on ApiFailure {
       return false;
@@ -239,12 +241,47 @@ class LivestreamDetailViewModel extends BaseChangeNotifierViewModel {
     try {
       final fresh = await _streamRepo.toggleReaction(uid);
       _streamsCache.upsert(fresh);
+      _refreshProfileCredits();
     } on ApiFailure {
       _streamsCache.upsert(original);
     } finally {
       _likePending = false;
       notifyListeners();
     }
+  }
+
+  /// Engagement can award voting credits — pull a fresh profile so chips /
+  /// breakdown stay in sync app-wide.
+  void _refreshProfileCredits() {
+    unawaited(_ref.read(userStateProvider).getUserDetailsFromServer());
+  }
+
+  /// Optimistic share bump after a completed share sheet; also refreshes
+  /// profile credits.
+  void onShared() {
+    final current = livestream;
+    if (current != null) {
+      _streamsCache.upsert(
+        Livestream(
+          uid: current.uid,
+          title: current.title,
+          description: current.description,
+          videoLink: current.videoLink,
+          videoThumbnail: current.videoThumbnail,
+          status: current.status,
+          counts: LivestreamCounts(
+            comments: current.counts.comments,
+            reactions: current.counts.reactions,
+            views: current.counts.views,
+            shares: current.counts.shares + 1,
+          ),
+          viewerReacted: current.viewerReacted,
+          createdAt: current.createdAt,
+        ),
+      );
+      notifyListeners();
+    }
+    _refreshProfileCredits();
   }
 
   final Set<String> _commentLikesPending = {};

@@ -9,7 +9,7 @@
 ///   "description": "...",
 ///   "date_purchased": "18 May., 2026 05:52PM",
 ///   "count": 2,
-///   "tickets": [{ "code", "ref", "event_name", "user_name", "date", "time", "location", "type" }]
+///   "tickets": [{ "code", "ref", "event_name", "user_name", "date", "time", "location", "type", "advert_image_url" }]
 /// }
 /// ```
 class PurchasedTicket {
@@ -80,6 +80,7 @@ class PurchasedTicketItem {
     required this.time,
     required this.location,
     required this.type,
+    this.advertImageUrl = "",
   });
 
   final String code;
@@ -91,6 +92,18 @@ class PurchasedTicketItem {
   final String location;
   final String type;
 
+  /// Optional sponsor/advert image for the ticket bottom band (`advert_image_url`).
+  final String advertImageUrl;
+
+  bool get hasAdvertImage {
+    final url = advertImageUrl.trim();
+    if (url.isEmpty) return false;
+    final uri = Uri.tryParse(url);
+    return uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == "http" || uri.scheme == "https");
+  }
+
   factory PurchasedTicketItem.fromJson(Map<String, dynamic> json) {
     return PurchasedTicketItem(
       code: json["code"]?.toString() ?? "",
@@ -101,6 +114,7 @@ class PurchasedTicketItem {
       time: json["time"]?.toString() ?? "",
       location: json["location"]?.toString() ?? "",
       type: json["type"]?.toString() ?? "",
+      advertImageUrl: json["advert_image_url"]?.toString() ?? "",
     );
   }
 
@@ -113,5 +127,6 @@ class PurchasedTicketItem {
     "time": time,
     "location": location,
     "type": type,
+    "advert_image_url": advertImageUrl,
   };
 }

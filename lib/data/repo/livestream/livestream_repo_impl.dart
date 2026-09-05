@@ -10,6 +10,12 @@ class LivestreamRepoImpl implements LivestreamRepo {
   final NetworkService _networkService;
 
   @override
+  Future<Livestream?> fetchCheck() async {
+    final response = await _networkService.get(ApiRoute.livestreamsCheck);
+    return _parseLivestream(response.data, allowNull: true);
+  }
+
+  @override
   Future<Livestream?> fetchActive() async {
     final response = await _networkService.get(ApiRoute.livestreams);
     return _parseLivestream(response.data, allowNull: true);
@@ -17,9 +23,7 @@ class LivestreamRepoImpl implements LivestreamRepo {
 
   @override
   Future<Livestream> toggleReaction(String uid) async {
-    final response = await _networkService.post(
-      ApiRoute.livestreamReact(uid),
-    );
+    final response = await _networkService.post(ApiRoute.livestreamReact(uid));
     final parsed = _parseLivestream(response.data, allowNull: false);
     if (parsed == null) {
       throw ApiFailure("Livestream payload missing");
@@ -27,9 +31,10 @@ class LivestreamRepoImpl implements LivestreamRepo {
     return parsed;
   }
 
-  /// Both `GET /livestreams` and `POST /livestreams/:uid/react` return
+  /// `GET /livestreams/check`, `GET /livestreams`, and
+  /// `POST /livestreams/:uid/react` return
   /// `{ data: { livestream: { ... } | null } }`. The `null` case is only
-  /// expected on the GET when there's no active stream — toggleReaction
+  /// expected on the GETs when there's no active stream — toggleReaction
   /// passes `allowNull: false` so a null payload there surfaces as an error.
   Livestream? _parseLivestream(dynamic root, {required bool allowNull}) {
     if (root is! Map<String, dynamic>) {

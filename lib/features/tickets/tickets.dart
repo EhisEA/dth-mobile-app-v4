@@ -24,3 +24,7 @@ export "views/purchase_tickets_view.dart";
 export "views/your_tickets_view.dart";
 export "models/your_tickets_args.dart";
 export "components/dth_ticket_card.dart";
+export "components/ticket_barcode.dart";
+export "components/ticket_info_block.dart";
+export "components/ticket_qr_with_outline.dart";
+export "components/ticket_ref_label.dart";

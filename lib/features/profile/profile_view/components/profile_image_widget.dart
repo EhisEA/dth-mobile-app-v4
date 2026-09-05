@@ -19,8 +19,18 @@ class ProfileImageWidget extends StatelessWidget {
   final String? avatar;
   final VoidCallback? onEditTap;
 
+  static const double _outerRadius = 20;
+  static const double _framePad = 4;
+  static const double _whiteBorder = 2;
+
   /// Badge is ~42% of avatar so it reads as a corner seal, not a full-width strip.
   double get _badgeSize => size * 0.42;
+
+  double get _innerRadius =>
+      (_outerRadius - _framePad).clamp(0, _outerRadius).toDouble();
+
+  double get _imageRadius =>
+      (_innerRadius - _whiteBorder).clamp(0, _innerRadius).toDouble();
 
   static bool _hasUsableAvatarUrl(String? raw) {
     final trimmed = raw?.trim() ?? '';
@@ -49,40 +59,54 @@ class ProfileImageWidget extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Positioned.fill(
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xffFDCA03),
-                      Color(0xffFBFA69),
-                      Color(0xffBC3B03),
-                    ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(_outerRadius),
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xffFDCA03),
+                        Color(0xffFBFA69),
+                        Color(0xffBC3B03),
+                      ],
+                    ),
                   ),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.white, width: 2),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  clipBehavior: Clip.hardEdge,
-                  child: useNetwork
-                      ? CachedNetworkImage(
-                          imageUrl: avatar!.trim(),
-                          fit: BoxFit.cover,
-                          width: size,
-                          height: size,
-                          placeholder: (context, url) =>
-                              _placeholderImage(size: size, tint: tint),
-                          errorWidget: (context, url, error) =>
-                              _placeholderImage(size: size, tint: tint),
-                        )
-                      : Center(
-                          child: _placeholderImage(size: size, tint: tint),
+                  child: Padding(
+                    padding: const EdgeInsets.all(_framePad),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(_innerRadius),
+                        border: Border.all(
+                          color: AppColors.white,
+                          width: _whiteBorder,
                         ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(_whiteBorder),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(_imageRadius),
+                          child: useNetwork
+                              ? CachedNetworkImage(
+                                  imageUrl: avatar!.trim(),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  placeholder: (context, url) =>
+                                      _placeholderImage(tint: tint),
+                                  errorWidget: (context, url, error) =>
+                                      _placeholderImage(tint: tint),
+                                )
+                              : ColoredBox(
+                                  color: tint,
+                                  child: _placeholderImage(tint: tint),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -140,11 +164,12 @@ class ProfileImageWidget extends StatelessWidget {
     );
   }
 
-  static Widget _placeholderImage({required double size, required Color tint}) {
+  static Widget _placeholderImage({required Color tint}) {
     return Image.asset(
       ImageAssets.user,
-      height: size,
-      width: size,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
       color: tint,
       colorBlendMode: BlendMode.darken,
     );

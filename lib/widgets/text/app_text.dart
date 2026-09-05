@@ -542,6 +542,246 @@ class AppText extends StatelessWidget {
     this.fontStyle,
   }) : baseStyle = AppTextStyle.bangersRegular;
 
+  const AppText.shantellLight(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellLight;
+
+  const AppText.shantellLightItalic(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellLightItalic;
+
+  const AppText.shantellRegular(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellRegular;
+
+  const AppText.shantellRegularItalic(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellRegularItalic;
+
+  const AppText.shantellMedium(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellMedium;
+
+  const AppText.shantellMediumItalic(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellMediumItalic;
+
+  const AppText.shantellSemiBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellSemiBold;
+
+  const AppText.shantellSemiBoldItalic(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellSemiBoldItalic;
+
+  const AppText.shantellBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellBold;
+
+  const AppText.shantellBoldItalic(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellBoldItalic;
+
+  const AppText.shantellExtraBold(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellExtraBold;
+
+  const AppText.shantellExtraBoldItalic(
+    this.text, {
+    super.key,
+    this.multiText = true,
+    this.overflow = TextOverflow.ellipsis,
+    this.color,
+    this.maxLines,
+    this.centered = false,
+    this.shadows,
+    this.textAlign,
+    this.wordSpacing,
+    this.decoration,
+    this.decorationColor,
+    this.height,
+    this.letterSpacing,
+    this.fontSize,
+    this.fontWeight,
+    this.fontStyle,
+  }) : baseStyle = AppTextStyle.shantellExtraBoldItalic;
+
   @override
   Widget build(BuildContext context) {
     final effectiveStyle = (baseStyle ?? AppTextStyle.regular).copyWith(

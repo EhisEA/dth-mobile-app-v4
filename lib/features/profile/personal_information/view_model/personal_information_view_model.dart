@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:io";
 
 import "package:dth_v4/core/provider.dart";
@@ -31,10 +32,12 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
   final ValueNotifier<bool> canResend = ValueNotifier<bool>(false);
   final ValueNotifier<DateTime> endTime;
   final ValueNotifier<bool> savingProfile = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> uploadingAvatar = ValueNotifier<bool>(false);
 
   /// Full-page [Loader.page] should not cover the screen during profile save
-  /// (that path uses [savingProfile] only).
-  bool get isBlockingPageBusy => isBaseBusy && !savingProfile.value;
+  /// (that path uses [savingProfile] only). Avatar upload uses [uploadingAvatar].
+  bool get isBlockingPageBusy =>
+      (isBaseBusy && !savingProfile.value) || uploadingAvatar.value;
 
   String? _verificationSignature;
   String _phoneNumberForVerification = "";
@@ -232,13 +235,10 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
     try {
       savingProfile.value = true;
       notifyListeners();
-      final phoneChanged =
-          current == null || !_samePhone(phoneTrimmed, current.phoneNumber);
-      final isoChanged = current == null || isoCode != current.isoCode;
       final response = await _profileRepo.updateProfile(
         fullName: name,
-        phone: phoneChanged ? phoneTrimmed : null,
-        isoCode: isoChanged || phoneChanged ? isoCode : null,
+        phone: phoneTrimmed,
+        isoCode: isoCode,
       );
       final updated = response.data;
       if (updated == null) {
@@ -339,17 +339,26 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
     }
 
     try {
+      uploadingAvatar.value = true;
+      notifyListeners();
       changeBaseState(const ViewModelState.busy());
-      // Do not resubmit `phone` — uniqueness on PUT treats the user's own
-      // number as taken.
       final response = await _profileRepo.updateProfile(
         fullName: current.fullName,
+        phone: current.phoneNumber,
         isoCode: current.isoCode,
         avatarFilePath: path,
       );
       final updated = response.data;
       if (updated != null) {
-        _userState.setUser(updated);
+        // Profile PUT returns `user` only — keep credit fields from current state.
+        final merged = updated.copyWith(
+          votingCredit: current.votingCredit,
+          votingCreditBreakdown: current.votingCreditBreakdown,
+          walletBalance: updated.walletBalance ?? current.walletBalance,
+        );
+        _userState.setUser(merged);
+        // Reconcile with GET /profile so cached voting_credit isn't wiped.
+        unawaited(_userState.getUserDetailsFromServer());
         DthFlushBar.instance.showSuccess(
           title: "Profile photo",
           message: "Your profile photo was updated.",
@@ -362,6 +371,9 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
         message: e.message,
         title: "Update failed",
       );
+    } finally {
+      uploadingAvatar.value = false;
+      notifyListeners();
     }
   }
 
@@ -375,6 +387,7 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
     canResend.dispose();
     endTime.dispose();
     savingProfile.dispose();
+    uploadingAvatar.dispose();
     super.dispose();
   }
 }

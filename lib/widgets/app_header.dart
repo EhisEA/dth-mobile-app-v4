@@ -1,6 +1,6 @@
 import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/data/state/app_modules_state.dart';
-import 'package:dth_v4/features/livestream/view_model/active_livestream_provider.dart';
+import 'package:dth_v4/features/leaderboard/leaderboard.dart';
 import 'package:dth_v4/features/notifications/notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,8 +9,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:flutter_utils/flutter_utils.dart';
 
 class AppHeader extends ConsumerWidget {
-  const AppHeader({super.key, required this.onLiveTap});
-  final VoidCallback onLiveTap;
+  const AppHeader({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,34 +24,16 @@ class AppHeader extends ConsumerWidget {
         Image.asset(ImageAssets.logo2, height: 36, width: 110),
         Row(
           children: [
-            // GestureDetector(
-            //   onTap: () {
-            //     HapticFeedback.lightImpact();
-            //     navigationService.navigateTo(SearchView.path);
-            //   },
-            //   behavior: HitTestBehavior.opaque,
-            //   child: SvgPicture.asset(SvgAssets.search),
-            // ),
-            Gap.w16,
-            if (appModules.appModules.value?.livestream == true) ...[
+            if (appModules.appModules.value?.leaderboard == true) ...[
               GestureDetector(
                 onTap: () {
-                  onLiveTap();
                   HapticFeedback.lightImpact();
+                  navigationService.navigateTo(LeaderboardView.path);
                 },
                 behavior: HitTestBehavior.opaque,
-                // Icon mirrors whatever the active-livestream pre-fetch
-                // resolved to: the "live" variant when a stream is up,
-                // the neutral variant when none / loading / errored.
-                child: SvgPicture.asset(
-                  ref.watch(activeLivestreamProvider).valueOrNull != null
-                      ? SvgAssets.livestreamLives
-                      : SvgAssets.livestream,
-                  height: 20,
-                  width: 20,
-                ),
+                child: SvgPicture.asset(SvgAssets.leaderboard, width: 22),
               ),
-              Gap.w18,
+              Gap.w16,
             ],
             GestureDetector(
               onTap: () {

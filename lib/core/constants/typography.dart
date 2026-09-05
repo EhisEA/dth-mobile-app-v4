@@ -6,6 +6,7 @@ abstract final class AppFontFamily {
   static const String hanson = 'Hanson';
   static const String athleticsSans = 'Athletics Sans';
   static const String bangers = 'Bangers';
+  static const String shantellSans = 'Shantell Sans';
 
   /// Bundled emoji typeface used as a glyph fallback so emoji render the same
   /// on every device, instead of relying on each OS's (version-dependent)

@@ -185,10 +185,8 @@ class _LivestreamViewState extends ConsumerState<LivestreamView> {
       backgroundColor: const Color(0xffFCFCFC),
       body: vm.baseState.when(
         busy: () => const PostDetailSkeleton(),
-        error: (Failure failure) => _ErrorState(
-          message: failure.message,
-          onRetry: () => vm.refresh(),
-        ),
+        error: (Failure failure) =>
+            _ErrorState(message: failure.message, onRetry: () => vm.refresh()),
         idle: () {
           if (vm.streamEnded) {
             return _EmptyState(onRefresh: () => vm.refresh());
@@ -228,15 +226,19 @@ class _LivestreamViewState extends ConsumerState<LivestreamView> {
                             post: post,
                             renderMedia: !isPinnedVideo,
                             onLike: vm.toggleLike,
+                            onShare: () => LinkShareHelper.shareLivestream(
+                              livestreamUid: stream.uid,
+                              title: stream.title,
+                              description: stream.description,
+                              imageUrl: stream.videoThumbnail?.trim() ?? "",
+                              onShared: vm.onShared,
+                            ),
                             metaProgress: isPinnedVideo ? _metaProgress : null,
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-                          child: _CommentsSection(
-                            vm: vm,
-                            comments: comments,
-                          ),
+                          child: _CommentsSection(vm: vm, comments: comments),
                         ),
                       ],
                     ),
@@ -365,12 +367,14 @@ class _LivestreamBlock extends StatelessWidget {
   const _LivestreamBlock({
     required this.post,
     required this.onLike,
+    required this.onShare,
     this.renderMedia = true,
     this.metaProgress,
   });
 
   final Post post;
   final VoidCallback onLike;
+  final VoidCallback onShare;
   final bool renderMedia;
   final ValueListenable<double>? metaProgress;
 
@@ -415,9 +419,7 @@ class _LivestreamBlock extends StatelessWidget {
           showContainer: true,
           onLike: onLike,
           onComment: () {},
-          // Livestream sharing isn't supported by the API — counts.shares is
-          // always 0 and there's no per-stream permalink. Tap is a no-op.
-          onShare: () {},
+          onShare: onShare,
         ),
       ],
     );

@@ -32,6 +32,11 @@ class NavigatorRoutes {
   static const String voting = "/voting";
   static const String aboutContestant = "/about-contestant";
 
+  ////////////////LEADERBOARD////////////////////
+  ///
+  static const String leaderboard = "/leaderboard";
+  static const String fanRewardsGuide = "/fan-rewards-guide";
+
   ////////////////PROFILE////////////////////
   ///
   static const String profile = "/profile";

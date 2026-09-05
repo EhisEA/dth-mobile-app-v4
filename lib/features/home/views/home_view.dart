@@ -28,6 +28,8 @@ class HomeView extends ConsumerStatefulWidget {
 }
 
 class _HomeViewState extends ConsumerState<HomeView> {
+  bool _joiningLive = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,8 +42,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
         ref.read(applicantDashboardViewModelProvider).prefetchForHomeUser(),
       );
       unawaited(ref.read(notificationsViewModelProvider).prefetchUnreadBadge());
-      // Warm the active-livestream cache. The icon tap then reads the
-      // resolved state synchronously — no HTTP roundtrip on tap.
+      // Warm GET /livestreams/check so the home banner can render.
       ref.read(activeLivestreamProvider);
       // Replay any deep link that arrived while logged out. Reaching home
       // means the user is authed, so the link's auth gate is now satisfied.
@@ -58,8 +59,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
     cache.upsert(current.copyWith(shareCount: current.shareCount + 1));
   }
 
-  /// Reads the pre-fetched active-livestream state and routes off the cached
-  /// AsyncValue (refetches when subscribed but cache still has subscription_required).
+  /// Banner uses cached `GET /livestreams/check`. Tap then calls
+  /// `GET /livestreams` for subscription / access gating.
   void _onLiveTap() {
     unawaited(_handleLiveTap());
   }
@@ -82,9 +83,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 
   Future<void> _handleLiveTap() async {
-    final asyncState = ref.read(activeLivestreamProvider);
+    if (_joiningLive) return;
 
-    if (asyncState.isLoading) {
+    final checkState = ref.read(activeLivestreamProvider);
+
+    if (checkState.isLoading) {
       DthFlushBar.instance.showGeneric(
         title: "Live",
         message: "Checking for an active livestream…",
@@ -92,44 +95,47 @@ class _HomeViewState extends ConsumerState<HomeView> {
       return;
     }
 
-    if (asyncState.hasError) {
-      final err = asyncState.error;
-      if (isSubscriptionRequiredFailure(err)) {
-        final isSubscribed =
-            ref.read(userStateProvider).user.value?.isSubscribed ?? false;
-        if (isSubscribed) {
-          ref.invalidate(activeLivestreamProvider);
-          try {
-            final stream = await ref.read(activeLivestreamProvider.future);
-            if (!mounted) return;
-            _routeForActiveStream(stream);
-          } on ApiFailure catch (e) {
-            if (!mounted) return;
-            DthFlushBar.instance.showError(title: "Live", message: e.message);
-          } on Object {
-            if (!mounted) return;
-            DthFlushBar.instance.showError(
-              title: "Live",
-              message: "Could not check livestream right now.",
-            );
-          }
-          return;
-        }
-        if (!mounted) return;
-        await showSubscriptionRequiredSheet(context);
-        return;
-      }
+    if (checkState.hasError) {
       DthFlushBar.instance.showError(
         title: "Live",
-        message: err is ApiFailure
-            ? err.message
+        message: checkState.error is ApiFailure
+            ? (checkState.error as ApiFailure).message
             : "Could not check livestream right now.",
       );
       return;
     }
 
-    if (asyncState.hasValue) {
-      _routeForActiveStream(asyncState.value);
+    if (checkState.valueOrNull == null) {
+      DthFlushBar.instance.showGeneric(
+        title: "Live",
+        message: "There's no active livestream right now.",
+      );
+      return;
+    }
+
+    setState(() => _joiningLive = true);
+    try {
+      final stream = await ref.read(livestreamRepositoryProvider).fetchActive();
+      if (!mounted) return;
+      setState(() => _joiningLive = false);
+      _routeForActiveStream(stream);
+    } on ApiFailure catch (e) {
+      if (!mounted) return;
+      setState(() => _joiningLive = false);
+      if (isSubscriptionRequiredFailure(e)) {
+        await showSubscriptionRequiredSheet(context);
+        return;
+      }
+      DthFlushBar.instance.showError(title: "Live", message: e.message);
+    } on Object {
+      if (!mounted) return;
+      setState(() => _joiningLive = false);
+      DthFlushBar.instance.showError(
+        title: "Live",
+        message: "Could not open livestream right now.",
+      );
+    } finally {
+      if (mounted && _joiningLive) setState(() => _joiningLive = false);
     }
   }
 
@@ -138,7 +144,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
     try {
       await ref.read(activeLivestreamProvider.future);
     } on Object {
-      // Banner/icon read valueOrNull; errors stay silent until live tap.
+      // Banner reads valueOrNull; errors stay silent until live tap.
     }
   }
 
@@ -174,11 +180,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Gap.h14,
-                      AppHeader(onLiveTap: _onLiveTap),
-                      Gap.h10,
-                    ],
+                    children: [Gap.h14, const AppHeader(), Gap.h10],
                   ),
                 ),
                 Expanded(
@@ -271,6 +273,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                   ),
                                   child: LivestreamBanner(
                                     stream: live,
+                                    isBusy: _joiningLive,
                                     onTap: _onLiveTap,
                                   ),
                                 );

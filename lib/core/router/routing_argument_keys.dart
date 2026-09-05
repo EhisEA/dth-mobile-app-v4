@@ -87,6 +87,9 @@ class RoutingArgumentKey {
   /// [AboutContestantView] — uid of the contestant to load.
   static const String contestantUid = "contestantUid";
 
+  /// [FanRewardsGuideView] — [FanLeaderboardGuide] from the leaderboard API.
+  static const String fanRewardsGuide = "fanRewardsGuide";
+
   static const String form = "form";
 }
 

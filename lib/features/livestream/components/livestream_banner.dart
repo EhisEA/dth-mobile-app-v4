@@ -7,27 +7,32 @@ import "package:flutter/services.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 /// Compact home-feed banner for the currently active livestream. Visibility
-/// is gated by the caller — render only when [activeLivestreamProvider] has
-/// a non-null value. Tapping the banner mirrors the live-icon flow.
+/// is gated by the caller — render only when [activeLivestreamProvider]
+/// (`GET /livestreams/check`) has a non-null value. Tapping runs the
+/// access-gated `GET /livestreams` flow via [onTap].
 class LivestreamBanner extends StatelessWidget {
   const LivestreamBanner({
     super.key,
     required this.stream,
     required this.onTap,
+    this.isBusy = false,
   });
 
   final Livestream stream;
   final VoidCallback onTap;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
     final thumb = stream.videoThumbnail?.trim() ?? "";
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
+      onTap: isBusy
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
       child: Container(
         height: 80,
         decoration: BoxDecoration(
@@ -90,11 +95,20 @@ class LivestreamBanner extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.white.withValues(alpha: 0.7),
-                size: 22,
-              ),
+              child: isBusy
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.white.withValues(alpha: 0.85),
+                      ),
+                    )
+                  : Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.white.withValues(alpha: 0.7),
+                      size: 24,
+                    ),
             ),
           ],
         ),
