@@ -35,13 +35,14 @@ class NotificationsViewModel extends BaseChangeNotifierViewModel {
     ];
   }
 
-  void _setItems(List<NotificationItem> items, {String? nextCursor}) {
+  /// [nextCursor] is required and assigned as-is: a null cursor is the server
+  /// saying "last page", so it must clear [_nextCursor] rather than leave a
+  /// stale one behind (which would keep [hasMore] true and re-fetch forever).
+  void _setItems(List<NotificationItem> items, {required String? nextCursor}) {
     _items = _withLocalReadState(
       items.where((n) => n.hasDisplayContent).toList(growable: false),
     );
-    if (nextCursor != null) {
-      _nextCursor = nextCursor;
-    }
+    _nextCursor = nextCursor;
   }
 
   /// Silent first-page fetch for the home header badge (no busy skeleton).
