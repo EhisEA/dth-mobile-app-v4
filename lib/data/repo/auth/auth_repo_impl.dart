@@ -37,8 +37,13 @@ class AuthRepoImpl implements AuthRepo {
     if (userRaw is! Map<String, dynamic>) {
       return ApiResponse(data: null);
     }
+    // Both fields are read from the `data` root, but `UserModel.fromJson`
+    // already parses them off `user` — so a missing/null root value must leave
+    // the parsed value alone (copyWith keeps the current value on null) rather
+    // than overwrite credits with 0.
+    final rootVotingCredit = root["voting_credit"];
     final user = UserModel.fromJson(userRaw).copyWith(
-      votingCredit: _asInt(root["voting_credit"]),
+      votingCredit: rootVotingCredit == null ? null : _asInt(rootVotingCredit),
       votingCreditBreakdown: root["voting_credit_breakdown"] == null
           ? null
           : VotingCreditBreakdown.fromJson(root["voting_credit_breakdown"]),

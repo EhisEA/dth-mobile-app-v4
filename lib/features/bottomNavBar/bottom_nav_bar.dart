@@ -29,12 +29,18 @@ final bottomNavBarViewModel = ChangeNotifierProvider.autoDispose(
 
 class _NavBinding {
   const _NavBinding({
+    required this.name,
     required this.label,
     required this.assetInactive,
     required this.assetActive,
     required this.screen,
     this.iconBuilder,
   });
+
+  /// Module identifier this tab was built from (`timeline`, `subscriptions`,
+  /// ...). Lets [BottomNavBarState.changeTabByModuleName] resolve a tab index
+  /// from the very list that is rendered, server-driven or fallback.
+  final String name;
   final String label;
   final String assetInactive;
   final String assetActive;
@@ -49,6 +55,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
   switch (item.name) {
     case 'timeline':
       return _NavBinding(
+        name: item.name,
         label: item.label,
         assetInactive: SvgAssets.home,
         assetActive: SvgAssets.homeActive,
@@ -56,6 +63,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
       );
     case 'search':
       return _NavBinding(
+        name: item.name,
         label: item.label,
         assetInactive: SvgAssets.search,
         assetActive: SvgAssets.searchActive,
@@ -63,6 +71,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
       );
     case 'voting':
       return _NavBinding(
+        name: item.name,
         label: item.label,
         assetInactive: SvgAssets.voting,
         assetActive: SvgAssets.votingActive,
@@ -70,6 +79,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
       );
     case 'tickets':
       return _NavBinding(
+        name: item.name,
         label: item.label,
         assetInactive: SvgAssets.ticket,
         assetActive: SvgAssets.ticketActive,
@@ -77,6 +87,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
       );
     case 'subscriptions':
       return _NavBinding(
+        name: item.name,
         label: item.label,
         assetInactive: SvgAssets.verify,
         assetActive: SvgAssets.verifyActive,
@@ -85,6 +96,7 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
       );
     case 'profile':
       return _NavBinding(
+        name: item.name,
         label: item.label,
         assetInactive: SvgAssets.profile,
         assetActive: SvgAssets.profileActive,
@@ -99,24 +111,28 @@ _NavBinding? _bindNavItem(AppModuleNavItem item) {
 /// matches the previous hard-coded layout so users never see a blank nav.
 final List<_NavBinding> _kFallbackBindings = [
   _NavBinding(
+    name: 'timeline',
     label: 'Home',
     assetInactive: SvgAssets.home,
     assetActive: SvgAssets.homeActive,
     screen: const HomeView(),
   ),
   _NavBinding(
+    name: 'search',
     label: 'Search',
     assetInactive: SvgAssets.search,
     assetActive: SvgAssets.searchActive,
     screen: const SearchView(),
   ),
   _NavBinding(
+    name: 'tickets',
     label: 'Tickets',
     assetInactive: SvgAssets.ticket,
     assetActive: SvgAssets.ticketActive,
     screen: const TicketView(),
   ),
   _NavBinding(
+    name: 'subscriptions',
     label: 'Subscription',
     assetInactive: SvgAssets.verify,
     assetActive: SvgAssets.verifyActive,
@@ -124,6 +140,7 @@ final List<_NavBinding> _kFallbackBindings = [
     iconBuilder: (isActive) => ProBadgeIcon(isActive: isActive),
   ),
   _NavBinding(
+    name: 'profile',
     label: 'Profile',
     assetInactive: SvgAssets.profile,
     assetActive: SvgAssets.profileActive,
@@ -176,38 +193,13 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
   /// or banner API screen alias (e.g. `subscription`).
   void changeTabByModuleName(String moduleName) {
     final targets = _moduleNameAliases(moduleName);
-    final navItems =
-        ref.read(appModulesStateProvider).appModules.value?.navigation ??
-        const <AppModuleNavItem>[];
-
-    if (navItems.isNotEmpty) {
-      var bindingIndex = 0;
-      for (final item in navItems) {
-        if (_bindNavItem(item) == null) continue;
-        if (targets.contains(item.name)) {
-          changeTab(bindingIndex);
-          return;
-        }
-        bindingIndex++;
-      }
-      return;
-    }
-
-    const fallbackOrder = [
-      'timeline',
-      'search',
-      'tickets',
-      'voting',
-      'subscriptions',
-      'profile',
-    ];
-    for (final target in targets) {
-      final index = fallbackOrder.indexOf(target);
-      if (index >= 0) {
-        changeTab(index);
-        return;
-      }
-    }
+    // Resolve against the same list the nav renders, so a server-driven and a
+    // fallback layout can never disagree about which index a module sits at.
+    // A module with no tab in the current layout (e.g. voting in the fallback)
+    // matches nothing and leaves the current tab alone.
+    final bindings = _resolveBindings();
+    final index = bindings.indexWhere((b) => targets.contains(b.name));
+    if (index >= 0) changeTab(index);
   }
 
   static Set<String> _moduleNameAliases(String moduleName) {
