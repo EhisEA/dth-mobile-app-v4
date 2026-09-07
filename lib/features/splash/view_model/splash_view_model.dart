@@ -103,15 +103,19 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
     // Guarded so an unexpected error in any optional preload can never strand
     // the app on the splash screen — we still route below.
 
-    // try {
-    await Future.wait([
-      preloadModules(), // App cannot start without this
-      preloadSponsorships(),
-      preloadVotingWeekIfNeeded(),
-    ]);
-    // } catch (e) {
-    //   _log.d("[splash] preload failed, routing anyway: $e");
-    // }
+    try {
+      await Future.wait([
+        preloadModules(), // App cannot start without this
+        preloadSponsorships(),
+        preloadVotingWeekIfNeeded(),
+      ]);
+    } catch (e) {
+      // Deliberately catch-all: the per-preload handlers only swallow
+      // ApiFailure, so a TypeError from a payload shape change, a timeout or a
+      // raw socket error would otherwise escape and leave the user on splash
+      // with no route at all.
+      _log.d("[splash] preload failed, routing anyway: $e");
+    }
 
     final bool isLoggedIn = _localCache.getToken() != null;
 

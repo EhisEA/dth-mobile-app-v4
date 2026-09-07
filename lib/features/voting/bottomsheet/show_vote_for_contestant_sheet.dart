@@ -1,7 +1,7 @@
 import "dart:async";
 
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/features/bottomNavBar/bottom_nav_bar.dart";
+import "package:dth_v4/features/voting/bottomsheet/show_top_up_voting_credits_sheet.dart";
 import "package:dth_v4/features/voting/bottomsheet/show_vote_success_sheet.dart";
 import "package:dth_v4/features/voting/components/voting_sponsor_footer.dart";
 import "package:dth_v4/features/voting/models/voting_contestant.dart";
@@ -89,9 +89,14 @@ class _VoteForContestantSheetBodyState
     return _selectedAmount!;
   }
 
-  bool _needsUpgrade(int remaining) {
-    if (remaining <= 0) return true;
-    return _requestedVoteCount(remaining) > remaining;
+  /// Credits the user is short by for the current selection — 0 when the
+  /// selection is affordable. Drives the top-up CTA below.
+  int _shortfall(int remaining) {
+    if (remaining <= 0) {
+      return _selectedAmount ?? 0;
+    }
+    final requested = _requestedVoteCount(remaining);
+    return requested > remaining ? requested - remaining : 0;
   }
 
   int _resolvedVoteCount(VotingCredits credits) {
@@ -104,8 +109,6 @@ class _VoteForContestantSheetBodyState
     return selected;
   }
 
-  bool _isOptionEnabled(int? amount, int remaining) => true;
-
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(votingViewModelProvider);
@@ -113,8 +116,9 @@ class _VoteForContestantSheetBodyState
     final remaining = credits.remaining;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final voteCount = _resolvedVoteCount(credits);
-    final needsUpgrade = _needsUpgrade(remaining);
-    final selectionValid = !needsUpgrade && voteCount > 0;
+    final shortfall = _shortfall(remaining);
+    final needsTopUp = shortfall > 0 || remaining <= 0;
+    final selectionValid = !needsTopUp && voteCount > 0;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -153,28 +157,31 @@ class _VoteForContestantSheetBodyState
                       runSpacing: 8,
                       alignment: WrapAlignment.center,
                       children: [
+                        // Every preset stays tappable: picking one the user
+                        // can't afford is how they express intent, and the CTA
+                        // below turns into "Top up credits" for the shortfall.
                         for (final preset in widget.votePresets)
                           _VoteAmountChip(
                             label: _numberFormat.format(preset),
                             selected: _selectedAmount == preset,
-                            enabled: _isOptionEnabled(preset, remaining),
+                            enabled: true,
                             onTap: () =>
                                 setState(() => _selectedAmount = preset),
                           ),
                         _VoteAmountChip(
                           label: "Max",
                           selected: _selectedAmount == null,
-                          enabled: _isOptionEnabled(null, remaining),
+                          enabled: true,
                           onTap: () => setState(() => _selectedAmount = null),
                         ),
                       ],
                     ),
-                    if (needsUpgrade) ...[
+                    if (needsTopUp) ...[
                       Gap.h16,
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: AppText.medium(
-                          "You don’t have enough vote credits. Get more votes by upgrading your subscription plan",
+                          _shortfallMessage(shortfall, remaining),
                           centered: true,
                           fontSize: 13,
                           color: AppColors.redTint35,
@@ -182,10 +189,10 @@ class _VoteForContestantSheetBodyState
                       ),
                     ],
                     Gap.h32,
-                    if (needsUpgrade)
+                    if (needsTopUp)
                       AppButton.primary(
-                        text: "Upgrade subscription",
-                        press: _openSubscriptionTab,
+                        text: "Top up credits",
+                        press: _openTopUp,
                       )
                     else
                       AppButton.primary(
@@ -259,18 +266,23 @@ class _VoteForContestantSheetBodyState
     );
   }
 
-  void _openSubscriptionTab() {
+  String _shortfallMessage(int shortfall, int remaining) {
+    if (shortfall <= 0) {
+      return "You don’t have any voting credits left. Top up to keep voting.";
+    }
+    final needed = _numberFormat.format(shortfall);
+    final votes = _numberFormat.format(_requestedVoteCount(remaining));
+    return "You need $needed more credits to cast $votes votes.";
+  }
+
+  void _openTopUp() {
     HapticFeedback.lightImpact();
     Navigator.of(context).pop();
-    final state = BottomNavBar.bottomNavBarKey.currentState;
-    if (state == null) {
-      DthFlushBar.instance.showGeneric(
-        title: "Unavailable",
-        message: "This section is not available right now.",
-      );
-      return;
-    }
-    state.changeTabByModuleName("subscription");
+    // Shown from the opener's context: this sheet's route context loses its
+    // Overlay once popped (same reason as the success sheet above).
+    final anchor = widget.anchorContext;
+    if (!anchor.mounted) return;
+    unawaited(showTopUpVotingCreditsSheet(anchor));
   }
 }
 
