@@ -20,6 +20,8 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
     this._refreshVoting,
   );
 
+  final _log = const AppLogger(SubscriptionCheckoutViewModel);
+
   final SubscriptionRepo _repo;
   final SubscriptionPlansState _subscriptionPlansState;
   final UserProfileState _userState;
@@ -84,13 +86,15 @@ class SubscriptionCheckoutViewModel extends BaseChangeNotifierViewModel {
 
       changeBaseState(const ViewModelState.idle());
     } on ApiFailure catch (e, s) {
-      // ignore: avoid_print
-      print("[checkout] ApiFailure: ${e.message}\n$s");
+      _log.e("[checkout] ApiFailure: ${e.message}", error: e, stackTrace: s);
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(title: "Error", message: e.message);
     } catch (e, s) {
-      // ignore: avoid_print
-      print("[checkout] NON-ApiFailure: $e (${e.runtimeType})\n$s");
+      _log.e(
+        "[checkout] non-ApiFailure (${e.runtimeType})",
+        error: e,
+        stackTrace: s,
+      );
       // A non-ApiFailure (e.g. verify/parse/timeout) must not leave the VM
       // stuck busy after a real payment — reset state and surface an error.
       changeBaseState(ViewModelState.error(ApiFailure(e.toString())));
