@@ -84,6 +84,12 @@ class VotingContestantDetail {
     );
   }
 
+  /// Whether the detail screen may offer a vote. Defers to
+  /// [VotingContestant.canCastVote] (cast uid present and not evicted) so the
+  /// list card and this screen can never disagree, and additionally honours
+  /// the detail-only `votable` flag.
+  bool get canCastVote => isVotable && toContestant.canCastVote;
+
   VotingContestant get toContestant => VotingContestant(
     uid: uid,
     name: name,

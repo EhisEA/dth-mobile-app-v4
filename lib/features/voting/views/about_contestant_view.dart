@@ -51,11 +51,7 @@ class _AboutContestantViewState extends ConsumerState<AboutContestantView> {
       bottomNavigationBar: detailState.maybeWhen(
         idle: () {
           final detail = scopedDetail;
-          if (detail == null ||
-              !detail.isVotable ||
-              (detail.votingWeekContestantUid?.trim().isEmpty ?? true)) {
-            return null;
-          }
+          if (detail == null || !detail.canCastVote) return null;
           return Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
             child: AppButton.primary(

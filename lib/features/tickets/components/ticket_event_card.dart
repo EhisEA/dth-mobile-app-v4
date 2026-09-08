@@ -48,7 +48,10 @@ class TicketEventCard extends StatelessWidget {
     final isPurchased = mode == TicketEventCardMode.purchased;
     final ownedCount =
         event.ticketsOwned ?? int.tryParse(event.ticketsCount) ?? 0;
-    final ticketsLeft = event.ticketsLeft ?? 0;
+    // Left null when the API omits `tickets_left` — the pill is hidden rather
+    // than defaulting to 0, which would read as "sold out" next to an active
+    // Buy button.
+    final ticketsLeft = event.ticketsLeft;
     final description = event.shortDescription.trim();
 
     return GestureDetector(
@@ -136,8 +139,10 @@ class TicketEventCard extends StatelessWidget {
             Gap.h14,
             Row(
               children: [
-                Expanded(child: _AvailabilityPill(count: ticketsLeft)),
-                Gap.w12,
+                if (ticketsLeft != null) ...[
+                  Expanded(child: _AvailabilityPill(count: ticketsLeft)),
+                  Gap.w12,
+                ],
                 Expanded(
                   child: AppButton.primary(
                     text: "Buy ticket now",
