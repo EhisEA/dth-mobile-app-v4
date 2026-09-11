@@ -56,6 +56,7 @@ class ImageAssets {
   static const String userBg = "$imagePath/profile/user_bg.png";
   static const String applicantBg = "$imagePath/profile/applicant_bg.png";
   static const String userNew = "$imagePath/profile/user_new.png";
+  static const String addBank = "$imagePath/profile/add-bank.png";
 
   /////////////////////SUBSCRIPTION//////////////////////
   static const String subscriptionBg =
@@ -172,6 +173,9 @@ class SvgAssets {
   static const String cup = "$svgPath/profile/cup.svg";
   static const String error = "$svgPath/profile/error.svg";
   static const String doubleTick = "$svgPath/profile/double_tick.svg";
+  static const String bankAccount = "$svgPath/profile/bank-account.svg";
+  static const String addBankAccount = "$svgPath/profile/add-circle.svg";
+  static const String more = "$svgPath/profile/horizontal-more.svg";
 
   /////////////////////APPLICATION//////////////////////
   ///

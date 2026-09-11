@@ -16,6 +16,7 @@ import 'package:dth_v4/features/livestream/views/livestream_view.dart';
 import 'package:dth_v4/features/notifications/notifications.dart';
 import 'package:dth_v4/features/posts/views/comment_thread_view.dart';
 import 'package:dth_v4/features/posts/views/post_detail_view.dart';
+import 'package:dth_v4/features/profile/bank_account/bank_account.dart';
 import 'package:dth_v4/features/profile/delete_account/views/delete_account_consent_view.dart';
 import 'package:dth_v4/features/profile/delete_account/views/delete_account_otp_view.dart';
 import 'package:dth_v4/features/profile/personal_information/views/personal_infomation_view.dart';
@@ -184,7 +185,16 @@ class AppRouter {
           settings: settings,
           viewToShow: const DeleteAccountOtpView(),
         );
-
+      case BankAccountView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const BankAccountView(),
+        );
+      case AddBankAccountView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const AddBankAccountView(),
+        );
       ////////////////SUBSCRIPTION VIEW////////////////////
       case ConfirmationView.path:
         final confirmationSuccess =

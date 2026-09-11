@@ -40,6 +40,12 @@ class AppColors {
   // 454545
   static Color tint25 = const Color(0xff454545);
 
+  // 202020
+  static Color tint30 = const Color(0xff202020);
+
+  // 1B1B1B
+  static Color tint40 = const Color(0xff1B1B1B);
+
   // 474954
   static const Color paleLavender = Color(0xff474954);
 

@@ -44,6 +44,8 @@ class NavigatorRoutes {
   static const String profilePhoneVerifyOtp = "/profile-phone-verify-otp";
   static const String deleteAccountConsent = "/delete-account-consent";
   static const String deleteAccountOtp = "/delete-account-otp";
+  static const String addBankAccount = "/add-bank-account";
+  static const String bankAccount = "/bank-account";
 
   ////////////////APPLICATION////////////////////
   ///
