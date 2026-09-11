@@ -21,7 +21,7 @@ class GuideItemIcon extends StatelessWidget {
     switch (icon) {
       case FanLeaderboardGuideIcon.spark:
         return SvgPicture.asset(
-          SvgAssets.voteStar,
+          SvgAssets.bulletPoint,
           width: size,
           height: size,
           colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
@@ -46,6 +46,12 @@ class GuideItemIcon extends StatelessWidget {
           width: size,
           height: size,
           colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+        );
+      case FanLeaderboardGuideIcon.reward:
+        return SvgPicture.asset(
+          SvgAssets.leaderReward,
+          width: size,
+          height: size,
         );
     }
   }

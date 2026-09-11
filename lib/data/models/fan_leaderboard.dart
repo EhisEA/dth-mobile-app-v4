@@ -30,6 +30,7 @@ enum FanLeaderboardGuideIcon {
   medalGold,
   medalSilver,
   medalBronze,
+  reward,
   check;
 
   static FanLeaderboardGuideIcon fromApi(dynamic raw) {
@@ -49,6 +50,9 @@ enum FanLeaderboardGuideIcon {
       case "medal-bronze":
       case "bronze":
         return FanLeaderboardGuideIcon.medalBronze;
+      case "reward":
+      case "rewards":
+        return FanLeaderboardGuideIcon.reward;
       case "check":
       case "tick":
       case "checkmark":
