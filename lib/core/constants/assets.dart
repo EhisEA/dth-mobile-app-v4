@@ -56,6 +56,7 @@ class ImageAssets {
   static const String userBg = "$imagePath/profile/user_bg.png";
   static const String applicantBg = "$imagePath/profile/applicant_bg.png";
   static const String userNew = "$imagePath/profile/user_new.png";
+  static const String addBank = "$imagePath/profile/add-bank.png";
 
   /////////////////////SUBSCRIPTION//////////////////////
   static const String subscriptionBg =
@@ -134,6 +135,8 @@ class SvgAssets {
   static const String medalGold = "$svgPath/leaderboard/gold.svg";
   static const String medalSilver = "$svgPath/leaderboard/silver.svg";
   static const String medalBronze = "$svgPath/leaderboard/bronze.svg";
+  static const String bulletPoint = "$svgPath/leaderboard/bullet-point.svg";
+  static const String leaderReward = "$svgPath/leaderboard/leader-reward.svg";
   static const String phoneVerify = "$svgPath/home/phone_verify.svg";
   static const String notification = "$svgPath/home/notification.svg";
   static const String greyLogo = "$svgPath/home/grey_logo.svg";
@@ -170,6 +173,9 @@ class SvgAssets {
   static const String cup = "$svgPath/profile/cup.svg";
   static const String error = "$svgPath/profile/error.svg";
   static const String doubleTick = "$svgPath/profile/double_tick.svg";
+  static const String bankAccount = "$svgPath/profile/bank-account.svg";
+  static const String addBankAccount = "$svgPath/profile/add-circle.svg";
+  static const String more = "$svgPath/profile/horizontal-more.svg";
 
   /////////////////////APPLICATION//////////////////////
   ///

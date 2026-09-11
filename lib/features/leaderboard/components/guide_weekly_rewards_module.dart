@@ -104,8 +104,8 @@ class GuideWeeklyRewardsModule extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const GuideItemIcon(
-                  icon: FanLeaderboardGuideIcon.spark,
-                  size: 16,
+                  icon: FanLeaderboardGuideIcon.reward,
+                  size: 32,
                 ),
                 Gap.w12,
                 Expanded(

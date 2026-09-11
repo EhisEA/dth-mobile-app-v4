@@ -204,7 +204,7 @@ class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
                         consentNote,
                         fontSize: 12,
                         height: 1.35,
-                        color: AppColors.blackTint20,
+                        color: AppColors.tint15,
                         textAlign: TextAlign.center,
                         multiText: true,
                       ),

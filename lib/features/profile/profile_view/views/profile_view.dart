@@ -4,6 +4,7 @@ import 'package:dth_v4/data/data.dart';
 import 'package:dth_v4/features/app_web_view/app_web_view.dart';
 import 'package:dth_v4/features/application/views/application_view.dart';
 import 'package:dth_v4/features/application_dashboard/applicant_dashboard.dart';
+import 'package:dth_v4/features/profile/bank_account/bank_account.dart';
 import 'package:dth_v4/features/profile/logout/logout.dart';
 import 'package:dth_v4/features/profile/profile.dart';
 import 'package:dth_v4/features/profile/profile_view/components/profile_wallet_balance_pill.dart';
@@ -176,7 +177,17 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                             );
                           },
                         ),
-
+                        Gap.h28,
+                        ProfileTlle(
+                          title: "Bank Accounts",
+                          description: "Manage your withdrawal account",
+                          icon: SvgAssets.bankAccount,
+                          onTap: () {
+                            MobileNavigationService.instance.navigateTo(
+                              BankAccountView.path,
+                            );
+                          },
+                        ),
                         Gap.h32,
                         AppText.medium(
                           "Support & Legal",
