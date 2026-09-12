@@ -19,6 +19,9 @@ class UserModel {
     this.votingCredit = 0,
     this.votingCreditBreakdown,
     this.walletBalance,
+    this.pendingWithdrawalRequest,
+    this.leaderboardEligible = false,
+    this.withdrawalLimit,
   });
 
   final String uid;
@@ -50,6 +53,15 @@ class UserModel {
 
   /// Wallet balance from GET /profile (`wallet_balance` on user).
   final WalletBalance? walletBalance;
+
+  /// In-flight withdrawal from GET /profile (`pending_withdrawal_request`).
+  final PendingWithdrawalRequest? pendingWithdrawalRequest;
+
+  /// When true with the leaderboard module, show leaderboard + wallet/bank UI.
+  final bool leaderboardEligible;
+
+  /// Min/max withdraw amounts from GET /profile (`withdrawal_limit`).
+  final WithdrawalLimit? withdrawalLimit;
 
   /// Profile chip label, e.g. `120 credits`.
   String get votingCreditLabel => "$votingCredit credits";
@@ -88,6 +100,11 @@ class UserModel {
           ? null
           : VotingCreditBreakdown.fromJson(json['voting_credit_breakdown']),
       walletBalance: WalletBalance.tryParse(json['wallet_balance']),
+      pendingWithdrawalRequest: PendingWithdrawalRequest.tryParse(
+        json['pending_withdrawal_request'],
+      ),
+      leaderboardEligible: _boolField(json['leaderboard_eligible']),
+      withdrawalLimit: WithdrawalLimit.tryParse(json['withdrawal_limit']),
     );
   }
 
@@ -138,6 +155,11 @@ class UserModel {
       if (votingCreditBreakdown != null)
         'voting_credit_breakdown': votingCreditBreakdown!.toJson(),
       if (walletBalance != null) 'wallet_balance': walletBalance!.toJson(),
+      if (pendingWithdrawalRequest != null)
+        'pending_withdrawal_request': pendingWithdrawalRequest!.toJson(),
+      'leaderboard_eligible': leaderboardEligible,
+      if (withdrawalLimit != null)
+        'withdrawal_limit': withdrawalLimit!.toJson(),
       if (applicationStatus != null)
         'application_status': applicationStatus!.toJson(),
     };
@@ -161,9 +183,14 @@ class UserModel {
     int? votingCredit,
     VotingCreditBreakdown? votingCreditBreakdown,
     WalletBalance? walletBalance,
+    PendingWithdrawalRequest? pendingWithdrawalRequest,
+    bool? leaderboardEligible,
+    WithdrawalLimit? withdrawalLimit,
     bool clearVotingCreditBreakdown = false,
     bool clearApplicationStatus = false,
     bool clearWalletBalance = false,
+    bool clearPendingWithdrawalRequest = false,
+    bool clearWithdrawalLimit = false,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -189,6 +216,13 @@ class UserModel {
       walletBalance: clearWalletBalance
           ? null
           : (walletBalance ?? this.walletBalance),
+      pendingWithdrawalRequest: clearPendingWithdrawalRequest
+          ? null
+          : (pendingWithdrawalRequest ?? this.pendingWithdrawalRequest),
+      leaderboardEligible: leaderboardEligible ?? this.leaderboardEligible,
+      withdrawalLimit: clearWithdrawalLimit
+          ? null
+          : (withdrawalLimit ?? this.withdrawalLimit),
     );
   }
 
@@ -213,11 +247,14 @@ class UserModel {
         other.isSubscribed == isSubscribed &&
         other.votingCredit == votingCredit &&
         other.votingCreditBreakdown == votingCreditBreakdown &&
-        other.walletBalance == walletBalance;
+        other.walletBalance == walletBalance &&
+        other.pendingWithdrawalRequest == pendingWithdrawalRequest &&
+        other.leaderboardEligible == leaderboardEligible &&
+        other.withdrawalLimit == withdrawalLimit;
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     uid,
     email,
     fullName,
@@ -236,11 +273,14 @@ class UserModel {
     votingCredit,
     votingCreditBreakdown,
     walletBalance,
-  );
+    pendingWithdrawalRequest,
+    leaderboardEligible,
+    withdrawalLimit,
+  ]);
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed, votingCredit: $votingCredit, votingCreditBreakdown: $votingCreditBreakdown, walletBalance: $walletBalance)';
+    return 'UserModel(uid: $uid, fullName: $fullName, email: $email, phoneNumber: $phoneNumber, isoCode: $isoCode, avatar: $avatar, isPhoneVerified: $isPhoneVerified, participationType: ${participationType.name}, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, updatedAt: $updatedAt, eligible: $eligible, applicationStatus: $applicationStatus, isSubscribed: $isSubscribed, votingCredit: $votingCredit, votingCreditBreakdown: $votingCreditBreakdown, walletBalance: $walletBalance, pendingWithdrawalRequest: $pendingWithdrawalRequest, leaderboardEligible: $leaderboardEligible, withdrawalLimit: $withdrawalLimit)';
   }
 }
 
@@ -299,6 +339,84 @@ class WalletBalance {
 
   @override
   String toString() => "WalletBalance(currency: $currency, amount: $amount)";
+}
+
+/// `withdrawal_limit` on profile user payload.
+class WithdrawalLimit {
+  const WithdrawalLimit({required this.minimum, required this.maximum});
+
+  final int minimum;
+  final int maximum;
+
+  static WithdrawalLimit? tryParse(Object? json) {
+    if (json is! Map) return null;
+    final map = Map<String, dynamic>.from(json);
+    final min = UserModel._asInt(map["minimum"]);
+    final max = UserModel._asInt(map["maximum"]);
+    if (min <= 0 && max <= 0) return null;
+    return WithdrawalLimit(
+      minimum: min > 0 ? min : 1,
+      maximum: max > 0 ? max : min,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {"minimum": minimum, "maximum": maximum};
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WithdrawalLimit &&
+        other.minimum == minimum &&
+        other.maximum == maximum;
+  }
+
+  @override
+  int get hashCode => Object.hash(minimum, maximum);
+
+  @override
+  String toString() => "WithdrawalLimit(minimum: $minimum, maximum: $maximum)";
+}
+
+/// `pending_withdrawal_request` on profile user payload.
+class PendingWithdrawalRequest {
+  const PendingWithdrawalRequest({required this.amount});
+
+  final WalletBalance amount;
+
+  String get formattedLabel => amount.formattedLabel;
+
+  static PendingWithdrawalRequest? tryParse(Object? json) {
+    if (json == null) return null;
+    if (json is! Map) return null;
+    final map = Map<String, dynamic>.from(json);
+    // Prefer nested amount object; otherwise treat this map as wallet-like.
+    final amountRaw = map["amount"];
+    final WalletBalance? balance;
+    if (amountRaw is Map) {
+      balance = WalletBalance.tryParse(Map<String, dynamic>.from(amountRaw));
+    } else {
+      balance = WalletBalance.tryParse(map);
+    }
+    if (balance == null) return null;
+    return PendingWithdrawalRequest(amount: balance);
+  }
+
+  Map<String, dynamic> toJson() => {
+    "currency": amount.currency,
+    "amount": amount.amount,
+  };
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PendingWithdrawalRequest && other.amount == amount;
+  }
+
+  @override
+  int get hashCode => amount.hashCode;
+
+  @override
+  String toString() => "PendingWithdrawalRequest(amount: $amount)";
 }
 
 /// `application_status` on profile user payload.

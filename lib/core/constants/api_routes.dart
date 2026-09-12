@@ -64,6 +64,19 @@ class ApiRoute {
       "$baseUrl/profile/phone/verify-otp";
   static String get profileUpdate => "$baseUrl/profile";
   static String get profileDeleteAccount => "$baseUrl/profile/delete-account";
+  static String get profileBankAccounts => "$baseUrl/profile/bank-accounts";
+  static String get profileBankAccountsResolve =>
+      "$baseUrl/profile/bank-accounts/resolve";
+  static String profileBankAccount(String bankAccountUid) =>
+      "$baseUrl/profile/bank-accounts/$bankAccountUid";
+  static String profileBankAccountDeleteRequestOtp(String bankAccountUid) =>
+      "$baseUrl/profile/bank-accounts/$bankAccountUid/delete/request-otp";
+  static String get profileWithdrawals => "$baseUrl/profile/withdrawals";
+  static String banks({String? search}) {
+    final q = search?.trim() ?? "";
+    if (q.isEmpty) return "$baseUrl/banks";
+    return "$baseUrl/banks?search=${Uri.encodeQueryComponent(q)}";
+  }
 
   ///MODULES
   static String get mobileAppModules => "$baseUrl/mobile/app/modules";

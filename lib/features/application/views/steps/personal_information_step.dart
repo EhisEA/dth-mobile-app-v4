@@ -151,7 +151,7 @@ class _PersonalInformationStepState
         .setPersonal(
           PersonalInformationInput(
             fullName: _nameController.text.trim(),
-            email: _emailController.text.trim(),
+            email: _emailController.text.replaceAll(RegExp(r'\s+'), ''),
             dateOfBirthDisplay: _dobController.text.trim(),
             gender: _gender ?? '',
             phoneNumber: phone,
@@ -234,10 +234,11 @@ class _PersonalInformationStepState
                 controller: _emailController,
                 focusNode: _emailFocus,
                 titleColor: AppColors.black,
-                validator: Validator.email,
+                validator: (v) =>
+                    Validator.email(v.replaceAll(RegExp(r'\s+'), '')),
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                formatter: [FilteringTextInputFormatter.singleLineFormatter],
+                formatter: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
               ),
               Gap.h16,
               Row(

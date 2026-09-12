@@ -7,8 +7,10 @@ import 'package:dth_v4/features/application_dashboard/applicant_dashboard.dart';
 import 'package:dth_v4/features/profile/bank_account/bank_account.dart';
 import 'package:dth_v4/features/profile/logout/logout.dart';
 import 'package:dth_v4/features/profile/profile.dart';
+import 'package:dth_v4/features/profile/profile_view/components/profile_voting_credits_row.dart';
 import 'package:dth_v4/features/profile/profile_view/components/profile_wallet_balance_pill.dart';
-// import 'package:dth_v4/features/profile/profile_view/components/profile_voting_credits_row.dart';
+import 'package:dth_v4/features/profile/profile_view/components/profile_pending_withdrawal_banner.dart';
+import 'package:dth_v4/features/profile/withdrawal/withdrawal.dart';
 import 'package:dth_v4/features/support/support.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -56,11 +58,16 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               modulesPayload?.application == false;
           final showApplicantDashboardTile =
               (user?.eligible ?? false) && !hideApplicantDashboardTile;
-          // Voting credits header chip — kept for possible restore.
-          // final showVotingCredits =
-          //     modulesPayload?.voting == true && user != null;
-          final showWalletBalance =
-              modulesPayload?.leaderboard == true && user != null;
+          // Voting credits header chip.
+          final showVotingCredits =
+              modulesPayload?.voting == true && user != null;
+          final showLeaderboardWallet =
+              modulesPayload?.leaderboard == true &&
+              (user?.leaderboardEligible ?? false);
+          final showWithdrawButton =
+              showLeaderboardWallet && modulesPayload?.withdrawal == true;
+          final showBankAccounts = showLeaderboardWallet;
+          final pendingWithdrawal = user?.pendingWithdrawalRequest;
           final role = user?.participationRole ?? ParticipationRole.user;
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -78,7 +85,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       padding: EdgeInsets.zero,
                       children: [
                         Gap.h10,
-                        if (showWalletBalance)
+                        if (showVotingCredits)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -88,8 +95,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                                 color: AppColors.tertiary60,
                                 letterSpacing: -0.4,
                               ),
-                              // ProfileVotingCreditsRow(user: user),
-                              ProfileWalletBalancePill(user: user),
+                              ProfileVotingCreditsRow(user: user),
                             ],
                           )
                         else
@@ -103,7 +109,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                               letterSpacing: -0.4,
                             ),
                           ),
-                        if (showWalletBalance) Gap.h10,
+                        if (showVotingCredits) Gap.h10,
                         Gap.h32,
                         Center(
                           child: ProfileImageWidget(
@@ -126,6 +132,22 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           fontSize: 12,
                           color: AppColors.tint25.withValues(alpha: 0.8),
                         ),
+                        if (showLeaderboardWallet) ...[
+                          Gap.h16,
+                          Center(
+                            child: ProfileWalletBalancePill(
+                              user: user!,
+                              showWithdraw: showWithdrawButton,
+                              onWithdraw: showWithdrawButton
+                                  ? () {
+                                      unawaited(
+                                        showWithdrawalFlow(context, ref),
+                                      );
+                                    }
+                                  : null,
+                            ),
+                          ),
+                        ],
                         ContestantPill(user: user),
                         if (user?.participationRole == ParticipationRole.user &&
                             appModules.appModules.value?.application ==
@@ -143,6 +165,12 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           ),
                           Gap.h32,
                         ] else ...[
+                          Gap.h22,
+                        ],
+                        if (pendingWithdrawal != null) ...[
+                          ProfilePendingWithdrawalBanner(
+                            request: pendingWithdrawal,
+                          ),
                           Gap.h32,
                         ],
                         AppText.medium(
@@ -178,17 +206,19 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           },
                         ),
                         Gap.h28,
-                        ProfileTlle(
-                          title: "Bank Accounts",
-                          description: "Manage your withdrawal account",
-                          icon: SvgAssets.bankAccount,
-                          onTap: () {
-                            MobileNavigationService.instance.navigateTo(
-                              BankAccountView.path,
-                            );
-                          },
-                        ),
-                        Gap.h32,
+                        if (showBankAccounts) ...[
+                          ProfileTlle(
+                            title: "Bank Accounts",
+                            description: "Manage your withdrawal account",
+                            icon: SvgAssets.bankAccount,
+                            onTap: () {
+                              MobileNavigationService.instance.navigateTo(
+                                BankAccountView.path,
+                              );
+                            },
+                          ),
+                          Gap.h32,
+                        ],
                         AppText.medium(
                           "Support & Legal",
                           fontSize: 12,

@@ -137,6 +137,136 @@ class ProfileRepoImpl implements ProfileRepo {
     final message = root["message"] as String?;
     return ApiResponse(data: message);
   }
+
+  @override
+  Future<ApiResponse<List<BankAccount>>> getBankAccounts() async {
+    final response = await _networkService.get(ApiRoute.profileBankAccounts);
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! List) {
+      return const ApiResponse(data: <BankAccount>[]);
+    }
+    final accounts = data
+        .whereType<Map>()
+        .map((e) => BankAccount.fromJson(Map<String, dynamic>.from(e)))
+        .toList(growable: false);
+    return ApiResponse(data: accounts);
+  }
+
+  @override
+  Future<ApiResponse<List<BankInstitution>>> getBanks({String? search}) async {
+    final response = await _networkService.get(ApiRoute.banks(search: search));
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! List) {
+      return const ApiResponse(data: <BankInstitution>[]);
+    }
+    final banks = data
+        .whereType<Map>()
+        .map((e) => BankInstitution.fromJson(Map<String, dynamic>.from(e)))
+        .toList(growable: false);
+    return ApiResponse(data: banks);
+  }
+
+  @override
+  Future<ApiResponse<String>> resolveBankAccount({
+    required String bankUid,
+    required String accountNumber,
+  }) async {
+    final response = await _networkService.post(
+      ApiRoute.profileBankAccountsResolve,
+      data: {
+        "bank_uid": bankUid,
+        "account_number": accountNumber,
+      },
+    );
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) {
+      return const ApiResponse(data: null);
+    }
+    final name = data["account_name"]?.toString().trim() ?? "";
+    return ApiResponse(data: name.isEmpty ? null : name);
+  }
+
+  @override
+  Future<ApiResponse<BankAccount>> addBankAccount({
+    required String bankUid,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    final response = await _networkService.post(
+      ApiRoute.profileBankAccounts,
+      data: {
+        "bank_uid": bankUid,
+        "account_number": accountNumber,
+        "account_name": accountName,
+      },
+    );
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) {
+      return const ApiResponse(data: null);
+    }
+    return ApiResponse(data: BankAccount.fromJson(data));
+  }
+
+  @override
+  Future<ApiResponse<BankAccountDeleteOtpSession>> requestBankAccountDeleteOtp({
+    required String bankAccountUid,
+  }) async {
+    final response = await _networkService.post(
+      ApiRoute.profileBankAccountDeleteRequestOtp(bankAccountUid),
+    );
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) {
+      return const ApiResponse(data: null);
+    }
+    final session = BankAccountDeleteOtpSession.fromJson(data);
+    if (session.signature.isEmpty) {
+      return const ApiResponse(data: null);
+    }
+    return ApiResponse(data: session);
+  }
+
+  @override
+  Future<ApiResponse<void>> deleteBankAccount({
+    required String bankAccountUid,
+    required String token,
+    required String signature,
+  }) async {
+    await _networkService.delete(
+      ApiRoute.profileBankAccount(bankAccountUid),
+      data: {
+        "token": token,
+        "signature": signature,
+      },
+    );
+    return const ApiResponse();
+  }
+
+  @override
+  Future<ApiResponse<Withdrawal>> createWithdrawal({
+    required num amount,
+    required String bankAccountUid,
+  }) async {
+    final response = await _networkService.post(
+      ApiRoute.profileWithdrawals,
+      data: {
+        "amount": amount,
+        "bank_account_uid": bankAccountUid,
+      },
+    );
+    final root = response.data as Map<String, dynamic>;
+    final data = root["data"];
+    if (data is! Map) {
+      return const ApiResponse(data: null);
+    }
+    return ApiResponse(
+      data: Withdrawal.fromJson(Map<String, dynamic>.from(data)),
+    );
+  }
 }
 
 final profileRepositoryProvider = Provider<ProfileRepo>((ref) {

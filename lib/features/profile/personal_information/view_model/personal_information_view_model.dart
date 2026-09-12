@@ -355,6 +355,11 @@ class PersonalInformationViewModel extends BaseChangeNotifierViewModel {
           votingCredit: current.votingCredit,
           votingCreditBreakdown: current.votingCreditBreakdown,
           walletBalance: updated.walletBalance ?? current.walletBalance,
+          pendingWithdrawalRequest:
+              updated.pendingWithdrawalRequest ??
+              current.pendingWithdrawalRequest,
+          leaderboardEligible: current.leaderboardEligible,
+          withdrawalLimit: updated.withdrawalLimit ?? current.withdrawalLimit,
         );
         _userState.setUser(merged);
         // Reconcile with GET /profile so cached voting_credit isn't wiped.

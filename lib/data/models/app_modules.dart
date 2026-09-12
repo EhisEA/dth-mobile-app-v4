@@ -9,6 +9,7 @@ class AppModulesModel {
     required this.judges,
     required this.subscription,
     required this.leaderboard,
+    required this.withdrawal,
     required this.reel,
     required this.googleLoginEnabled,
     required this.navigation,
@@ -23,6 +24,7 @@ class AppModulesModel {
   final bool judges;
   final bool subscription;
   final bool leaderboard;
+  final bool withdrawal;
   final bool reel;
 
   /// Server-side kill switch for the "Sign in with Google" button. Lets us
@@ -55,6 +57,7 @@ class AppModulesModel {
       judges: json["judges"] == true,
       subscription: json["subscription"] == true,
       leaderboard: json["leaderboard"] == true,
+      withdrawal: json["withdrawal"] == true,
       reel: json["reel"] != false,
       googleLoginEnabled: json["google_login_enabled"] == true,
       navigation: nav,
@@ -71,6 +74,7 @@ class AppModulesModel {
     "judges": judges,
     "subscription": subscription,
     "leaderboard": leaderboard,
+    "withdrawal": withdrawal,
     "reel": reel,
     "google_login_enabled": googleLoginEnabled,
     "navigation": navigation.map((n) => n.toJson()).toList(),

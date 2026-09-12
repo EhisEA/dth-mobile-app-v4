@@ -33,4 +33,34 @@ abstract class ProfileRepo {
     String? deviceName,
     String? fcmToken,
   });
+
+  Future<ApiResponse<List<BankAccount>>> getBankAccounts();
+
+  Future<ApiResponse<List<BankInstitution>>> getBanks({String? search});
+
+  Future<ApiResponse<String>> resolveBankAccount({
+    required String bankUid,
+    required String accountNumber,
+  });
+
+  Future<ApiResponse<BankAccount>> addBankAccount({
+    required String bankUid,
+    required String accountNumber,
+    required String accountName,
+  });
+
+  Future<ApiResponse<BankAccountDeleteOtpSession>> requestBankAccountDeleteOtp({
+    required String bankAccountUid,
+  });
+
+  Future<ApiResponse<void>> deleteBankAccount({
+    required String bankAccountUid,
+    required String token,
+    required String signature,
+  });
+
+  Future<ApiResponse<Withdrawal>> createWithdrawal({
+    required num amount,
+    required String bankAccountUid,
+  });
 }

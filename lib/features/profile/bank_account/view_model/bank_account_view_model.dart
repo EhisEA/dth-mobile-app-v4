@@ -1,13 +1,11 @@
-import "package:dth_v4/core/services/push_notification_service.dart";
 import "package:dth_v4/data/data.dart";
-import "package:dth_v4/data/models/bank_account_model.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class BankAccountViewModel extends BaseChangeNotifierViewModel {
-  BankAccountViewModel(this._profileRepo, this._deviceInfoState)
+  BankAccountViewModel(this._profileRepo, this._bankAccountsState)
     : endTime = ValueNotifier<DateTime>(
         DateTime.now().add(const Duration(seconds: _defaultCooldownSeconds)),
       );
@@ -15,50 +13,111 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
   static const int _defaultCooldownSeconds = 60;
 
   final ProfileRepo _profileRepo;
-  final DeviceInfoState _deviceInfoState;
+  final BankAccountsState _bankAccountsState;
 
   final ValueNotifier<bool> canResend = ValueNotifier<bool>(false);
   final ValueNotifier<DateTime> endTime;
 
-  bool _consentGiven = false;
-  String? _deletionSignature;
+  String? _deleteSignature;
+  String? _pendingDeleteBankAccountUid;
 
-  bool get consentGiven => _consentGiven;
+  bool get hasActiveDeleteRequest =>
+      _deleteSignature != null &&
+      _deleteSignature!.isNotEmpty &&
+      _pendingDeleteBankAccountUid != null &&
+      _pendingDeleteBankAccountUid!.isNotEmpty;
 
-  bool get hasActiveDeletionRequest =>
-      _deletionSignature != null && _deletionSignature!.isNotEmpty;
+  List<BankInstitution> _banks = const [];
+  List<BankInstitution> get banks => _banks;
 
-  List<BankAccount> _bankAccounts = [
-    BankAccount(
-      url: "https://example.com/gtbank.png",
-      bankName: "GTBank",
-      accountNumber: "0123456789",
-      accountName: "John Doe",
-    ),
-    BankAccount(
-      url: "https://example.com/access-bank.png",
-      bankName: "Access Bank",
-      accountNumber: "9876543210",
-      accountName: "John Doe",
-    ),
-  ];
+  bool _banksLoading = false;
+  bool get banksLoading => _banksLoading;
 
-  List<BankAccount> get bankAccounts => _bankAccounts;
+  bool _resolving = false;
+  bool get resolving => _resolving;
 
-  bool get hasBankAccounts => _bankAccounts.isNotEmpty;
+  static const String _listKey = "bankAccountsList";
 
-  void setBankAccounts(List<BankAccount> accounts) {
-    _bankAccounts = accounts;
-    notifyListeners();
+  ViewModelState get listState =>
+      getState(_listKey) ?? const ViewModelState.busy();
+
+  Future<void> loadAccounts() async {
+    try {
+      setState(_listKey, const ViewModelState.busy());
+      await _bankAccountsState.load();
+      setState(_listKey, const ViewModelState.idle());
+    } on ApiFailure catch (e) {
+      setState(_listKey, ViewModelState.error(e));
+    }
   }
 
-  void setConsent(bool value) {
-    if (_consentGiven == value) return;
-    _consentGiven = value;
+  Future<void> loadBanks({String? search}) async {
+    _banksLoading = true;
     notifyListeners();
+    try {
+      final response = await _profileRepo.getBanks(search: search);
+      _banks = response.data ?? const [];
+    } on ApiFailure catch (e) {
+      DthFlushBar.instance.showError(title: "Banks", message: e.message);
+    } finally {
+      _banksLoading = false;
+      notifyListeners();
+    }
   }
 
-  void toggleConsent() => setConsent(!_consentGiven);
+  Future<String?> resolveAccountName({
+    required String bankUid,
+    required String accountNumber,
+  }) async {
+    _resolving = true;
+    notifyListeners();
+    try {
+      final response = await _profileRepo.resolveBankAccount(
+        bankUid: bankUid,
+        accountNumber: accountNumber,
+      );
+      return response.data;
+    } on ApiFailure catch (e) {
+      DthFlushBar.instance.showError(
+        title: "Could not resolve account",
+        message: e.message,
+      );
+      return null;
+    } finally {
+      _resolving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> addBankAccount({
+    required String bankUid,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    if (isBaseBusy) return false;
+    try {
+      changeBaseState(const ViewModelState.busy());
+      await _profileRepo.addBankAccount(
+        bankUid: bankUid,
+        accountNumber: accountNumber,
+        accountName: accountName,
+      );
+      await _bankAccountsState.refresh();
+      changeBaseState(const ViewModelState.idle());
+      DthFlushBar.instance.showSuccess(
+        title: "Bank account",
+        message: "Your bank account was saved.",
+      );
+      return true;
+    } on ApiFailure catch (e) {
+      changeBaseState(ViewModelState.error(e));
+      DthFlushBar.instance.showError(
+        title: "Could not save",
+        message: e.message,
+      );
+      return false;
+    }
+  }
 
   void assignEndTime({int? ttlSeconds}) {
     final seconds = ttlSeconds ?? _defaultCooldownSeconds;
@@ -70,55 +129,41 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
     canResend.value = true;
   }
 
-  void onOtpResentCooldown() {
-    assignEndTime(ttlSeconds: _defaultCooldownSeconds);
-  }
-
-  /// Clears in-memory deletion flow state (e.g. after success or abandoning the flow).
-  void clearDeletionSession() {
-    _deletionSignature = null;
-    _consentGiven = false;
+  void clearDeleteSession() {
+    _deleteSignature = null;
+    _pendingDeleteBankAccountUid = null;
     canResend.value = false;
     assignEndTime(ttlSeconds: _defaultCooldownSeconds);
     notifyListeners();
   }
 
-  /// Call when opening the delete-account intro so a prior abandoned session does not leak.
-  void resetForNewFlow() {
-    _deletionSignature = null;
-    _consentGiven = false;
-    canResend.value = false;
-    assignEndTime(ttlSeconds: _defaultCooldownSeconds);
-    notifyListeners();
+  /// Masks `example@email.com` → `exam**ple@email.com`.
+  static String maskEmailForDisplay(String email) {
+    final trimmed = email.trim();
+    final at = trimmed.indexOf("@");
+    if (at <= 0) return trimmed;
+    final local = trimmed.substring(0, at);
+    final domain = trimmed.substring(at);
+    if (local.length <= 4) {
+      return "${local[0]}***$domain";
+    }
+    final tailLen = local.length >= 7 ? 3 : 2;
+    return "${local.substring(0, 4)}**"
+        "${local.substring(local.length - tailLen)}$domain";
   }
 
-  Future<String?> _optionalDeviceName() async {
-    try {
-      final name = await _deviceInfoState.getDeviceName();
-      final t = name.trim();
-      return t.isEmpty ? null : t;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<bool> requestDeletionOtp() async {
-    if (!_consentGiven) {
-      DthFlushBar.instance.showError(
-        title: "Consent required",
-        message: "Please confirm you understand the conditions above.",
-      );
-      return false;
-    }
+  Future<bool> requestBankAccountDeleteOtp(String bankAccountUid) async {
+    if (isBaseBusy) return false;
+    final uid = bankAccountUid.trim();
+    if (uid.isEmpty) return false;
     try {
       changeBaseState(const ViewModelState.busy());
-      final deviceName = await _optionalDeviceName();
-      final response = await _profileRepo.requestAccountDeletion(
-        deviceName: deviceName,
+      final response = await _profileRepo.requestBankAccountDeleteOtp(
+        bankAccountUid: uid,
       );
       changeBaseState(const ViewModelState.idle());
-      final sig = response.data;
-      if (sig == null || sig.isEmpty) {
+      final session = response.data;
+      if (session == null || session.signature.isEmpty) {
         DthFlushBar.instance.showError(
           title: "Something went wrong",
           message:
@@ -126,94 +171,99 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         );
         return false;
       }
-      _deletionSignature = sig;
+      _pendingDeleteBankAccountUid = uid;
+      _deleteSignature = session.signature;
       assignEndTime();
       notifyListeners();
       return true;
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(
-        message: e.message,
         title: "Could not send code",
+        message: e.message,
       );
       return false;
     }
   }
 
-  Future<void> resendDeletionCode() async {
+  Future<void> resendBankAccountDeleteOtp() async {
     if (isBaseBusy) return;
-    if (!hasActiveDeletionRequest) {
+    final uid = _pendingDeleteBankAccountUid?.trim() ?? "";
+    if (uid.isEmpty) {
       DthFlushBar.instance.showError(
         title: "Resend code",
         message:
-            "Your verification session expired. Go back and request deletion again.",
+            "Your verification session expired. Go back and try deleting again.",
       );
       return;
     }
     try {
       changeBaseState(const ViewModelState.busy());
-      final deviceName = await _optionalDeviceName();
-      final response = await _profileRepo.requestAccountDeletion(
-        deviceName: deviceName,
+      final response = await _profileRepo.requestBankAccountDeleteOtp(
+        bankAccountUid: uid,
       );
       changeBaseState(const ViewModelState.idle());
-      final newSig = response.data;
-      if (newSig != null && newSig.isNotEmpty) {
-        _deletionSignature = newSig;
+      final session = response.data;
+      if (session != null && session.signature.isNotEmpty) {
+        _deleteSignature = session.signature;
+        assignEndTime();
       }
       DthFlushBar.instance.showSuccess(
         title: "Code sent",
         message: "A new verification code has been sent to your email.",
       );
-      onOtpResentCooldown();
       notifyListeners();
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(
-        message: e.message,
         title: "Could not resend",
+        message: e.message,
       );
     }
   }
 
-  static const String _defaultDeletionSuccessMessage =
-      "Account will be deleted in 30 days. Log in to your account to cancel the deletion.";
-
-  /// Returns the server message to show after sign-out, or `null` on failure.
-  Future<String?> confirmDeletion(String token) async {
-    if (isBaseBusy) return null;
-    final sig = _deletionSignature;
-    if (sig == null || sig.isEmpty) {
+  Future<bool> confirmBankAccountDelete(String token) async {
+    if (isBaseBusy) return false;
+    final uid = _pendingDeleteBankAccountUid?.trim() ?? "";
+    final sig = _deleteSignature?.trim() ?? "";
+    final otp = token.trim();
+    if (uid.isEmpty || sig.isEmpty) {
       DthFlushBar.instance.showError(
         title: "Verification",
         message:
             "We could not find an active deletion request. Go back and try again.",
       );
-      return null;
+      return false;
+    }
+    if (otp.length != 6) {
+      DthFlushBar.instance.showError(
+        title: "Verification",
+        message: "Enter the 6-digit code sent to your email.",
+      );
+      return false;
     }
     try {
       changeBaseState(const ViewModelState.busy());
-      final deviceName = await _optionalDeviceName();
-      final fcmToken = await PushNotificationService.getToken();
-      final response = await _profileRepo.confirmAccountDeletion(
-        token: token,
+      await _profileRepo.deleteBankAccount(
+        bankAccountUid: uid,
+        token: otp,
         signature: sig,
-        deviceName: deviceName,
-        fcmToken: fcmToken,
       );
+      await _bankAccountsState.refresh();
+      clearDeleteSession();
       changeBaseState(const ViewModelState.idle());
-      final apiMessage = response.data?.trim();
-      if (apiMessage != null && apiMessage.isNotEmpty) {
-        return apiMessage;
-      }
-      return _defaultDeletionSuccessMessage;
+      DthFlushBar.instance.showSuccess(
+        title: "Bank account",
+        message: "Bank account deleted.",
+      );
+      return true;
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(
+        title: "Could not delete",
         message: e.message,
-        title: "Verification failed",
       );
-      return null;
+      return false;
     }
   }
 
@@ -229,6 +279,6 @@ final bankAccountViewModelProvider =
     ChangeNotifierProvider<BankAccountViewModel>((ref) {
       return BankAccountViewModel(
         ref.read(profileRepositoryProvider),
-        ref.read(deviceInfoStateProvider),
+        ref.read(bankAccountsStateProvider),
       );
     });

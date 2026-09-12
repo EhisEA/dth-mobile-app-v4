@@ -176,6 +176,8 @@ class SvgAssets {
   static const String bankAccount = "$svgPath/profile/bank-account.svg";
   static const String addBankAccount = "$svgPath/profile/add-circle.svg";
   static const String more = "$svgPath/profile/horizontal-more.svg";
+  static const String clock2 = "$svgPath/profile/clock_2.svg";
+  static const String wallet = "$svgPath/profile/wallet.svg";
 
   /////////////////////APPLICATION//////////////////////
   ///

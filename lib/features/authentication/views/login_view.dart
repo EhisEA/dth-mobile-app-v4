@@ -38,8 +38,14 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   Future<void> _onLogin() async {
     FocusScope.of(context).unfocus();
+    final email = _emailController.text.replaceAll(RegExp(r'\s+'), '');
+    if (email != _emailController.text) {
+      _emailController.value = TextEditingValue(
+        text: email,
+        selection: TextSelection.collapsed(offset: email.length),
+      );
+    }
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final email = _emailController.text.trim();
     final model = ref.read(loginViewModelProvider);
     final signature = await model.login(email: email);
     if (signature == null || !mounted) return;
@@ -88,11 +94,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
                         hint: 'example@email.com',
                         controller: _emailController,
                         focusNode: _emailFocus,
-                        validator: Validator.email,
+                        validator: (v) =>
+                            Validator.email(v.replaceAll(RegExp(r'\s+'), '')),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.done,
                         formatter: [
-                          FilteringTextInputFormatter.singleLineFormatter,
+                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
                         ],
                       ),
                       Gap.h28,

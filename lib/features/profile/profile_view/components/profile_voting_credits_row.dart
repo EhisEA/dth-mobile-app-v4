@@ -8,9 +8,6 @@ import "package:flutter_utils/flutter_utils.dart";
 /// Profile top-right credits controls:
 /// - pill tap → available-credits breakdown sheet
 /// - plus tap → top-up sheet (skips breakdown)
-///
-/// Currently unused on profile (wallet balance pill is shown instead).
-/// Keep for easy restore.
 class ProfileVotingCreditsRow extends StatelessWidget {
   const ProfileVotingCreditsRow({super.key, required this.user});
 

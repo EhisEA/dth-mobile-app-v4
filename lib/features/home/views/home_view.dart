@@ -148,6 +148,14 @@ class _HomeViewState extends ConsumerState<HomeView> {
     }
   }
 
+  Future<void> _refreshAppModules() async {
+    try {
+      await ref.read(appModulesStateProvider).fetchModules();
+    } on Object {
+      // Modules refresh is best-effort; keep the last known payload.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appModules = ref.watch(appModulesStateProvider);
@@ -231,7 +239,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           ref.read(sponsorshipsViewModelProvider).load(),
                           ref.read(userStateProvider).getUserDetails(),
                           _refreshActiveLivestream(),
+                          _refreshAppModules(),
                         ]);
+                        if (mounted) setState(() {});
                       },
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (n) {

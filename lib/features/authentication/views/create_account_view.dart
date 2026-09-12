@@ -91,7 +91,13 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       );
       return;
     }
-    final email = _emailController.text.trim();
+    final email = _emailController.text.replaceAll(RegExp(r'\s+'), '');
+    if (email != _emailController.text) {
+      _emailController.value = TextEditingValue(
+        text: email,
+        selection: TextSelection.collapsed(offset: email.length),
+      );
+    }
     final fullName = _nameController.text.trim();
     final phone = composeInternationalPhone(
       country: country,
@@ -210,13 +216,14 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                           hint: 'example@email.com',
                           controller: _emailController,
                           focusNode: _emailFocus,
-                          validator: Validator.email,
+                          validator: (v) =>
+                              Validator.email(v.replaceAll(RegExp(r'\s+'), '')),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           onSubmitted: (_) =>
                               FocusScope.of(context).requestFocus(_phoneFocus),
                           formatter: [
-                            FilteringTextInputFormatter.singleLineFormatter,
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
                           ],
                         ),
                         Gap.h16,

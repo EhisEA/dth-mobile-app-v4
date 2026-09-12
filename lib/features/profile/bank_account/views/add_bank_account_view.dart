@@ -1,9 +1,8 @@
+import "dart:async";
+
 import "package:dth_v4/core/core.dart";
-import "package:dth_v4/features/app_web_view/app_web_view.dart";
 import "package:dth_v4/features/profile/bank_account/view_model/bank_account_view_model.dart";
-import "package:dth_v4/widgets/text/textstyles.dart";
 import "package:dth_v4/widgets/widgets.dart";
-import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -19,198 +18,246 @@ class AddBankAccountView extends ConsumerStatefulWidget {
 }
 
 class _AddBankAccountViewState extends ConsumerState<AddBankAccountView> {
-  late final TapGestureRecognizer _supportPrivacyTap;
+  final _formKey = GlobalKey<FormState>();
+  final _accountNumberController = TextEditingController();
+  final _accountNameController = TextEditingController();
+  final _accountNumberFocus = FocusNode();
+  final _accountNameFocus = FocusNode();
+
+  String? _bankUid;
+  Timer? _resolveDebounce;
+  int _resolveGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    _supportPrivacyTap = TapGestureRecognizer()..onTap = _onSupportPrivacyTap;
+    _accountNumberController.addListener(_onAccountNumberChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(ref.read(bankAccountViewModelProvider).loadBanks());
+    });
   }
 
   @override
   void dispose() {
-    _supportPrivacyTap.dispose();
+    _resolveDebounce?.cancel();
+    _accountNumberController.removeListener(_onAccountNumberChanged);
+    _accountNumberController.dispose();
+    _accountNameController.dispose();
+    _accountNumberFocus.dispose();
+    _accountNameFocus.dispose();
     super.dispose();
   }
 
-  void _onSupportPrivacyTap() {
+  String _digitsOnly(String s) => s.replaceAll(RegExp(r"\D"), "");
+
+  void _onAccountNumberChanged() {
+    _scheduleResolve();
+  }
+
+  void _onBankChanged(String? uid) {
+    setState(() => _bankUid = uid);
+    _accountNameController.clear();
+    _scheduleResolve();
+  }
+
+  void _scheduleResolve() {
+    _resolveDebounce?.cancel();
+    final bankUid = _bankUid?.trim() ?? "";
+    final digits = _digitsOnly(_accountNumberController.text);
+    if (bankUid.isEmpty || digits.length != 10) {
+      if (_accountNameController.text.isNotEmpty) {
+        _accountNameController.clear();
+      }
+      return;
+    }
+    _resolveDebounce = Timer(const Duration(milliseconds: 400), () {
+      unawaited(_resolve(bankUid: bankUid, accountNumber: digits));
+    });
+  }
+
+  Future<void> _resolve({
+    required String bankUid,
+    required String accountNumber,
+  }) async {
+    final gen = ++_resolveGeneration;
+    final name = await ref
+        .read(bankAccountViewModelProvider)
+        .resolveAccountName(bankUid: bankUid, accountNumber: accountNumber);
+    if (!mounted || gen != _resolveGeneration) return;
+    if (name == null || name.isEmpty) {
+      _accountNameController.clear();
+      setState(() {});
+      return;
+    }
+    _accountNameController.text = name;
+    setState(() {});
+  }
+
+  Future<void> _pasteAccountNumber() async {
     HapticFeedback.lightImpact();
-    MobileNavigationService.instance.navigateTo(
-      AppWebView.path,
-      extra: {
-        RoutingArgumentKey.title: "Privacy Policy",
-        RoutingArgumentKey.initialURl: AppLink.privacyPolicy,
-      },
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? "";
+    if (text.isEmpty) return;
+    final digits = _digitsOnly(text);
+    if (digits.isEmpty) return;
+    _accountNumberController.text = digits;
+    _accountNumberController.selection = TextSelection.collapsed(
+      offset: digits.length,
     );
+    setState(() {});
+  }
+
+  Widget _pasteSuffix() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _pasteAccountNumber,
+      child: AppText.medium("PASTE", fontSize: 12, color: AppColors.black),
+    );
+  }
+
+  Future<void> _onSave() async {
+    HapticFeedback.lightImpact();
+    final valid = _formKey.currentState?.validate() ?? false;
+    if (!valid) return;
+    final bankUid = _bankUid?.trim() ?? "";
+    if (bankUid.isEmpty) {
+      DthFlushBar.instance.showError(
+        title: "Bank required",
+        message: "Please select a bank.",
+      );
+      return;
+    }
+    final accountName = _accountNameController.text.trim();
+    if (accountName.isEmpty) {
+      DthFlushBar.instance.showError(
+        title: "Account name",
+        message: "Resolve a valid account number before saving.",
+      );
+      return;
+    }
+
+    final ok = await ref
+        .read(bankAccountViewModelProvider)
+        .addBankAccount(
+          bankUid: bankUid,
+          accountNumber: _digitsOnly(_accountNumberController.text),
+          accountName: accountName,
+        );
+    if (!mounted) return;
+    if (ok) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(bankAccountViewModelProvider);
+    final bankOptions = [
+      for (final bank in vm.banks)
+        AppDropdownOption(value: bank.uid, label: bank.name),
+    ];
 
-    return Scaffold(
-      appBar: DthAppBar(title: ""),
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Gap.h16,
-                    AppText.regular(
-                      "Deleting your account is permanent. We handle your data "
-                      "in line with applicable financial services and data protection regulations.",
-                      fontSize: 13,
-                      height: 1.45,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h24,
-                    AppText.semiBold(
-                      "What you should know:",
-                      fontSize: 12,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h12,
-                    AppText.semiBold(
-                      "1. Deactivation period",
-                      fontSize: 12,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h6,
-                    AppText.regular(
-                      "When you request deletion, your account will be deactivated for 30 days.\n\n"
-                      " •  Do not log in during this period.\n"
-                      " •  If you log in, the deletion request will be canceled.\n\n"
-                      "After 30 days, your account and all related data will be permanently deleted.",
-                      fontSize: 12,
-                      height: 1.45,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h24,
-                    AppText.semiBold(
-                      "2. Data deletion and retention",
-                      fontSize: 12,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h6,
-                    AppText.regular(
-                      " •  Your personal data will be deleted or anonymized, making it no longer identifiable.\n"
-                      " •  Some information (like transaction records) will be retained for a legally required period (typically 5–7 years) to comply with data privacy and financial regulations.",
-                      fontSize: 13,
-                      height: 1.4,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h24,
-                    AppText.semiBold(
-                      "3. Why some data may be kept",
-                      fontSize: 12,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h6,
-                    AppText.regular(
-                      "Data that must be retained will be stripped of personal identifiers and stored solely for:",
-                      fontSize: 12,
-                      height: 1.4,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h6,
-                    AppText.regular(
-                      " •  Audit purposes\n"
-                      " •  Fraud prevention\n"
-                      " •  Regulatory reporting",
-                      fontSize: 12,
-                      height: 1.4,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h24,
-                    AppText.semiBold(
-                      "Need help?",
-                      fontSize: 12,
-                      color: AppColors.mainBlack,
-                    ),
-                    Gap.h8,
-                    Text.rich(
-                      TextSpan(
-                        style: AppTextStyle.regular.copyWith(
-                          fontSize: 13,
-                          color: AppColors.mainBlack,
-                        ),
-                        children: [
-                          const TextSpan(
-                            text:
-                                "If you have questions or would like assistance, please feel free to contact our support team at ",
-                          ),
-                          TextSpan(
-                            text: "support@dth.ng",
-                            style: AppTextStyle.medium.copyWith(
-                              fontSize: 13,
-                              color: AppColors.primary,
-                            ),
-                            recognizer: _supportPrivacyTap,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Gap.h24,
-                    AppText.semiBold(
-                      "Give consent",
-                      fontSize: 12,
-                      color: AppColors.black,
-                    ),
-                    Gap.h8,
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return Loader.page(
+      isLoading: vm.isBaseBusy,
+      child: Scaffold(
+        appBar: const DthAppBar(title: ""),
+        backgroundColor: AppColors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            side: BorderSide(color: const Color(0xffC7C7C7)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            value: vm.consentGiven,
-                            onChanged: (_) => vm.toggleConsent(),
-                            activeColor: AppColors.primary,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
+                        Gap.h8,
+                        AppText.medium(
+                          "Add bank account",
+                          fontSize: 22,
+                          letterSpacing: -0.4,
+                          color: AppColors.tertiary60,
+                          height: 1.3,
                         ),
-                        Gap.w12,
-                        Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: vm.toggleConsent,
-                            child: AppText.regular(
-                              "By proceeding, you confirm that you understand and "
-                              "accept the conditions outlined above.",
-                              fontSize: 12,
-                              height: 1.4,
-                              color: AppColors.black,
-                            ),
+                        Gap.h4,
+                        AppText.regular(
+                          "Enter your bank account details",
+                          fontSize: 14,
+                          color: AppColors.tint25,
+                        ),
+                        Gap.h24,
+                        AppDropdownFormField<String>(
+                          title: "Bank Name",
+                          titleSize: 12,
+                          hint: vm.banksLoading
+                              ? "Loading banks..."
+                              : "Select bank",
+                          options: bankOptions,
+                          search: true,
+                          enabled: !vm.banksLoading && bankOptions.isNotEmpty,
+                          onChanged: _onBankChanged,
+                        ),
+                        Gap.h16,
+                        AppTextField(
+                          title: "Account Number",
+                          hint: "Enter account number",
+                          titleSize: 12,
+                          controller: _accountNumberController,
+                          focusNode: _accountNumberFocus,
+                          titleColor: AppColors.black,
+                          keyboardType: TextInputType.number,
+                          formatter: [FilteringTextInputFormatter.digitsOnly],
+                          textInputAction: TextInputAction.next,
+                          suffixIcon: _pasteSuffix(),
+                          suffixIconConstraints: const BoxConstraints(
+                            minWidth: 46,
+                            minHeight: 24,
                           ),
+                          validator: (v) {
+                            final d = _digitsOnly(v);
+                            if (d.isEmpty) return "This field is required";
+                            if (d.length != 10) {
+                              return "Enter a valid 10-digit account number";
+                            }
+                            return null;
+                          },
+                        ),
+                        Gap.h16,
+                        AppTextField(
+                          title: "Account Name",
+                          hint: vm.resolving
+                              ? "Resolving..."
+                              : "Account name appears after resolve",
+                          controller: _accountNameController,
+                          enabled: false,
+                          titleSize: 12,
+                          readOnly: true,
+                          focusNode: _accountNameFocus,
+                          titleColor: AppColors.black,
+                          textInputAction: TextInputAction.done,
+                          validator: (v) {
+                            if (v.trim().isEmpty) {
+                              return "Resolve a valid account number first";
+                            }
+                            return null;
+                          },
                         ),
                       ],
                     ),
-                    Gap.h24,
-                  ],
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: AppButton.primary(
-                fontSize: 14,
-                text: "Save",
-                isShort: true,
-                press: () {},
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: AppButton.primary(
+                  fontSize: 14,
+                  text: "Save",
+                  isShort: true,
+                  press: _onSave,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

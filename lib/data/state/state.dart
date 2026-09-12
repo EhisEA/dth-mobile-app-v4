@@ -4,3 +4,4 @@ export "app_modules_state.dart";
 export "subscription_state.dart";
 export "events_state.dart";
 export "user_state.dart";
+export "bank_accounts_state.dart";
