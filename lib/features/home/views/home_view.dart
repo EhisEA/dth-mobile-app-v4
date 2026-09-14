@@ -28,8 +28,6 @@ class HomeView extends ConsumerStatefulWidget {
 }
 
 class _HomeViewState extends ConsumerState<HomeView> {
-  bool _joiningLive = false;
-
   @override
   void initState() {
     super.initState();
@@ -59,8 +57,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
     cache.upsert(current.copyWith(shareCount: current.shareCount + 1));
   }
 
-  /// Banner uses cached `GET /livestreams/check`. Tap then calls
-  /// `GET /livestreams` for subscription / access gating.
+  /// Banner uses cached `GET /livestreams/check` (`access_livestream` +
+  /// optional `video_link`). No gated refetch on tap.
   void _onLiveTap() {
     unawaited(_handleLiveTap());
   }
@@ -83,8 +81,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 
   Future<void> _handleLiveTap() async {
-    if (_joiningLive) return;
-
     final checkState = ref.read(activeLivestreamProvider);
 
     if (checkState.isLoading) {
@@ -105,7 +101,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
       return;
     }
 
-    if (checkState.valueOrNull == null) {
+    final check = checkState.valueOrNull;
+    if (check == null) {
       DthFlushBar.instance.showGeneric(
         title: "Live",
         message: "There's no active livestream right now.",
@@ -113,30 +110,12 @@ class _HomeViewState extends ConsumerState<HomeView> {
       return;
     }
 
-    setState(() => _joiningLive = true);
-    try {
-      final stream = await ref.read(livestreamRepositoryProvider).fetchActive();
-      if (!mounted) return;
-      setState(() => _joiningLive = false);
-      _routeForActiveStream(stream);
-    } on ApiFailure catch (e) {
-      if (!mounted) return;
-      setState(() => _joiningLive = false);
-      if (isSubscriptionRequiredFailure(e)) {
-        await showSubscriptionRequiredSheet(context);
-        return;
-      }
-      DthFlushBar.instance.showError(title: "Live", message: e.message);
-    } on Object {
-      if (!mounted) return;
-      setState(() => _joiningLive = false);
-      DthFlushBar.instance.showError(
-        title: "Live",
-        message: "Could not open livestream right now.",
-      );
-    } finally {
-      if (mounted && _joiningLive) setState(() => _joiningLive = false);
+    if (!check.accessLivestream) {
+      await showSubscriptionRequiredSheet(context);
+      return;
     }
+
+    _routeForActiveStream(check.livestream);
   }
 
   Future<void> _refreshActiveLivestream() async {
@@ -262,15 +241,12 @@ class _HomeViewState extends ConsumerState<HomeView> {
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [
-                            // Active-livestream banner. Reads the cached
-                            // active-livestream state (warmed in initState)
-                            // so it renders synchronously off whatever the
-                            // pre-fetch resolved to — no tap-time HTTP.
                             SliverToBoxAdapter(
                               child: () {
                                 final live = ref
                                     .watch(activeLivestreamProvider)
-                                    .valueOrNull;
+                                    .valueOrNull
+                                    ?.livestream;
                                 if (live == null) {
                                   return const SizedBox.shrink();
                                 }
@@ -283,7 +259,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                   ),
                                   child: LivestreamBanner(
                                     stream: live,
-                                    isBusy: _joiningLive,
                                     onTap: _onLiveTap,
                                   ),
                                 );

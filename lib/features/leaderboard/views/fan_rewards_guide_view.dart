@@ -181,7 +181,12 @@ class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    consentNote.isNotEmpty && _isLast ? 16 : 24,
+                  ),
                   child: AppButton.primary(
                     text: ctaLabel,
                     press: () {
@@ -194,24 +199,24 @@ class _FanRewardsGuideViewState extends State<FanRewardsGuideView> {
                     },
                   ),
                 ),
-                if (consentNote.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: AnimatedOpacity(
-                      opacity: _isLast ? 1 : 0,
-                      duration: _pageAnimDuration,
-                      child: AppText.regular(
-                        consentNote,
-                        fontSize: 12,
-                        height: 1.35,
-                        color: AppColors.tint15,
-                        textAlign: TextAlign.center,
-                        multiText: true,
-                      ),
-                    ),
-                  )
-                else
-                  Gap.h16,
+                AnimatedSize(
+                  duration: _pageAnimDuration,
+                  curve: _pageAnimCurve,
+                  alignment: Alignment.topCenter,
+                  child: consentNote.isNotEmpty && _isLast
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                          child: AppText.regular(
+                            consentNote,
+                            fontSize: 12,
+                            height: 1.35,
+                            color: AppColors.tint15,
+                            textAlign: TextAlign.center,
+                            multiText: true,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ],
             ),
           ),

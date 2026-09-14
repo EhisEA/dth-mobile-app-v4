@@ -329,9 +329,12 @@ class _LeaderboardViewState extends ConsumerState<LeaderboardView> {
                                         ),
                                       ),
                                       Gap.h16,
-                                      ...vm.participants.map(
-                                        (e) => LeaderboardParticipantTile(
-                                          entry: e,
+                                      ...vm.participants.asMap().entries.map(
+                                        (entry) => LeaderboardParticipantTile(
+                                          entry: entry.value,
+                                          showDivider:
+                                              entry.key <
+                                              vm.participants.length - 1,
                                         ),
                                       ),
                                     ],
@@ -341,9 +344,10 @@ class _LeaderboardViewState extends ConsumerState<LeaderboardView> {
                                         child: SizedBox(
                                           height: 24,
                                           width: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
+                                          child:
+                                              CircularProgressIndicator.adaptive(
+                                                strokeWidth: 2,
+                                              ),
                                         ),
                                       ),
                                   ],

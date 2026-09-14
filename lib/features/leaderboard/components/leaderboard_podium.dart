@@ -11,15 +11,15 @@ class LeaderboardPodium extends StatelessWidget {
   /// Intrinsic asset sizes — keep relative block sizes / display widths correct.
   static const _w1 = 490.0;
   static const _h1 = 850.0;
-  static const _w2 = 472.0;
-  static const _h2 = 720.0;
+  static const _w2 = 482.0;
+  static const _h2 = 730.0;
   static const _w3 = 476.0;
   static const _h3 = 600.0;
 
   /// Approximate height of avatar + name + points pill.
   static const _personStackHeight = 100.0;
 
-  static const _horizontalPadding = 20.0;
+  static const _horizontalPadding = 16.0;
 
   /// How much 2/3 tuck under 1 when spanning full width.
   static const _overlap = 20.0;
@@ -169,13 +169,13 @@ class LeaderboardPodium extends StatelessWidget {
               ),
               // People above every block so points/names stay visible.
               person(
-                centerX: secondCenterX,
+                centerX: secondCenterX - 4,
                 entry: second,
                 rank: 2,
                 blockHeight: secondBlockHeight,
               ),
               person(
-                centerX: thirdCenterX,
+                centerX: thirdCenterX + 4,
                 entry: third,
                 rank: 3,
                 blockHeight: thirdBlockHeight,

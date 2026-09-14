@@ -252,10 +252,6 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
       await _bankAccountsState.refresh();
       clearDeleteSession();
       changeBaseState(const ViewModelState.idle());
-      DthFlushBar.instance.showSuccess(
-        title: "Bank account",
-        message: "Bank account deleted.",
-      );
       return true;
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));

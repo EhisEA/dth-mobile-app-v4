@@ -1,8 +1,11 @@
 import "package:dth_v4/data/data.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-/// Cached `GET /livestreams/check` for the home banner. Not subscription-gated
-/// — use [LivestreamRepo.fetchActive] on banner tap to enforce access.
+/// Cached `GET /livestreams/check` for the home banner.
+///
+/// Includes [LivestreamCheckResult.accessLivestream] so banner tap can open
+/// the subscribe sheet or navigate with [Livestream.videoLink] without a
+/// second gated `GET /livestreams`.
 ///
 /// Cache invalidation:
 /// - [HomeView.initState] warms it so the banner can render.
@@ -10,6 +13,8 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 ///   stream has ended.
 /// - Callers needing a forced refetch (pull-to-refresh on home, lifecycle
 ///   resume, post-subscribe) can `ref.invalidate(activeLivestreamProvider)`.
-final activeLivestreamProvider = FutureProvider<Livestream?>((ref) async {
+final activeLivestreamProvider = FutureProvider<LivestreamCheckResult?>((
+  ref,
+) async {
   return ref.read(livestreamRepositoryProvider).fetchCheck();
 });

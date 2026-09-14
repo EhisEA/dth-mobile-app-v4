@@ -2,8 +2,9 @@ import "package:dth_v4/data/models/model.dart";
 
 abstract class LivestreamRepo {
   /// Home-banner status (`GET /livestreams/check`). Returns stream metadata
-  /// without a subscription gate so the banner can render for everyone.
-  Future<Livestream?> fetchCheck();
+  /// plus [LivestreamCheckResult.accessLivestream] without requiring a second
+  /// gated call to decide subscribe vs open.
+  Future<LivestreamCheckResult?> fetchCheck();
 
   /// Access-gated active livestream (`GET /livestreams`). May throw
   /// `subscription_required` when the viewer is not subscribed.

@@ -7,14 +7,19 @@ import "package:flutter/material.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class LeaderboardParticipantTile extends StatelessWidget {
-  const LeaderboardParticipantTile({super.key, required this.entry});
+  const LeaderboardParticipantTile({
+    super.key,
+    required this.entry,
+    this.showDivider = true,
+  });
 
   final FanLeaderboardEntry entry;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, showDivider ? 0 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -54,6 +59,15 @@ class LeaderboardParticipantTile extends StatelessWidget {
               ),
             ],
           ),
+          if (showDivider) ...[
+            Gap.h16,
+            Container(
+              height: 0.6,
+              width: double.infinity,
+              color: AppColors.greyTint25,
+            ),
+            Gap.h16,
+          ],
         ],
       ),
     );

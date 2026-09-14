@@ -103,3 +103,19 @@ class Livestream {
     );
   }
 }
+
+/// Payload of `GET /livestreams/check`.
+///
+/// [livestream] is the active stream (or null when none). [accessLivestream]
+/// says whether the viewer may open it; when true, [Livestream.videoLink] is
+/// expected so the detail screen can start without a gated refetch.
+@immutable
+class LivestreamCheckResult {
+  const LivestreamCheckResult({
+    required this.livestream,
+    required this.accessLivestream,
+  });
+
+  final Livestream livestream;
+  final bool accessLivestream;
+}

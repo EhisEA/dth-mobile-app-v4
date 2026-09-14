@@ -8,8 +8,8 @@ import "package:flutter_utils/flutter_utils.dart";
 
 /// Compact home-feed banner for the currently active livestream. Visibility
 /// is gated by the caller — render only when [activeLivestreamProvider]
-/// (`GET /livestreams/check`) has a non-null value. Tapping runs the
-/// access-gated `GET /livestreams` flow via [onTap].
+/// (`GET /livestreams/check`) has a non-null livestream. Tap handling uses
+/// `access_livestream` from that same payload.
 class LivestreamBanner extends StatelessWidget {
   const LivestreamBanner({
     super.key,
