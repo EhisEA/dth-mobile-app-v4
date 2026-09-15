@@ -102,13 +102,6 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         accountNumber: accountNumber,
         accountName: accountName,
       );
-      await _bankAccountsState.refresh();
-      changeBaseState(const ViewModelState.idle());
-      DthFlushBar.instance.showSuccess(
-        title: "Bank account",
-        message: "Your bank account was saved.",
-      );
-      return true;
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(
@@ -116,6 +109,24 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         message: e.message,
       );
       return false;
+    }
+    await _refreshAccountsAfterMutation();
+    changeBaseState(const ViewModelState.idle());
+    DthFlushBar.instance.showSuccess(
+      title: "Bank account",
+      message: "Your bank account was saved.",
+    );
+    return true;
+  }
+
+  /// The mutation already succeeded, so a failed list refresh must not be
+  /// reported as a failed save/delete (retrying could duplicate or reuse a
+  /// spent OTP). The list stays stale until the next load.
+  Future<void> _refreshAccountsAfterMutation() async {
+    try {
+      await _bankAccountsState.refresh();
+    } on Object {
+      // Best-effort; see doc comment.
     }
   }
 
@@ -249,10 +260,6 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         token: otp,
         signature: sig,
       );
-      await _bankAccountsState.refresh();
-      clearDeleteSession();
-      changeBaseState(const ViewModelState.idle());
-      return true;
     } on ApiFailure catch (e) {
       changeBaseState(ViewModelState.error(e));
       DthFlushBar.instance.showError(
@@ -261,6 +268,10 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
       );
       return false;
     }
+    clearDeleteSession();
+    await _refreshAccountsAfterMutation();
+    changeBaseState(const ViewModelState.idle());
+    return true;
   }
 
   @override
