@@ -43,48 +43,60 @@ Future<T?> _showBlurredSheet<T>(
       );
       return Material(
         color: Colors.transparent,
-        child: SizedBox.expand(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Positioned.fill(
-                child: FadeTransition(
-                  opacity: animation,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.of(dialogContext).pop(),
-                    child: ClipRect(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                        child: Container(
-                          color: const Color(
-                            0xff044423,
-                          ).withValues(alpha: 0.12),
+        child: Consumer(
+          builder: (context, ref, _) {
+            // Block backdrop/back dismissal while a withdrawal is submitting:
+            // closing disposes the autoDispose VM mid-request.
+            final busy = ref.watch(withdrawalViewModelProvider).isBaseBusy;
+            return PopScope(
+              canPop: !busy,
+              child: SizedBox.expand(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned.fill(
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: busy
+                              ? null
+                              : () => Navigator.of(dialogContext).pop(),
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                              child: Container(
+                                color: const Color(
+                                  0xff044423,
+                                ).withValues(alpha: 0.12),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-              SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(sheetCurve),
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Material(
-                    color: AppColors.white,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
+                    SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 1),
+                        end: Offset.zero,
+                      ).animate(sheetCurve),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Material(
+                          color: AppColors.white,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(32),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: builder(dialogContext),
+                        ),
+                      ),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: builder(dialogContext),
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       );
     },
