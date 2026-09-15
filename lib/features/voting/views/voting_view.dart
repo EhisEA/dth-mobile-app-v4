@@ -101,7 +101,9 @@ class _VotingViewState extends ConsumerState<VotingView> {
   /// the final CTA. Only runs while this tab is actively ticking (visible).
   Future<void> _maybeShowWelcomeTutorial() async {
     if (_didOfferTutorial || !mounted) return;
-    if (!TickerMode.valuesOf(context).enabled) return;
+    // `valuesOf` needs Flutter 3.35+; keep `of` for older SDKs.
+    // ignore: deprecated_member_use
+    if (!TickerMode.of(context)) return;
     if (_tutorialAlreadySeen) {
       _didOfferTutorial = true;
       return;
@@ -152,7 +154,8 @@ class _VotingViewState extends ConsumerState<VotingView> {
 
     // When the user first switches onto this tab, TickerMode flips on — offer
     // the greeting if splash already warmed week data.
-    if (TickerMode.valuesOf(context).enabled && !_didOfferTutorial) {
+    // ignore: deprecated_member_use
+    if (TickerMode.of(context) && !_didOfferTutorial) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(_maybeShowWelcomeTutorial());
       });

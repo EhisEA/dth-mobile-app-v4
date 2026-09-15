@@ -45,9 +45,12 @@ class WithdrawalViewModel extends BaseChangeNotifierViewModel {
       user?.withdrawalLimit ??
       const WithdrawalLimit(minimum: 1, maximum: 1000000000);
 
+  /// Whole-naira balance; kobo is dropped since withdrawals are whole amounts.
   int get availableAmount {
-    final digits = walletBalance.amount.replaceAll(RegExp(r"\D"), "");
-    return int.tryParse(digits) ?? 0;
+    final numeric = walletBalance.amount.replaceAll(RegExp(r"[^0-9.]"), "");
+    final value = double.tryParse(numeric);
+    if (value == null || value <= 0) return 0;
+    return value.floor();
   }
 
   int get minWithdrawAmount => withdrawalLimit.minimum;
