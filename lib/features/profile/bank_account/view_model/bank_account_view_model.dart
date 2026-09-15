@@ -102,11 +102,12 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         accountNumber: accountNumber,
         accountName: accountName,
       );
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not save",
-        message: e.message,
+        message: failure.message,
       );
       return false;
     }
@@ -187,11 +188,12 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
       assignEndTime();
       notifyListeners();
       return true;
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not send code",
-        message: e.message,
+        message: failure.message,
       );
       return false;
     }
@@ -224,11 +226,12 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         message: "A new verification code has been sent to your email.",
       );
       notifyListeners();
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not resend",
-        message: e.message,
+        message: failure.message,
       );
     }
   }
@@ -260,11 +263,12 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         token: otp,
         signature: sig,
       );
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not delete",
-        message: e.message,
+        message: failure.message,
       );
       return false;
     }
@@ -272,6 +276,14 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
     await _refreshAccountsAfterMutation();
     changeBaseState(const ViewModelState.idle());
     return true;
+  }
+
+  /// Maps any thrown error to a [Failure] so an unexpected exception (e.g. a
+  /// malformed 2xx body) can't leave the VM stuck in the busy state.
+  Failure _toFailure(Object error, StackTrace stackTrace) {
+    if (error is Failure) return error;
+    logger.e("Unexpected error", error: error, stackTrace: stackTrace);
+    return ApiFailure("Something went wrong. Please try again.");
   }
 
   @override

@@ -108,13 +108,13 @@ class WithdrawalViewModel extends BaseChangeNotifierViewModel {
     _banksLoading = false;
     _banksError = null;
     changeBaseState(const ViewModelState.idle());
-    notifyListeners();
+    _notifySafely();
   }
 
   Future<void> loadBankAccounts() async {
     _banksLoading = true;
     _banksError = null;
-    notifyListeners();
+    _notifySafely();
     try {
       await _bankAccountsState.load();
       final accounts = bankAccounts;
@@ -137,7 +137,7 @@ class WithdrawalViewModel extends BaseChangeNotifierViewModel {
       _banksError = "Could not load bank accounts. Please try again.";
     } finally {
       _banksLoading = false;
-      notifyListeners();
+      _notifySafely();
     }
   }
 
@@ -145,7 +145,7 @@ class WithdrawalViewModel extends BaseChangeNotifierViewModel {
     final digits = raw.replaceAll(RegExp(r"\D"), "");
     if (digits.isEmpty) {
       _amount = 0;
-      notifyListeners();
+      _notifySafely();
       return;
     }
     var value = int.tryParse(digits) ?? 0;
@@ -154,19 +154,19 @@ class WithdrawalViewModel extends BaseChangeNotifierViewModel {
       value = maxAllowed;
     }
     _amount = value;
-    notifyListeners();
+    _notifySafely();
   }
 
   void setMaxAmount() {
     _amount = maxWithdrawableAmount;
-    notifyListeners();
+    _notifySafely();
   }
 
   void selectBankAccount(String uid) {
     final trimmed = uid.trim();
     if (trimmed.isEmpty || trimmed == _selectedBankAccountUid) return;
     _selectedBankAccountUid = trimmed;
-    notifyListeners();
+    _notifySafely();
   }
 
   Future<Withdrawal?> submit() async {
@@ -195,14 +195,29 @@ class WithdrawalViewModel extends BaseChangeNotifierViewModel {
       }
       changeBaseState(const ViewModelState.idle());
       return withdrawal;
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not withdraw",
-        message: e.message,
+        message: failure.message,
       );
       return null;
     }
+  }
+
+  /// Maps any thrown error to a [Failure] so an unexpected exception (e.g. a
+  /// malformed 2xx body) can't leave the VM stuck in the busy state.
+  Failure _toFailure(Object error, StackTrace stackTrace) {
+    if (error is Failure) return error;
+    logger.e("Unexpected error", error: error, stackTrace: stackTrace);
+    return ApiFailure("Something went wrong. Please try again.");
+  }
+
+  /// This VM is autoDispose: the sheet can close while an async load is still
+  /// running, so guard notifications against a disposed notifier.
+  void _notifySafely() {
+    if (!isDisposed) notifyListeners();
   }
 }
 

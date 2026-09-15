@@ -848,30 +848,31 @@ class _BankSelectCard extends StatelessWidget {
               ],
             ),
           ),
-          Positioned(
-            top: 13,
-            right: 13,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: const Color(0xffE5FBF0),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xffCCF7E1)),
-              ),
+          if (selected)
+            Positioned(
+              top: 13,
+              right: 13,
               child: Container(
-                padding: const EdgeInsets.all(0.5),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: const Color(0xffE5FBF0),
                   shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xffCCF7E1)),
                 ),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  size: 16,
-                  color: AppColors.primary,
+                child: Container(
+                  padding: const EdgeInsets.all(0.5),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

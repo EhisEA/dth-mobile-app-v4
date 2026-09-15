@@ -64,6 +64,51 @@ class AppModulesModel {
     );
   }
 
+  // Value equality lets the `appModules` ValueNotifier skip notifying (and
+  // rebuilding the whole bottom nav) when a refresh returns the same payload.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppModulesModel &&
+          application == other.application &&
+          livestream == other.livestream &&
+          timeline == other.timeline &&
+          ticket == other.ticket &&
+          voting == other.voting &&
+          poll == other.poll &&
+          judges == other.judges &&
+          subscription == other.subscription &&
+          leaderboard == other.leaderboard &&
+          withdrawal == other.withdrawal &&
+          reel == other.reel &&
+          googleLoginEnabled == other.googleLoginEnabled &&
+          _listEquals(navigation, other.navigation);
+
+  @override
+  int get hashCode => Object.hash(
+    application,
+    livestream,
+    timeline,
+    ticket,
+    voting,
+    poll,
+    judges,
+    subscription,
+    leaderboard,
+    withdrawal,
+    reel,
+    googleLoginEnabled,
+    Object.hashAll(navigation),
+  );
+
+  static bool _listEquals(List<AppModuleNavItem> a, List<AppModuleNavItem> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   Map<String, dynamic> toJson() => {
     "application": application,
     "livestream": livestream,
@@ -97,4 +142,12 @@ class AppModuleNavItem {
   }
 
   Map<String, dynamic> toJson() => {"name": name, "label": label};
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppModuleNavItem && name == other.name && label == other.label;
+
+  @override
+  int get hashCode => Object.hash(name, label);
 }
