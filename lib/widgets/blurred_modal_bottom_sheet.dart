@@ -15,6 +15,13 @@ Future<T?> showBlurredModalBottomSheet<T>({
   bool useSafeArea = true,
   bool enableDrag = true,
   bool? isCentered,
+
+  /// Outer inset around the white sheet (e.g. floating product detail).
+  EdgeInsetsGeometry? margin,
+
+  /// Corners of the white sheet. Defaults to top-only 24, or full 28 when
+  /// [margin] is set and this is omitted.
+  BorderRadiusGeometry? borderRadius,
   RouteSettings? routeSettings,
   AnimationController? transitionAnimationController,
   AnimationStyle? sheetAnimationStyle,
@@ -37,6 +44,8 @@ Future<T?> showBlurredModalBottomSheet<T>({
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
       isCentered: isCentered == true,
+      margin: margin,
+      borderRadius: borderRadius,
       child: builder(modalContext),
     ),
   );
@@ -48,24 +57,36 @@ class _BlurredBottomSheetFrame extends StatelessWidget {
     required this.useSafeArea,
     required this.isDismissible,
     this.isCentered = false,
+    this.margin,
+    this.borderRadius,
   });
 
   final Widget child;
   final bool useSafeArea;
   final bool isDismissible;
   final bool isCentered;
+  final EdgeInsetsGeometry? margin;
+  final BorderRadiusGeometry? borderRadius;
 
   static final ImageFilter _blur = ImageFilter.blur(sigmaX: 12, sigmaY: 12);
 
+  BorderRadiusGeometry? get _resolvedRadius {
+    if (isCentered) return null;
+    if (borderRadius != null) return borderRadius;
+    if (margin != null) return BorderRadius.circular(28);
+    return const BorderRadius.vertical(top: Radius.circular(24));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final routeAnimation = ModalRoute.of(context)?.animation;
+    final hasMargin = margin != null;
+
     final sheet = Material(
       color: isCentered ? Colors.transparent : AppColors.white,
       elevation: isCentered ? 0 : 8,
       shadowColor: isCentered ? Colors.transparent : Colors.black26,
-      borderRadius: isCentered
-          ? null
-          : const BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: _resolvedRadius,
       clipBehavior: isCentered ? Clip.none : Clip.antiAlias,
       child: child,
     );
@@ -77,27 +98,45 @@ class _BlurredBottomSheetFrame extends StatelessWidget {
       sheetSlot = useSafeArea ? SafeArea(top: false, child: sheet) : sheet;
     }
 
-    final alignedSheet = isCentered
+    Widget alignedSheet = isCentered
         ? Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: sheetSlot,
           )
+        : hasMargin
+        ? Padding(padding: margin!, child: sheetSlot)
         : sheetSlot;
+
+    if (routeAnimation != null && isCentered) {
+      alignedSheet = FadeTransition(
+        opacity: CurvedAnimation(parent: routeAnimation, curve: Curves.easeOut),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.96, end: 1).animate(
+            CurvedAnimation(parent: routeAnimation, curve: Curves.easeOutCubic),
+          ),
+          child: alignedSheet,
+        ),
+      );
+    }
+
+    final scrim = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: isDismissible ? () => Navigator.maybePop(context) : null,
+      child: BackdropFilter(
+        filter: _blur,
+        child: ColoredBox(
+          color: const Color(0xff044423).withValues(alpha: 0.12),
+        ),
+      ),
+    );
 
     return Stack(
       fit: StackFit.expand,
       children: [
         Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: isDismissible ? () => Navigator.maybePop(context) : null,
-            child: BackdropFilter(
-              filter: _blur,
-              child: ColoredBox(
-                color: Color(0xfF044423).withValues(alpha: 0.12),
-              ),
-            ),
-          ),
+          child: routeAnimation == null
+              ? scrim
+              : FadeTransition(opacity: routeAnimation, child: scrim),
         ),
         Align(
           alignment: isCentered ? Alignment.center : Alignment.bottomCenter,

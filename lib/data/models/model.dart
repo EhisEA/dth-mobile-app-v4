@@ -36,3 +36,5 @@ export "available_ticket_model.dart";
 export "bank_account_model.dart";
 export "withdrawal_model.dart";
 export "ticket_purchase_line_model.dart";
+export "store/store.dart";
+export "orders/orders.dart";

@@ -20,3 +20,5 @@ export "tickets/tickets.dart";
 export "support/support.dart";
 export "notifications/notifications.dart";
 export "shares/shares.dart";
+export "store/store.dart";
+export "orders/orders.dart";

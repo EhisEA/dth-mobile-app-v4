@@ -129,7 +129,13 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
   Future<void> _refreshAppModules() async {
     try {
-      await ref.read(appModulesStateProvider).fetchModules();
+      final modulesState = ref.read(appModulesStateProvider);
+      await modulesState.fetchModules();
+      unawaited(
+        ref
+            .read(storeStateProvider)
+            .prefetchFromModules(modulesState.appModules.value),
+      );
     } on Object {
       // Modules refresh is best-effort; keep the last known payload.
     }

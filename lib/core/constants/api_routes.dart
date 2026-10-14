@@ -81,6 +81,39 @@ class ApiRoute {
   ///MODULES
   static String get mobileAppModules => "$baseUrl/mobile/app/modules";
 
+  /// STORES — `{store}` is `event` or `merch`.
+  static String store(String store) => "$baseUrl/stores/$store";
+  static String storeCategories(String store) =>
+      "$baseUrl/stores/$store/categories";
+  static String storeProducts(String store) =>
+      "$baseUrl/stores/$store/products";
+  static String storeProduct(String store, String productId) =>
+      "$baseUrl/stores/$store/products/$productId";
+
+  /// STORE CART — note singular `store` (not `stores`).
+  static String get storeCart => "$baseUrl/store/cart";
+  static String get storeCartItems => "$baseUrl/store/cart/items";
+  static String storeCartItem(String itemUid) =>
+      "$baseUrl/store/cart/items/$itemUid";
+
+  /// STORE ORDERS — paid orders across stores (optional `store` filter).
+  static String get storeOrders => "$baseUrl/store/orders";
+  static String storeOrder(String orderUid) =>
+      "$baseUrl/store/orders/${orderUid.trim()}";
+  static String storeOrderReorder(String orderUid) =>
+      "$baseUrl/store/orders/${orderUid.trim()}/reorder";
+
+  /// STORE CHECKOUT — `{store}` is `event` or `merch`.
+  static String storeCheckoutQuote(String store) =>
+      "$baseUrl/stores/$store/checkout/quote";
+  static String storeCheckout(String store) =>
+      "$baseUrl/stores/$store/checkout";
+
+  /// ADDRESSES
+  static String get addresses => "$baseUrl/addresses";
+  static String address(String addressUid) =>
+      "$baseUrl/addresses/${addressUid.trim()}";
+
   ///TIMELINE
   static String get timeline => "$baseUrl/timeline-posts";
   static String get timelinePinnedPosts => "$baseUrl/timeline-posts/pinned";

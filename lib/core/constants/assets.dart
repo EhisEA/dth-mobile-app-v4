@@ -29,6 +29,24 @@ class ImageAssets {
   static const String notificationsEmptyState =
       "$imagePath/empty_state/notifications_empty_state.png";
 
+  /////////////////////STORE//////////////////////
+  static const String storeEmptyState =
+      "$imagePath/empty_state/store_empty_state.png";
+  static const String storePromo = "$imagePath/stores/promo.png";
+  static const String storePaymentSummaryBg =
+      "$imagePath/stores/payment_summary_bg.png";
+  static const String storePaymentSuccessBg =
+      "$imagePath/stores/payment_success_bg.png";
+  static const String storePaymentFailedBg =
+      "$imagePath/stores/payment_failed_bg.png";
+  static const String storePaymentFailedIcon =
+      "$imagePath/stores/payment_failed_icon.png";
+
+  /////////////////////ORDERS//////////////////////
+  static const String ordersGroup1 = "$imagePath/orders/group_1.png";
+  static const String ordersDeliveringToMap =
+      "$imagePath/orders/delivering_to_map.png";
+
   /////////////////////AUTH//////////////////////
   ///
   static const String authBg1 = "$imagePath/auth/1.png";
@@ -219,6 +237,19 @@ class SvgAssets {
   static const String voteChoose = "$svgPath/voting/choose.svg";
   static const String voteCast = "$svgPath/voting/cast.svg";
   static const String confetti = "$svgPath/voting/confetti.svg";
+
+  /////////////////////STORE//////////////////////
+  ///
+  static const String storefront = "$svgPath/stores/storefront.svg";
+  static const String shoppingBag = "$svgPath/stores/shopping_bag.svg";
+  static const String orderApprove = "$svgPath/stores/order_approve.svg";
+  static const String deliveryTruck = "$svgPath/stores/delivery_truck.svg";
+  static const String storeFire = "$svgPath/stores/fire.svg";
+
+  /////////////////////ORDERS//////////////////////
+  ///
+  static const String phTimer = "$svgPath/orders/ph_timer.svg";
+  static const String proiconsBox = "$svgPath/orders/proicons_box.svg";
 }
 
 class LottieAssets {

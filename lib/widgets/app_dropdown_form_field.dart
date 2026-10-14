@@ -610,7 +610,7 @@ class _SearchableDropdownSheetState<T>
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                     child: TextField(
                       controller: _searchController,
                       textInputAction: TextInputAction.search,
@@ -624,15 +624,15 @@ class _SearchableDropdownSheetState<T>
                         hintText: "Search list",
                         prefixIconConstraints: const BoxConstraints(
                           minWidth: 40,
-                          minHeight: 20,
-                          maxHeight: 20,
+                          minHeight: 24,
+                          maxHeight: 24,
                         ),
                         prefixIcon: Padding(
                           padding: const EdgeInsets.only(left: 12),
                           child: SvgPicture.asset(
                             SvgAssets.search,
-                            height: 12,
-                            width: 12,
+                            height: 14,
+                            width: 14,
                             colorFilter: ColorFilter.mode(
                               Color(0xffB5B5B5),
                               BlendMode.srcIn,
@@ -665,7 +665,7 @@ class _SearchableDropdownSheetState<T>
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 4,
-                          vertical: 10,
+                          vertical: 14,
                         ),
                       ),
                     ),

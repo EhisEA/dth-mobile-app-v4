@@ -12,11 +12,13 @@ import "package:flutter_utils/flutter_utils.dart";
 class SplashViewModel extends BaseChangeNotifierViewModel {
   final LocalCache _localCache;
   final AppModulesState _appModulesState;
+  final StoreState _storeState;
   final SponsorshipsViewModel _sponsorshipsViewModel;
   final VotingViewModel _votingViewModel;
   SplashViewModel(
     this._localCache,
     this._appModulesState,
+    this._storeState,
     this._sponsorshipsViewModel,
     this._votingViewModel,
   );
@@ -55,6 +57,12 @@ class SplashViewModel extends BaseChangeNotifierViewModel {
     try {
       await _appModulesState.fetchModules();
       _log.d("[app modules] ${_appModulesState.appModules.value?.toJson()}");
+      // Warm merch/event store payloads so header → catalog skips loading.
+      unawaited(
+        _storeState.prefetchFromModules(
+          _appModulesState.appModules.value,
+        ),
+      );
     } on ApiFailure catch (e) {
       _log.d("[app modules] fetch failed: ${e.message}");
     }

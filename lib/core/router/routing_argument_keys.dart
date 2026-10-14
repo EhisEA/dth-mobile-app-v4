@@ -90,6 +90,18 @@ class RoutingArgumentKey {
   /// [FanRewardsGuideView] — [FanLeaderboardGuide] from the leaderboard API.
   static const String fanRewardsGuide = "fanRewardsGuide";
 
+  /// [StoreCartView] — `StoreKind.name` (`merch` | `liveEvent`).
+  static const String storeCartKind = "storeCartKind";
+
+  /// [StoreCheckoutView] — `StoreKind.name` (`merch` | `liveEvent`).
+  static const String storeCheckoutKind = "storeCheckoutKind";
+
+  /// [StoreShippingAddressView] — existing address uid for PUT update.
+  static const String storeAddressUid = "storeAddressUid";
+
+  /// [StorePaymentResultView] — `bool` payment outcome.
+  static const String storePaymentSuccess = "storePaymentSuccess";
+
   static const String form = "form";
 }
 

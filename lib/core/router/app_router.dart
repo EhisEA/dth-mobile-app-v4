@@ -28,6 +28,8 @@ import 'package:dth_v4/features/subscription/subscription.dart';
 import 'package:dth_v4/features/tickets/tickets.dart';
 import 'package:dth_v4/features/voting/views/about_contestant_view.dart';
 import 'package:dth_v4/features/leaderboard/leaderboard.dart';
+import 'package:dth_v4/features/orders/orders.dart';
+import 'package:dth_v4/features/store/store.dart';
 import 'package:flutter/material.dart';
 
 class AppRouter {
@@ -322,6 +324,61 @@ class AppRouter {
                   tabs: [],
                 ),
           ),
+        );
+
+      ////////////////STORE////////////////////
+      case ShoppingComplexView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const ShoppingComplexView(),
+        );
+      case LiveEventStoresView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const LiveEventStoresView(),
+        );
+      case StoreCartView.path:
+        final cartKindName =
+            routeArgs[RoutingArgumentKey.storeCartKind] as String? ??
+            StoreKind.merch.name;
+        final cartKind = StoreKind.values.firstWhere(
+          (k) => k.name == cartKindName,
+          orElse: () => StoreKind.merch,
+        );
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: StoreCartView(kind: cartKind),
+        );
+      case StoreCheckoutView.path:
+        final kindName =
+            routeArgs[RoutingArgumentKey.storeCheckoutKind] as String? ??
+            StoreKind.merch.name;
+        final kind = StoreKind.values.firstWhere(
+          (k) => k.name == kindName,
+          orElse: () => StoreKind.merch,
+        );
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: StoreCheckoutView(kind: kind),
+        );
+      case StoreShippingAddressView.path:
+        final addressUid =
+            routeArgs[RoutingArgumentKey.storeAddressUid] as String?;
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: StoreShippingAddressView(addressUid: addressUid),
+        );
+      case StorePaymentResultView.path:
+        final isSuccess =
+            routeArgs[RoutingArgumentKey.storePaymentSuccess] as bool? ?? true;
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: StorePaymentResultView(isSuccess: isSuccess),
+        );
+      case MyOrdersView.path:
+        return _getPageRoute(
+          settings: settings,
+          viewToShow: const MyOrdersView(),
         );
 
       default:

@@ -11,6 +11,7 @@ import 'package:dth_v4/features/profile/profile_view/components/profile_voting_c
 import 'package:dth_v4/features/profile/profile_view/components/profile_wallet_balance_pill.dart';
 import 'package:dth_v4/features/profile/profile_view/components/profile_pending_withdrawal_banner.dart';
 import 'package:dth_v4/features/profile/withdrawal/withdrawal.dart';
+import 'package:dth_v4/features/orders/orders.dart';
 import 'package:dth_v4/features/support/support.dart';
 import 'package:dth_v4/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -197,6 +198,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           title: "Personal Information",
                           description: "Update your profile information",
                           icon: SvgAssets.personal,
+                          color: const Color(0xff284FEB),
                           showRightArrow: false,
                           onTap: () {
                             if (user == null) return;
@@ -206,9 +208,12 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           },
                         ),
                         Gap.h28,
+
                         if (showBankAccounts) ...[
                           ProfileTlle(
                             title: "Bank Accounts",
+                            color: const Color(0xff00AD55),
+
                             description: "Manage your withdrawal account",
                             icon: SvgAssets.bankAccount,
                             onTap: () {
@@ -218,6 +223,18 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                             },
                           ),
                           Gap.h32,
+                        ],
+                        if (modulesPayload?.anyStoreEnabled == true) ...[
+                          ProfileTlle(
+                            title: "My Orders",
+                            description: "Keep track of your purchases",
+                            icon: SvgAssets.orderApprove,
+                            color: const Color(0xff17AA89),
+                            onTap: () {
+                              _navigationService.navigateTo(MyOrdersView.path);
+                            },
+                          ),
+                          Gap.h28,
                         ],
                         AppText.medium(
                           "Support & Legal",
@@ -230,6 +247,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           description:
                               "Review the guidelines for using this platform",
                           icon: SvgAssets.terms,
+                          color: const Color(0xffFF22C2),
                           onTap: () {
                             _navigationService.navigateTo(
                               AppWebView.path,
@@ -246,6 +264,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           title: "Privacy Policy",
                           description: "See how your data is handled",
                           icon: SvgAssets.privacy,
+                          color: const Color(0xff57688E),
                           onTap: () {
                             _navigationService.navigateTo(
                               AppWebView.path,
@@ -267,9 +286,24 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         // ),
                         Gap.h28,
                         ProfileTlle(
+                          title: "Contact Support",
+                          description: "Get help from our support team",
+                          color: const Color(0xffF09035),
+                          icon: SvgAssets.profileSupport,
+                          onTap: () {
+                            unawaited(
+                              ref
+                                  .read(supportSessionViewModelProvider)
+                                  .requestSupportWebSession(),
+                            );
+                          },
+                        ),
+                        Gap.h32,
+                        ProfileTlle(
                           title: "Learn More",
                           description: "Discover more about De9jaTalenthunt",
                           icon: SvgAssets.learn,
+                          color: const Color(0xff202020),
                           onTap: () {
                             MobileNavigationService.instance.navigateTo(
                               AppWebView.path,
@@ -282,19 +316,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           },
                         ),
                         Gap.h28,
-                        ProfileTlle(
-                          title: "Contact Support",
-                          description: "Get help from our support team",
-                          icon: SvgAssets.profileSupport,
-                          onTap: () {
-                            unawaited(
-                              ref
-                                  .read(supportSessionViewModelProvider)
-                                  .requestSupportWebSession(),
-                            );
-                          },
-                        ),
-                        Gap.h32,
                         AppText.medium(
                           "Account Actions",
                           fontSize: 12,

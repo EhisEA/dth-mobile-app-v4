@@ -15,6 +15,7 @@ class ProfileTlle extends StatelessWidget {
     this.isRed = false,
     this.showRightArrow = true,
     this.widget,
+    this.color,
   });
   final String title;
   final String description;
@@ -23,6 +24,7 @@ class ProfileTlle extends StatelessWidget {
   final bool isRed;
   final bool showRightArrow;
   final Widget? widget;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +38,9 @@ class ProfileTlle extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 19,
-            backgroundColor: isRed ? AppColors.redTint35 : AppColors.dthBlue,
+            backgroundColor: isRed
+                ? AppColors.redTint35
+                : (color ?? AppColors.dthBlue),
             child: SvgPicture.asset(icon),
           ),
           Gap.w14,

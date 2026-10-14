@@ -73,7 +73,7 @@ class ContestantDashboardTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 19,
-            backgroundColor: AppColors.dthBlue,
+            backgroundColor: const Color(0xffF09035),
             child: SvgPicture.asset(SvgAssets.cup),
           ),
           Gap.w14,

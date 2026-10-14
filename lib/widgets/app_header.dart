@@ -2,6 +2,7 @@ import 'package:dth_v4/core/core.dart';
 import 'package:dth_v4/data/data.dart';
 import 'package:dth_v4/features/leaderboard/leaderboard.dart';
 import 'package:dth_v4/features/notifications/notifications.dart';
+import 'package:dth_v4/features/store/store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,7 @@ class AppHeader extends ConsumerWidget {
             final showLeaderboard =
                 modules?.leaderboard == true &&
                 (user?.leaderboardEligible ?? false);
+            final showStore = modules?.anyStoreEnabled == true;
 
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -35,6 +37,30 @@ class AppHeader extends ConsumerWidget {
                 Image.asset(ImageAssets.logo2, height: 36, width: 110),
                 Row(
                   children: [
+                    if (showStore) ...[
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          // Prefer merch; if only event store is on, open that.
+                          if (modules?.merchStore == true) {
+                            navigationService.navigateTo(
+                              ShoppingComplexView.path,
+                            );
+                          } else {
+                            navigationService.navigateTo(
+                              LiveEventStoresView.path,
+                            );
+                          }
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: SvgPicture.asset(
+                          SvgAssets.storefront,
+                          width: 22,
+                          height: 22,
+                        ),
+                      ),
+                      Gap.w16,
+                    ],
                     if (showLeaderboard) ...[
                       GestureDetector(
                         onTap: () {

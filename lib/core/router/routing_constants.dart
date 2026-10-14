@@ -74,4 +74,14 @@ class NavigatorRoutes {
   ////////////////LIVESTREAM////////////////////
   ///
   static const String livestream = "/livestream";
+
+  ////////////////STORE////////////////////
+  ///
+  static const String shoppingComplex = "/shopping-complex";
+  static const String liveEventStores = "/live-event-stores";
+  static const String storeCart = "/store-cart";
+  static const String storeCheckout = "/store-checkout";
+  static const String storeShippingAddress = "/store-shipping-address";
+  static const String storePaymentResult = "/store-payment-result";
+  static const String myOrders = "/my-orders";
 }

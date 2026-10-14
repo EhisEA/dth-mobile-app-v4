@@ -14,6 +14,7 @@ final _splashViewModel = ChangeNotifierProvider.autoDispose<SplashViewModel>((
   return SplashViewModel(
     ref.read(localCacheProvider),
     ref.read(appModulesStateProvider),
+    ref.read(storeStateProvider),
     ref.read(sponsorshipsViewModelProvider),
     ref.read(votingViewModelProvider),
   );

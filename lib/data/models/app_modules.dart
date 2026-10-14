@@ -11,6 +11,8 @@ class AppModulesModel {
     required this.leaderboard,
     required this.withdrawal,
     required this.reel,
+    required this.eventStore,
+    required this.merchStore,
     required this.googleLoginEnabled,
     required this.navigation,
   });
@@ -26,6 +28,8 @@ class AppModulesModel {
   final bool leaderboard;
   final bool withdrawal;
   final bool reel;
+  final bool eventStore;
+  final bool merchStore;
 
   /// Server-side kill switch for the "Sign in with Google" button. Lets us
   /// hide the OAuth path without shipping a new build (e.g. while Apple
@@ -35,6 +39,9 @@ class AppModulesModel {
   // Ordered list of tabs to render in the bottom nav. Driving this from
   // the server means we can ship/hide tabs without releasing a new build.
   final List<AppModuleNavItem> navigation;
+
+  /// True when either storefront module is enabled.
+  bool get anyStoreEnabled => eventStore || merchStore;
 
   factory AppModulesModel.fromJson(Map<String, dynamic> json) {
     final navRaw = json["navigation"];
@@ -59,6 +66,8 @@ class AppModulesModel {
       leaderboard: json["leaderboard"] == true,
       withdrawal: json["withdrawal"] == true,
       reel: json["reel"] != false,
+      eventStore: json["event_store"] == true,
+      merchStore: json["merch_store"] == true,
       googleLoginEnabled: json["google_login_enabled"] == true,
       navigation: nav,
     );
@@ -76,6 +85,8 @@ class AppModulesModel {
     "leaderboard": leaderboard,
     "withdrawal": withdrawal,
     "reel": reel,
+    "event_store": eventStore,
+    "merch_store": merchStore,
     "google_login_enabled": googleLoginEnabled,
     "navigation": navigation.map((n) => n.toJson()).toList(),
   };
