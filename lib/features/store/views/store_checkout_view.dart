@@ -84,7 +84,7 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
       final sizeLabel = storeSizeFullLabel(item.variant.size);
       final colorName = item.variant.color?.name.trim() ?? "";
       final parts = [
-        if (sizeLabel.isNotEmpty) sizeLabel,
+        if (sizeLabel.isNotEmpty) "Size: $sizeLabel",
         if (colorName.isNotEmpty) colorName,
       ];
       if (parts.isNotEmpty) return parts.join(" · ");
@@ -155,399 +155,410 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
               child: busy
                   ? const Center(child: CircularProgressIndicator.adaptive())
                   : ListView(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: AppText.medium(
-                          "Your Cart",
-                          fontSize: 16,
-                          color: AppColors.mainBlack,
-                        ),
-                      ),
-                      Gap.h16,
-                      if (items.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: AppText.regular(
-                            "No selected items to checkout.",
-                            fontSize: 14,
-                            color: AppColors.tint15,
-                          ),
-                        )
-                      else
-                        ...items.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final item = entry.value;
-                          final problem = item.problem?.trim();
-                          final unavailable =
-                              problem != null && problem.isNotEmpty;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (index > 0)
-                                  Container(
-                                    height: 1,
-                                    color: AppColors.greyTint15,
-                                  ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  child: IntrinsicHeight(
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          child: SizedBox(
-                                            width: 91,
-                                            height: 80,
-                                            child:
-                                                item.product.imageUrl
-                                                    .trim()
-                                                    .isEmpty
-                                                ? ColoredBox(
-                                                    color: AppColors.greyTint20,
-                                                  )
-                                                : CachedNetworkImage(
-                                                    imageUrl:
-                                                        item.product.imageUrl,
-                                                    fit: BoxFit.cover,
-                                                    placeholder: (_, __) =>
-                                                        ColoredBox(
-                                                          color: AppColors
-                                                              .greyTint20,
-                                                        ),
-                                                    errorWidget: (_, __, ___) =>
-                                                        ColoredBox(
-                                                          color: AppColors
-                                                              .greyTint20,
-                                                        ),
-                                                  ),
-                                          ),
-                                        ),
-                                        Gap.w16,
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        AppText.medium(
-                                                          item.product.name,
-                                                          fontSize: 16,
-                                                          color: AppColors
-                                                              .mainBlack,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                        Gap.h4,
-                                                        AppText.medium(
-                                                          _itemSubtitle(item),
-                                                          fontSize: 12,
-                                                          color: AppColors
-                                                              .blackTint20,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 10,
-                                                          vertical: 6,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.transparent,
-                                                      border: Border.all(
-                                                        color: AppColors
-                                                            .greyTint35,
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                    child: AppText.medium(
-                                                      "x${item.quantity}",
-                                                      fontSize: 14,
-                                                      color: AppColors.black,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  if (unavailable) ...[
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 3,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(
-                                                          0xffFDECEC,
-                                                        ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              100,
-                                                            ),
-                                                      ),
-                                                      child: AppText.medium(
-                                                        problem,
-                                                        fontSize: 10,
-                                                        color:
-                                                            AppColors.redTint35,
-                                                      ),
-                                                    ),
-                                                    Gap.h4,
-                                                  ],
-                                                  AppText.bold(
-                                                    "$currencySymbol${item.lineTotal.toMoneyWholeNumber()}",
-                                                    fontSize: 16,
-                                                    color: const Color(
-                                                      0xff006B34,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      Gap.h16,
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: AppText.medium(
-                          "Promo Code",
-                          fontSize: 16,
-                          color: AppColors.mainBlack,
-                        ),
-                      ),
-                      Gap.h8,
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.greyTint30),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _promoController,
-                                enabled: !checkout.isQuoteBusy,
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  errorBorder: InputBorder.none,
-                                  focusedErrorBorder: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  hintText: "Enter promo code",
-                                  hintStyle: AppTextStyle.regular.copyWith(
-                                    fontSize: 14,
-                                    letterSpacing: -0.2,
-                                    color: AppColors.tint15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: checkout.isQuoteBusy
-                                  ? null
-                                  : () {
-                                      HapticFeedback.selectionClick();
-                                      unawaited(
-                                        checkout.applyPromo(
-                                          _promoController.text,
-                                        ),
-                                      );
-                                    },
-                              child: AppText.semiBold(
-                                "|    Apply",
-                                fontSize: 14,
-                                color: const Color(0xff002914),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (quote?.promo?.applied == false &&
-                          quote?.promo?.message?.trim().isNotEmpty == true) ...[
-                        Gap.h8,
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: AppText.regular(
-                            quote!.promo!.message!,
-                            fontSize: 12,
-                            color: AppColors.redTint35,
-                          ),
-                        ),
-                      ],
-                      if (quote?.requiresAddress == true) ...[
-                        Gap.h24,
+                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+                      children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: AppText.medium(
-                            "Shipping Address",
+                            "Your Cart",
+                            fontSize: 16,
+                            color: AppColors.mainBlack,
+                          ),
+                        ),
+                        Gap.h16,
+                        if (items.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: AppText.regular(
+                              "No selected items to checkout.",
+                              fontSize: 14,
+                              color: AppColors.tint15,
+                            ),
+                          )
+                        else
+                          ...items.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            final problem = item.problem?.trim();
+                            final unavailable =
+                                problem != null && problem.isNotEmpty;
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (index > 0)
+                                    Container(
+                                      height: 1,
+                                      color: AppColors.greyTint15,
+                                    ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    child: IntrinsicHeight(
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            child: SizedBox(
+                                              width: 91,
+                                              height: 80,
+                                              child:
+                                                  item.product.imageUrl
+                                                      .trim()
+                                                      .isEmpty
+                                                  ? ColoredBox(
+                                                      color:
+                                                          AppColors.greyTint20,
+                                                    )
+                                                  : CachedNetworkImage(
+                                                      imageUrl:
+                                                          item.product.imageUrl,
+                                                      fit: BoxFit.cover,
+                                                      placeholder: (_, __) =>
+                                                          ColoredBox(
+                                                            color: AppColors
+                                                                .greyTint20,
+                                                          ),
+                                                      errorWidget:
+                                                          (_, __, ___) =>
+                                                              ColoredBox(
+                                                                color: AppColors
+                                                                    .greyTint20,
+                                                              ),
+                                                    ),
+                                            ),
+                                          ),
+                                          Gap.w16,
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          AppText.medium(
+                                                            item.product.name,
+                                                            fontSize: 16,
+                                                            color: AppColors
+                                                                .mainBlack,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                          Gap.h4,
+                                                          AppText.medium(
+                                                            _itemSubtitle(item),
+                                                            fontSize: 12,
+                                                            color: AppColors
+                                                                .blackTint20,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 10,
+                                                            vertical: 6,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors.transparent,
+                                                        border: Border.all(
+                                                          color: AppColors
+                                                              .greyTint35,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: AppText.medium(
+                                                        "x${item.quantity}",
+                                                        fontSize: 14,
+                                                        color: AppColors.black,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    if (unavailable) ...[
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 3,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(
+                                                            0xffFDECEC,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                100,
+                                                              ),
+                                                        ),
+                                                        child: AppText.medium(
+                                                          problem,
+                                                          fontSize: 10,
+                                                          color: AppColors
+                                                              .redTint35,
+                                                        ),
+                                                      ),
+                                                      Gap.h4,
+                                                    ],
+                                                    AppText.bold(
+                                                      "$currencySymbol${item.lineTotal.toMoneyWholeNumber()}",
+                                                      fontSize: 16,
+                                                      color: const Color(
+                                                        0xff006B34,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        Gap.h16,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: AppText.medium(
+                            "Promo Code",
                             fontSize: 16,
                             color: AppColors.mainBlack,
                           ),
                         ),
                         Gap.h8,
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: address == null
-                              ? _EmptyShippingAddressCard(
-                                  onAdd: () =>
-                                      unawaited(_openAddShippingAddress()),
-                                )
-                              : _FilledShippingAddressCard(
-                                  address: address,
-                                  onEdit: () => unawaited(
-                                    _openEditShippingAddress(address),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.greyTint30),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _promoController,
+                                  enabled: !checkout.isQuoteBusy,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    focusedErrorBorder: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    hintText: "Enter promo code",
+                                    hintStyle: AppTextStyle.regular.copyWith(
+                                      fontSize: 14,
+                                      letterSpacing: -0.2,
+                                      color: AppColors.tint15,
+                                    ),
                                   ),
-                                  onOpenAddresses: () =>
-                                      unawaited(_openAddressesList()),
                                 ),
+                              ),
+                              GestureDetector(
+                                onTap: checkout.isQuoteBusy
+                                    ? null
+                                    : () {
+                                        HapticFeedback.selectionClick();
+                                        unawaited(
+                                          checkout.applyPromo(
+                                            _promoController.text,
+                                          ),
+                                        );
+                                      },
+                                child: AppText.semiBold(
+                                  "|    Apply",
+                                  fontSize: 14,
+                                  color: const Color(0xff002914),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        if (address == null) ...[
+                        if (quote?.promo?.applied == false &&
+                            quote?.promo?.message?.trim().isNotEmpty ==
+                                true) ...[
                           Gap.h8,
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: AppText.regular(
-                              "Add a delivery address to continue checkout.",
+                              quote!.promo!.message!,
                               fontSize: 12,
                               color: AppColors.redTint35,
                             ),
                           ),
                         ],
-                      ],
-                      Gap.h16,
-                      DecoratedBox(
-                        decoration: const BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(
-                              ImageAssets.storePaymentSummaryBg,
+                        if (quote?.requiresAddress == true) ...[
+                          Gap.h24,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: AppText.medium(
+                              "Shipping Address",
+                              fontSize: 16,
+                              color: AppColors.mainBlack,
                             ),
-                            fit: BoxFit.fill,
                           ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppText.medium(
-                                "Payment Summary",
-                                fontSize: 16,
-                                color: AppColors.mainBlack,
-                              ),
-                              Gap.h16,
-                              if (quote == null)
-                                AppText.regular(
-                                  checkout.isQuoteBusy
-                                      ? "Loading summary…"
-                                      : "Summary unavailable.",
-                                  fontSize: 14,
-                                  color: AppColors.tint15,
-                                )
-                              else ...[
-                                for (
-                                  var i = 0;
-                                  i < quote.summary.length;
-                                  i++
-                                ) ...[
-                                  if (i > 0) Gap.h16,
-                                  _SummaryRow(
-                                    label: quote.summary[i].label,
-                                    value: _formatAmount(
-                                      quote.summary[i].value,
-                                      currencySymbol,
-                                      discount: quote.summary[i].isDiscount,
+                          Gap.h8,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: address == null
+                                ? _EmptyShippingAddressCard(
+                                    onAdd: () =>
+                                        unawaited(_openAddShippingAddress()),
+                                  )
+                                : _FilledShippingAddressCard(
+                                    address: address,
+                                    onEdit: () => unawaited(
+                                      _openEditShippingAddress(address),
                                     ),
+                                    onOpenAddresses: () =>
+                                        unawaited(_openAddressesList()),
+                                  ),
+                          ),
+                          if (address == null) ...[
+                            Gap.h8,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: AppText.regular(
+                                "Add a delivery address to continue checkout.",
+                                fontSize: 12,
+                                color: AppColors.redTint35,
+                              ),
+                            ),
+                          ],
+                        ],
+                        Gap.h16,
+                        DecoratedBox(
+                          decoration: const BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(
+                                ImageAssets.storePaymentSummaryBg,
+                              ),
+                              fit: BoxFit.fill,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppText.medium(
+                                  "Payment Summary",
+                                  fontSize: 16,
+                                  color: AppColors.mainBlack,
+                                ),
+                                Gap.h16,
+                                if (quote == null)
+                                  AppText.regular(
+                                    checkout.isQuoteBusy
+                                        ? "Loading summary…"
+                                        : "Summary unavailable.",
+                                    fontSize: 14,
+                                    color: AppColors.tint15,
+                                  )
+                                else ...[
+                                  for (
+                                    var i = 0;
+                                    i < quote.summary.length;
+                                    i++
+                                  ) ...[
+                                    if (i > 0) Gap.h16,
+                                    _SummaryRow(
+                                      label: quote.summary[i].label,
+                                      value: _formatAmount(
+                                        quote.summary[i].value,
+                                        currencySymbol,
+                                        discount: quote.summary[i].isDiscount,
+                                      ),
+                                    ),
+                                  ],
+                                  Gap.h26,
+                                  _SummaryRow(
+                                    label: quote.total.label,
+                                    value: _formatAmount(
+                                      quote.total.value,
+                                      currencySymbol,
+                                    ),
+                                    bold: true,
                                   ),
                                 ],
-                                Gap.h26,
-                                _SummaryRow(
-                                  label: quote.total.label,
-                                  value: _formatAmount(
-                                    quote.total.value,
-                                    currencySymbol,
-                                  ),
-                                  bold: true,
-                                ),
                               ],
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: AppButton(
-              text: quote?.hasItemProblems == true ? "Edit cart" : totalLabel,
-              enabled: quote?.hasItemProblems == true
-                  ? !checkout.isPlacingOrder
-                  : canPay && !checkout.isPlacingOrder,
-              isLoading:
-                  checkout.isPlacingOrder ||
-                  (checkout.isQuoteBusy && quote != null),
-              disableTextColor: AppColors.tint10,
-              press: quote?.hasItemProblems == true
-                  ? () {
-                      HapticFeedback.lightImpact();
-                      Navigator.of(context).pop();
-                    }
-                  : canPay && !checkout.isPlacingOrder
-                  ? () {
-                      HapticFeedback.lightImpact();
-                      unawaited(checkout.placeOrder());
-                    }
-                  : null,
+                      ],
+                    ),
             ),
-          ),
-        ],
-      ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              child: AppButton(
+                text: quote?.hasItemProblems == true ? "Edit cart" : totalLabel,
+                enabled: quote?.hasItemProblems == true
+                    ? !checkout.isPlacingOrder
+                    : canPay && !checkout.isPlacingOrder,
+                isLoading:
+                    checkout.isPlacingOrder ||
+                    (checkout.isQuoteBusy && quote != null),
+                disableTextColor: AppColors.tint10,
+                press: quote?.hasItemProblems == true
+                    ? () {
+                        HapticFeedback.lightImpact();
+                        Navigator.of(context).pop();
+                      }
+                    : canPay && !checkout.isPlacingOrder
+                    ? () {
+                        HapticFeedback.lightImpact();
+                        unawaited(checkout.placeOrder());
+                      }
+                    : null,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

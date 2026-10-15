@@ -647,7 +647,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 280),
                 switchInCurve: Curves.easeOutCubic,

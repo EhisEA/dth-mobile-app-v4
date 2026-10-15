@@ -31,7 +31,7 @@ class StoreCartLineTile extends StatelessWidget {
     final sizeLabel = storeSizeFullLabel(item.variant.size);
     final colorName = item.variant.color?.name;
     final meta = [
-      if (sizeLabel.isNotEmpty) sizeLabel,
+      if (sizeLabel.isNotEmpty) "Size: $sizeLabel",
       if (colorName != null && colorName.isNotEmpty) colorName,
     ].join(" · ");
 
