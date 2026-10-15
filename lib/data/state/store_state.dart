@@ -181,9 +181,10 @@ class StoreState extends ChangeNotifier {
     if (!forceRefresh) {
       final hit = _productDetails[key];
       if (hit != null) return Future.value(hit);
-      final pending = _productDetailInFlight[key];
-      if (pending != null) return pending;
     }
+    // Reuse in-flight even on forceRefresh to avoid duplicate GETs.
+    final pending = _productDetailInFlight[key];
+    if (pending != null) return pending;
 
     final future = _loadProduct(id, pid, key);
     _productDetailInFlight[key] = future;

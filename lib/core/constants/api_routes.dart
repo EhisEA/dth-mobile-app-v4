@@ -102,6 +102,8 @@ class ApiRoute {
       "$baseUrl/store/orders/${orderUid.trim()}";
   static String storeOrderReorder(String orderUid) =>
       "$baseUrl/store/orders/${orderUid.trim()}/reorder";
+  static String storeOrderAbandon(String orderUid) =>
+      "$baseUrl/store/orders/${orderUid.trim()}/abandon";
 
   /// STORE CHECKOUT — `{store}` is `event` or `merch`.
   static String storeCheckoutQuote(String store) =>

@@ -29,12 +29,14 @@ class StoreCatalogView extends ConsumerStatefulWidget {
 
 class _StoreCatalogViewState extends ConsumerState<StoreCatalogView> {
   late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
   late final ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchFocusNode = FocusNode(debugLabel: "storeCatalogSearch");
     _scrollController = ScrollController()..addListener(_onScroll);
   }
 
@@ -47,11 +49,18 @@ class _StoreCatalogViewState extends ConsumerState<StoreCatalogView> {
     }
   }
 
+  void _dismissSearchKeyboard() {
+    _searchFocusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+    SystemChannels.textInput.invokeMethod("TextInput.hide");
+  }
+
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -68,53 +77,59 @@ class _StoreCatalogViewState extends ConsumerState<StoreCatalogView> {
       ref.read(storeCartStateProvider).syncCount(count);
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: DthAppBar(
-        title: title,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: StoreCartBadgeButton(
-              kind: widget.kind,
-              countOverride: store?.cartCount,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: _dismissSearchKeyboard,
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        appBar: DthAppBar(
+          title: title,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: StoreCartBadgeButton(
+                kind: widget.kind,
+                countOverride: store?.cartCount,
+              ),
             ),
-          ),
-        ],
-      ),
-      body: vm.loadState.when(
-        busy: () =>
-            StoreCatalogSkeleton(showPromoBanner: widget.showPromoBanner),
-        error: (failure) => _StoreStatusBody(
-          title: "Store unavailable",
-          message: failure.message,
-          onRetry: () => vm.loadStore(forceRefresh: true),
+          ],
         ),
-        idle: () {
-          if (store == null) {
-            return _StoreStatusBody(
-              title: "Store unavailable",
-              message: "We couldn't load this store right now.",
-              onRetry: () => vm.loadStore(forceRefresh: true),
+        body: vm.loadState.when(
+          busy: () =>
+              StoreCatalogSkeleton(showPromoBanner: widget.showPromoBanner),
+          error: (failure) => _StoreStatusBody(
+            title: "Store unavailable",
+            message: failure.message,
+            onRetry: () => vm.loadStore(forceRefresh: true),
+          ),
+          idle: () {
+            if (store == null) {
+              return _StoreStatusBody(
+                title: "Store unavailable",
+                message: "We couldn't load this store right now.",
+                onRetry: () => vm.loadStore(forceRefresh: true),
+              );
+            }
+            if (!store.isOpen) {
+              return _StoreStatusBody(
+                title: store.name,
+                message: store.closedMessage?.trim().isNotEmpty == true
+                    ? store.closedMessage!
+                    : "This store is not open right now.",
+                onRetry: () => vm.loadStore(forceRefresh: true),
+              );
+            }
+            return _StoreOpenBody(
+              vm: vm,
+              searchController: _searchController,
+              searchFocusNode: _searchFocusNode,
+              scrollController: _scrollController,
+              showPromoBanner: widget.showPromoBanner,
+              onDismissKeyboard: _dismissSearchKeyboard,
+              onRefresh: () => _refreshCatalog(ref, widget.kind, vm),
             );
-          }
-          if (!store.isOpen) {
-            return _StoreStatusBody(
-              title: store.name,
-              message: store.closedMessage?.trim().isNotEmpty == true
-                  ? store.closedMessage!
-                  : "This store is not open right now.",
-              onRetry: () => vm.loadStore(forceRefresh: true),
-            );
-          }
-          return _StoreOpenBody(
-            vm: vm,
-            searchController: _searchController,
-            scrollController: _scrollController,
-            showPromoBanner: widget.showPromoBanner,
-            onRefresh: () => _refreshCatalog(ref, widget.kind, vm),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -175,15 +190,19 @@ class _StoreOpenBody extends StatelessWidget {
   const _StoreOpenBody({
     required this.vm,
     required this.searchController,
+    required this.searchFocusNode,
     required this.scrollController,
     required this.showPromoBanner,
+    required this.onDismissKeyboard,
     required this.onRefresh,
   });
 
   final StoreCatalogViewModel vm;
   final TextEditingController searchController;
+  final FocusNode searchFocusNode;
   final ScrollController scrollController;
   final bool showPromoBanner;
+  final VoidCallback onDismissKeyboard;
   final Future<void> Function() onRefresh;
 
   @override
@@ -196,6 +215,7 @@ class _StoreOpenBody extends StatelessWidget {
       onRefresh: onRefresh,
       child: CustomScrollView(
         controller: scrollController,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
@@ -206,6 +226,7 @@ class _StoreOpenBody extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: StorePromoBanner(
                   onVisitLiveStores: () {
+                    onDismissKeyboard();
                     MobileNavigationService.instance.navigateTo(
                       LiveEventStoresView.path,
                     );
@@ -219,9 +240,11 @@ class _StoreOpenBody extends StatelessWidget {
               categories: vm.categories,
               selectedCategoryId: vm.selectedCategoryId,
               searchController: searchController,
+              searchFocusNode: searchFocusNode,
               onSearchChanged: vm.setSearchQuery,
               onCategorySelected: (id) {
                 HapticFeedback.selectionClick();
+                onDismissKeyboard();
                 vm.selectCategory(id);
               },
             ),
@@ -254,7 +277,21 @@ class _StoreOpenBody extends StatelessWidget {
                   final product = products[index];
                   return StoreProductCard(
                     product: product,
-                    onTap: () => showProductDetailSheet(context, product),
+                    onTap: () {
+                      onDismissKeyboard();
+                      // Warm latest detail (stock / colours) before the sheet opens.
+                      unawaited(
+                        ProviderScope.containerOf(context)
+                            .read(storeStateProvider)
+                            .fetchProduct(
+                              product.kind.apiStoreId,
+                              product.id,
+                              forceRefresh: true,
+                            )
+                            .then<void>((_) {}, onError: (_) {}),
+                      );
+                      unawaited(showProductDetailSheet(context, product));
+                    },
                   );
                 }, childCount: products.length),
               ),
@@ -274,6 +311,7 @@ class _StoreSearchFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.categories,
     required this.selectedCategoryId,
     required this.searchController,
+    required this.searchFocusNode,
     required this.onSearchChanged,
     required this.onCategorySelected,
   });
@@ -281,6 +319,7 @@ class _StoreSearchFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   final List<StoreCategory> categories;
   final String selectedCategoryId;
   final TextEditingController searchController;
+  final FocusNode searchFocusNode;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onCategorySelected;
 
@@ -307,11 +346,14 @@ class _StoreSearchFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: AppTextField(
               controller: searchController,
+              focusNode: searchFocusNode,
               borderRadius: BorderRadius.circular(100),
               onChanged: onSearchChanged,
               hint: "Search anything...",
               hintColor: AppColors.tint25,
               hintStyle: AppTextStyle.regular.copyWith(fontSize: 16),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => searchFocusNode.unfocus(),
               suffixIcon: SvgPicture.asset(
                 SvgAssets.search,
                 width: 20,
@@ -360,6 +402,8 @@ class _StoreSearchFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _StoreSearchFilterHeaderDelegate oldDelegate) {
     return selectedCategoryId != oldDelegate.selectedCategoryId ||
-        categories != oldDelegate.categories;
+        categories != oldDelegate.categories ||
+        searchController != oldDelegate.searchController ||
+        searchFocusNode != oldDelegate.searchFocusNode;
   }
 }

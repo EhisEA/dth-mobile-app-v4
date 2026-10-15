@@ -111,6 +111,7 @@ class StoreProduct {
       kind: kind,
       title: dto.name,
       storeName: dto.vendor,
+      description: dto.description,
       imageUrl: dto.imageUrl,
       price: dto.price,
       originalPrice: dto.compareAtPrice,
@@ -202,4 +203,33 @@ class StoreProduct {
   bool hasAvailableColor(String colorName) =>
       variants.isEmpty ||
       variants.any((v) => (v.color?.name ?? "") == colorName && v.isAvailable);
+
+  /// Colors that exist on variants for [size]. Empty when that size has no colour.
+  List<StoreProductColor> colorsForSize(String? size) {
+    if (variants.isEmpty) return colors;
+    final sizeKey = size?.trim();
+    if (sizeKey == null || sizeKey.isEmpty) return colors;
+
+    final seen = <String>{};
+    final result = <StoreProductColor>[];
+    for (final v in variants) {
+      if (v.size != sizeKey) continue;
+      final color = v.color;
+      if (color == null) continue;
+      if (seen.add(color.name)) result.add(color);
+    }
+    return result;
+  }
+
+  bool hasAvailableColorForSize(String colorName, String? size) {
+    if (variants.isEmpty) return true;
+    final sizeKey = size?.trim();
+    return variants.any((v) {
+      final sizeOk =
+          sizeKey == null || sizeKey.isEmpty || v.size == sizeKey;
+      return sizeOk &&
+          (v.color?.name ?? "") == colorName &&
+          v.isAvailable;
+    });
+  }
 }

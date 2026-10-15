@@ -43,12 +43,11 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
 
   Future<void> _proceedToCheckout(StoreCartStoreBlock checkoutStore) async {
     HapticFeedback.lightImpact();
+    // Warm addresses while the quote loads so checkout feels snappy.
+    unawaited(ref.read(storeAddressesStateProvider).fetchAddresses());
     final checkout = ref.read(storeCheckoutViewModelProvider);
     final addressUid = ref.read(cartViewModelProvider).shippingAddress?.uid;
-    final ok = await checkout.load(
-      checkoutStore.kind,
-      addressUid: addressUid,
-    );
+    final ok = await checkout.load(checkoutStore.kind, addressUid: addressUid);
     if (!mounted || !ok) return;
 
     final quotedAddress = checkout.quote?.address;
@@ -60,9 +59,7 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
 
     MobileNavigationService.instance.navigateTo(
       StoreCheckoutView.path,
-      extra: {
-        RoutingArgumentKey.storeCheckoutKind: checkoutStore.kind.name,
-      },
+      extra: {RoutingArgumentKey.storeCheckoutKind: checkoutStore.kind.name},
     );
   }
 
@@ -87,16 +84,7 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
         children: [
           Expanded(
             child: cart.loadState.when(
-              busy: () => const Center(
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
+              busy: () => const StoreCartSkeleton(),
               error: (failure) => Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -120,10 +108,18 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
               ),
               idle: () {
                 if (items.isEmpty) {
-                  return const StoreEmptyState(
-                    title: "Your Cart is Empty",
-                    message:
-                        "Your cart is empty at the moment. Kindly add an item to your cart and it will appear here.",
+                  return Center(
+                    child: Column(
+                      children: [
+                        Gap.h30,
+                        Gap.h30,
+                        const StoreEmptyState(
+                          title: "Your Cart is Empty",
+                          message:
+                              "Your cart is empty at the moment. Kindly add an item to your cart and it will appear here.",
+                        ),
+                      ],
+                    ),
                   );
                 }
 
@@ -131,7 +127,7 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
                   color: AppColors.primary,
                   onRefresh: () => cart.fetchCart(quiet: true),
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                     itemCount: stores.length,
                     itemBuilder: (context, storeIndex) {
                       final store = stores[storeIndex];
@@ -208,9 +204,7 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
                     : Icon(
                         Icons.arrow_forward_rounded,
                         size: 18,
-                        color: canCheckout
-                            ? AppColors.white
-                            : AppColors.tint15,
+                        color: canCheckout ? AppColors.white : AppColors.tint15,
                       ),
                 press: canCheckout && checkoutStore != null && !quoting
                     ? () => unawaited(_proceedToCheckout(checkoutStore))

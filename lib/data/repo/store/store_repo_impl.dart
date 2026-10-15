@@ -361,6 +361,42 @@ class StoreRepoImpl implements StoreRepo {
   }
 
   @override
+  Future<StoreAbandonOrderResult> abandonOrder(String orderUid) async {
+    final uid = orderUid.trim();
+    if (uid.isEmpty) {
+      throw ApiFailure("Missing order.");
+    }
+    final response = await _networkService.post(
+      ApiRoute.storeOrderAbandon(uid),
+    );
+    final root = response.data;
+    if (root is! Map<String, dynamic>) {
+      throw ApiFailure("Invalid abandon response");
+    }
+    final status = root["status"]?.toString();
+    final message = root["message"]?.toString() ?? "";
+    final event = root["event"];
+    if (status == "failed") {
+      throw ApiFailure(
+        message.isNotEmpty
+            ? message
+            : "Could not leave payment. Please try again.",
+        event: event,
+      );
+    }
+    final data = root["data"];
+    if (data is! Map<String, dynamic>) {
+      throw ApiFailure(
+        message.isNotEmpty
+            ? message
+            : "Could not leave payment. Please try again.",
+        event: event,
+      );
+    }
+    return StoreAbandonOrderResult.fromJson(data, message: message);
+  }
+
+  @override
   Future<List<StoreCheckoutAddress>> getAddresses() async {
     final response = await _networkService.get(ApiRoute.addresses);
     final root = response.data;
@@ -383,9 +419,7 @@ class StoreRepoImpl implements StoreRepo {
     if (list is! List) return const [];
     return list
         .whereType<Map>()
-        .map(
-          (e) => StoreCheckoutAddress.fromJson(Map<String, dynamic>.from(e)),
-        )
+        .map((e) => StoreCheckoutAddress.fromJson(Map<String, dynamic>.from(e)))
         .toList(growable: false);
   }
 
@@ -498,25 +532,17 @@ class StoreRepoImpl implements StoreRepo {
     }
     final status = responseData["status"]?.toString();
     if (status == "failed") {
-      throw ApiFailure(
-        responseData["message"]?.toString() ?? fallbackMessage,
-      );
+      throw ApiFailure(responseData["message"]?.toString() ?? fallbackMessage);
     }
     final data = responseData["data"];
     if (data is! Map<String, dynamic>) {
-      throw ApiFailure(
-        responseData["message"]?.toString() ?? fallbackMessage,
-      );
+      throw ApiFailure(responseData["message"]?.toString() ?? fallbackMessage);
     }
     final addressRaw = data["address"];
     if (addressRaw is! Map) {
-      throw ApiFailure(
-        responseData["message"]?.toString() ?? fallbackMessage,
-      );
+      throw ApiFailure(responseData["message"]?.toString() ?? fallbackMessage);
     }
-    return StoreCheckoutAddress.fromJson(
-      Map<String, dynamic>.from(addressRaw),
-    );
+    return StoreCheckoutAddress.fromJson(Map<String, dynamic>.from(addressRaw));
   }
 
   Map<String, dynamic> _productParams({

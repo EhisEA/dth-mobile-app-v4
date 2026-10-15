@@ -7,11 +7,16 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
-  StoreCheckoutViewModel(this._repo, {Future<void> Function()? onOrderPaid})
-    : _onOrderPaid = onOrderPaid;
+  StoreCheckoutViewModel(
+    this._repo, {
+    Future<void> Function()? onOrderPaid,
+    Future<void> Function()? onCartRestored,
+  }) : _onOrderPaid = onOrderPaid,
+       _onCartRestored = onCartRestored;
 
   final StoreRepo _repo;
   final Future<void> Function()? _onOrderPaid;
+  final Future<void> Function()? _onCartRestored;
   final _log = const AppLogger(StoreCheckoutViewModel);
 
   StoreKind? _kind;
@@ -131,13 +136,16 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       );
 
       var paymentSucceeded = false;
+      var restoredToCart = false;
+      var openOrders = false;
 
       if (!result.requiresPayment) {
         paymentSucceeded = true;
       } else {
         final authUrl = result.authorizationUrl?.trim() ?? "";
         final reference = result.reference?.trim() ?? "";
-        if (authUrl.isEmpty || reference.isEmpty) {
+        final orderUid = result.order.uid.trim();
+        if (authUrl.isEmpty || reference.isEmpty || orderUid.isEmpty) {
           DthFlushBar.instance.showError(
             title: "Checkout",
             message: "Could not start checkout. Please try again.",
@@ -156,10 +164,36 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
               },
             );
 
-        paymentSucceeded = returnedFromCallback == true;
-        if (paymentSucceeded) {
+        if (returnedFromCallback == true) {
+          paymentSucceeded = true;
           await _repo.verifyPayment(reference: reference);
+        } else {
+          // Left payment — provider checked first; act on abandon `event`.
+          final leave = await _leavePayment(orderUid);
+          switch (leave) {
+            case _LeavePaymentOutcome.paid:
+              paymentSucceeded = true;
+            case _LeavePaymentOutcome.restoredToCart:
+              restoredToCart = true;
+            case _LeavePaymentOutcome.openOrders:
+              openOrders = true;
+            case _LeavePaymentOutcome.stayOnCheckout:
+              return;
+          }
         }
+      }
+
+      if (restoredToCart) {
+        MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+        return;
+      }
+
+      if (openOrders) {
+        MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+        await MobileNavigationService.instance.navigateTo(
+          NavigatorRoutes.myOrders,
+        );
+        return;
       }
 
       if (paymentSucceeded) {
@@ -189,6 +223,86 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
+  /// Handles leave-payment / abandon, including typed API `event`s.
+  Future<_LeavePaymentOutcome> _leavePayment(String orderUid) async {
+    try {
+      final abandon = await _repo.abandonOrder(orderUid);
+      if (abandon.isPaid) return _LeavePaymentOutcome.paid;
+
+      try {
+        await _onCartRestored?.call();
+      } catch (e, s) {
+        _log.e("[checkout] cart restore failed", error: e, stackTrace: s);
+      }
+      _showAbandonFeedback(abandon);
+      return _LeavePaymentOutcome.restoredToCart;
+    } on ApiFailure catch (e, s) {
+      _log.e("[abandon] ApiFailure: ${e.message}", error: e, stackTrace: s);
+      final event = e.event?.toString().trim().toLowerCase() ?? "";
+      switch (event) {
+        case StoreAbandonEvents.orderAlreadyPaid:
+          return _LeavePaymentOutcome.paid;
+        case StoreAbandonEvents.orderNotAwaitingPayment:
+          if (e.message.trim().isNotEmpty) {
+            DthFlushBar.instance.showError(
+              title: "Checkout",
+              message: e.message,
+            );
+          }
+          return _LeavePaymentOutcome.openOrders;
+        case StoreAbandonEvents.orderNotFound:
+          DthFlushBar.instance.showError(
+            title: "Checkout",
+            message: e.message.trim().isNotEmpty
+                ? e.message
+                : "Order not found.",
+          );
+          try {
+            await _onCartRestored?.call();
+          } catch (_) {}
+          return _LeavePaymentOutcome.restoredToCart;
+        case StoreAbandonEvents.paymentCheckFailed:
+          DthFlushBar.instance.showError(
+            title: "Checkout",
+            message: e.message.trim().isNotEmpty
+                ? e.message
+                : "We could not check your payment. Try again.",
+          );
+          return _LeavePaymentOutcome.stayOnCheckout;
+        default:
+          DthFlushBar.instance.showError(title: "Checkout", message: e.message);
+          return _LeavePaymentOutcome.stayOnCheckout;
+      }
+    }
+  }
+
+  void _showAbandonFeedback(StoreAbandonOrderResult abandon) {
+    final base = abandon.message.trim().isNotEmpty
+        ? abandon.message.trim()
+        : "Your items are back in your cart.";
+    final skippedLines = abandon.skipped
+        .map((s) {
+          final reason = s.reason.trim();
+          if (reason.isNotEmpty) return reason;
+          final name = s.name.trim();
+          return name.isEmpty ? null : name;
+        })
+        .whereType<String>()
+        .toList(growable: false);
+
+    if (skippedLines.isEmpty) {
+      DthFlushBar.instance.showSuccess(title: "Cart", message: base);
+      return;
+    }
+
+    final message = "$base\n${skippedLines.join("\n")}";
+    if (abandon.added > 0) {
+      DthFlushBar.instance.showSuccess(title: "Cart", message: message);
+    } else {
+      DthFlushBar.instance.showError(title: "Cart", message: message);
+    }
+  }
+
   void reset() {
     _requestId++;
     _kind = null;
@@ -200,11 +314,15 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   }
 }
 
+enum _LeavePaymentOutcome { paid, restoredToCart, openOrders, stayOnCheckout }
+
 final storeCheckoutViewModelProvider =
     ChangeNotifierProvider<StoreCheckoutViewModel>((ref) {
       return StoreCheckoutViewModel(
         ref.read(storeRepositoryProvider),
         onOrderPaid: () =>
             ref.read(storeCartStateProvider).clearAfterCheckout(),
+        onCartRestored: () =>
+            ref.read(storeCartStateProvider).fetchCart(quiet: true),
       );
     });

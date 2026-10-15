@@ -10,16 +10,24 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
+import "package:shimmer/shimmer.dart";
 
 Future<void> showProductDetailSheet(
   BuildContext context,
   StoreProduct product,
-) {
+) async {
+  // Force-dismiss search keyboard before the sheet opens (iOS keeps it
+  // otherwise when opening a modal over a focused TextField).
+  FocusManager.instance.primaryFocus?.unfocus();
+  await SystemChannels.textInput.invokeMethod<void>("TextInput.hide");
+  if (!context.mounted) return;
+
   return showBlurredModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
-    useSafeArea: false,
+    useSafeArea: true,
+    requestFocus: true,
     margin: const EdgeInsets.all(16),
     borderRadius: BorderRadius.circular(48),
     sheetAnimationStyle: const AnimationStyle(
@@ -98,12 +106,32 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
 
   Future<void> _loadDetail() async {
     final storeState = ref.read(storeStateProvider);
-    final cached = storeState.cachedProductDetail(
-      _product.kind.apiStoreId,
-      _product.id,
-    );
+    final storeId = _product.kind.apiStoreId;
+    final productId = _product.id;
+    final cached = storeState.cachedProductDetail(storeId, productId);
+
+    // Prefer cached detail when present (colours / variants / gallery).
     if (cached != null) {
       _applyDetail(cached);
+    }
+
+    // List payload already includes description (+ sizes) — keep UI filled and
+    // only refresh quietly so stock / colours stay current.
+    final hasListContent =
+        _product.description.trim().isNotEmpty || _product.sizes.isNotEmpty;
+
+    if (cached != null || hasListContent) {
+      try {
+        final result = await storeState.fetchProduct(
+          storeId,
+          productId,
+          forceRefresh: true,
+        );
+        if (!mounted) return;
+        _applyDetail(result);
+      } catch (_) {
+        // Keep list / cached product — no error banner on quiet refresh.
+      }
       return;
     }
 
@@ -113,10 +141,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
     });
 
     try {
-      final result = await storeState.fetchProduct(
-        _product.kind.apiStoreId,
-        _product.id,
-      );
+      final result = await storeState.fetchProduct(storeId, productId);
       if (!mounted) return;
       _applyDetail(result);
     } on ApiFailure catch (e) {
@@ -149,11 +174,13 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
         ? size
         : (detailed.sizes.isEmpty ? null : detailed.sizes.first);
 
+    final sizeColors = detailed.colorsForSize(preferredSize);
     final color = _selectedColor;
-    final colorNames = detailed.colors.map((c) => c.name).toList();
-    final preferredColor = (color != null && colorNames.contains(color))
-        ? color
-        : (colorNames.isEmpty ? null : colorNames.first);
+    final preferredColor = sizeColors.isEmpty
+        ? null
+        : (color != null && sizeColors.any((c) => c.name == color)
+              ? color
+              : sizeColors.first.name);
 
     final resolved = detailed.resolveVariant(
       size: preferredSize,
@@ -163,7 +190,9 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
     setState(() {
       _product = detailed;
       _selectedSize = resolved?.size ?? preferredSize;
-      _selectedColor = resolved?.color?.name ?? preferredColor;
+      _selectedColor = sizeColors.isEmpty
+          ? null
+          : (resolved?.color?.name ?? preferredColor);
       _detailLoading = false;
       _detailError = null;
       _qty = _clampedQty(_qty);
@@ -205,8 +234,15 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   bool _isLightColor(Color color) => color.computeLuminance() > 0.85;
 
   void _selectSize(String size) {
+    final sizeColors = _product.colorsForSize(size);
     setState(() {
       _selectedSize = size;
+      if (sizeColors.isEmpty) {
+        _selectedColor = null;
+      } else if (_selectedColor == null ||
+          !sizeColors.any((c) => c.name == _selectedColor)) {
+        _selectedColor = sizeColors.first.name;
+      }
       _qty = _clampedQty(_qty);
     });
   }
@@ -271,7 +307,6 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final discount = _product.discountPercent;
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.80;
     final images = _product.galleryImages;
     final variant = _selectedVariant;
@@ -279,6 +314,13 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
     final canAdd =
         !_product.soldOut &&
         (_product.variants.isEmpty || (variant?.isAvailable ?? false));
+    final sizeColors = _product.colorsForSize(_selectedSize);
+    final showDescriptionShimmer =
+        _detailLoading && _product.description.trim().isEmpty;
+    final showFullBodyShimmer =
+        showDescriptionShimmer &&
+        _product.variants.isEmpty &&
+        _product.sizes.isEmpty;
 
     return SafeArea(
       top: false,
@@ -289,319 +331,323 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
           children: [
             Flexible(
               child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Gap.h12,
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.greyTint30,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                      ),
-                    ),
-                    Gap.h12,
-                    AspectRatio(
-                      aspectRatio: 1.9,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (images.isEmpty)
-                                ColoredBox(color: AppColors.greyTint20)
-                              else
-                                PageView.builder(
-                                  itemCount: images.length,
-                                  onPageChanged: (i) =>
-                                      setState(() => _imageIndex = i),
-                                  itemBuilder: (_, i) => CachedNetworkImage(
-                                    imageUrl: images[i],
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, __) =>
-                                        ColoredBox(color: AppColors.greyTint20),
-                                    errorWidget: (_, __, ___) =>
-                                        ColoredBox(color: AppColors.greyTint20),
-                                  ),
-                                ),
-                              const DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0x00000000),
-                                      Color(0xFF000000),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              if (_product.soldOut)
-                                Positioned(
-                                  top: 14,
-                                  right: 14,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.redTint35,
-                                      borderRadius: BorderRadius.circular(100),
-                                    ),
-                                    child: AppText.semiBold(
-                                      "Sold-Out",
-                                      fontSize: 11,
-                                      color: AppColors.white,
-                                    ),
-                                  ),
-                                ),
-                              if (images.length > 1)
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 64,
-                                  child: _PageDots(
-                                    count: images.length,
-                                    current: _imageIndex,
-                                  ),
-                                ),
-                              Positioned(
-                                left: 24,
-                                right: 24,
-                                bottom: 16,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: AppText.semiBold(
-                                                  _product.title,
-                                                  fontSize: 16,
-                                                  color: AppColors.white,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              if (discount != null &&
-                                                  !_product.soldOut) ...[
-                                                Gap.w8,
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xffFFF3E5,
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          40,
-                                                        ),
-                                                  ),
-                                                  child: AppText.bold(
-                                                    "-$discount%",
-                                                    fontSize: 8,
-                                                    color: AppColors.redTint35,
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                          Gap.h(2),
-                                          AppText.medium(
-                                            _product.storeName,
-                                            fontSize: 12,
-                                            color: const Color(0xffC9D1E1),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        AppText.bold(
-                                          "${_product.currencySymbol}${_product.price.toMoneyWholeNumber()}",
-                                          fontSize: 20,
-                                          height: 1,
-                                          color: AppColors.white,
-                                        ),
-                                        if (_product.originalPrice != null)
-                                          AppText.medium(
-                                            "${_product.currencySymbol}${_product.originalPrice!.toMoneyWholeNumber()}",
-                                            fontSize: 12,
-                                            color: const Color(0xffABB1C4),
-                                            decoration:
-                                                TextDecoration.lineThrough,
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 320),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Gap.h12,
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.greyTint30,
+                            borderRadius: BorderRadius.circular(100),
                           ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_detailLoading &&
-                              _product.description.isEmpty &&
-                              _product.variants.isEmpty) ...[
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator.adaptive(
-                                    strokeWidth: 2.2,
+                      Gap.h12,
+                      AspectRatio(
+                        aspectRatio: 1.9,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (images.isEmpty)
+                                  ColoredBox(color: AppColors.greyTint20)
+                                else
+                                  PageView.builder(
+                                    itemCount: images.length,
+                                    onPageChanged: (i) =>
+                                        setState(() => _imageIndex = i),
+                                    itemBuilder: (_, i) => CachedNetworkImage(
+                                      imageUrl: images[i],
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => ColoredBox(
+                                        color: AppColors.greyTint20,
+                                      ),
+                                      errorWidget: (_, __, ___) => ColoredBox(
+                                        color: AppColors.greyTint20,
+                                      ),
+                                    ),
+                                  ),
+                                const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0x00000000),
+                                        Color(0xFF000000),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
+                                if (_product.soldOut)
+                                  Positioned(
+                                    top: 14,
+                                    right: 14,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.redTint35,
+                                        borderRadius: BorderRadius.circular(
+                                          100,
+                                        ),
+                                      ),
+                                      child: AppText.semiBold(
+                                        "Sold-Out",
+                                        fontSize: 11,
+                                        color: AppColors.white,
+                                      ),
+                                    ),
+                                  ),
+                                if (images.length > 1)
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 64,
+                                    child: _PageDots(
+                                      count: images.length,
+                                      current: _imageIndex,
+                                    ),
+                                  ),
+                                Positioned(
+                                  left: 24,
+                                  right: 24,
+                                  bottom: 16,
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Flexible(
+                                                  child: AppText.semiBold(
+                                                    _product.title,
+                                                    fontSize: 16,
+                                                    color: AppColors.white,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (discount != null &&
+                                                    !_product.soldOut) ...[
+                                                  Gap.w8,
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(
+                                                        0xffFFF3E5,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            40,
+                                                          ),
+                                                    ),
+                                                    child: AppText.bold(
+                                                      "-$discount%",
+                                                      fontSize: 8,
+                                                      color:
+                                                          AppColors.redTint35,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            Gap.h(2),
+                                            AppText.medium(
+                                              _product.storeName,
+                                              fontSize: 12,
+                                              color: const Color(0xffC9D1E1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          AppText.bold(
+                                            "${_product.currencySymbol}${_product.price.toMoneyWholeNumber()}",
+                                            fontSize: 20,
+                                            height: 1,
+                                            color: AppColors.white,
+                                          ),
+                                          if (_product.originalPrice != null)
+                                            AppText.medium(
+                                              "${_product.currencySymbol}${_product.originalPrice!.toMoneyWholeNumber()}",
+                                              fontSize: 12,
+                                              color: const Color(0xffABB1C4),
+                                              decoration:
+                                                  TextDecoration.lineThrough,
+                                              decorationColor:
+                                                  AppColors.redTint35,
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                          if (_detailError != null) ...[
-                            AppText.medium(
-                              _detailError!,
-                              fontSize: 13,
-                              color: AppColors.redTint35,
-                              multiText: true,
-                            ),
-                            Gap.h12,
-                            AppButton.onBorder(
-                              text: "Retry",
-                              isShort: true,
-                              width: 120,
-                              press: () => unawaited(_loadDetail()),
-                            ),
-                            Gap.h16,
-                          ],
-                          if (_product.description.trim().isNotEmpty) ...[
-                            AppText.semiBold(
-                              "Description",
-                              fontSize: 16,
-                              color: AppColors.black,
-                            ),
-                            Gap.h8,
-                            AppText.regular(
-                              _product.description,
-                              fontSize: 14,
-                              height: 1.45,
-                              color: AppColors.tint30,
-                              multiText: true,
-                            ),
-                          ],
-                          if ((_product.terms ?? _product.sponsorshipTerms) !=
-                              null) ...[
-                            Gap.h20,
-                            AppText.medium(
-                              "Sponsorship Terms",
-                              fontSize: 16,
-                              color: AppColors.tertiary60,
-                            ),
-                            Gap.h8,
-                            AppText.regular(
-                              (_product.terms ?? _product.sponsorshipTerms)!,
-                              fontSize: 14,
-                              height: 1.45,
-                              color: AppColors.blackTint20,
-                              multiText: true,
-                            ),
-                          ],
-                          if (_product.sizes.isNotEmpty) ...[
-                            Gap.h24,
-                            AppText.semiBold(
-                              "Select Size",
-                              fontSize: 16,
-                              height: 1,
-                              color: AppColors.black,
-                            ),
-                            Gap.h8,
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: _product.sizes.map((size) {
-                                final selected = size == _selectedSize;
-                                final available = _product.hasAvailableSize(
-                                  size,
-                                );
-                                return _SizeChip(
-                                  label: storeSizeDisplayLabel(size),
-                                  selected: selected,
-                                  available: available,
-                                  onTap: !available || _product.soldOut
-                                      ? null
-                                      : () {
-                                          HapticFeedback.selectionClick();
-                                          _selectSize(size);
-                                        },
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                          if (_product.colors.isNotEmpty) ...[
-                            Gap.h24,
-                            AppText.semiBold(
-                              "Select Color",
-                              fontSize: 16,
-                              height: 1,
-                              color: AppColors.black,
-                            ),
-                            Gap.h8,
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: _product.colors.map((color) {
-                                final selected = color.name == _selectedColor;
-                                final available = _product.hasAvailableColor(
-                                  color.name,
-                                );
-                                final fill = _parseHex(color.hex);
-                                return _ColorChip(
-                                  fill: fill,
-                                  selected: selected,
-                                  available: available,
-                                  lightBorder: _isLightColor(fill),
-                                  onTap: !available || _product.soldOut
-                                      ? null
-                                      : () {
-                                          HapticFeedback.selectionClick();
-                                          _selectColor(color.name);
-                                        },
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                          Gap.h24,
-                        ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (showFullBodyShimmer) ...[
+                              const _ProductDetailBodyShimmer(),
+                            ] else if (showDescriptionShimmer) ...[
+                              const _ProductDescriptionShimmer(),
+                            ],
+                            if (_detailError != null) ...[
+                              AppText.medium(
+                                _detailError!,
+                                fontSize: 13,
+                                color: AppColors.redTint35,
+                                multiText: true,
+                              ),
+                              Gap.h12,
+                              AppButton.onBorder(
+                                text: "Retry",
+                                isShort: true,
+                                width: 120,
+                                press: () => unawaited(_loadDetail()),
+                              ),
+                              Gap.h16,
+                            ],
+                            if (_product.description.trim().isNotEmpty) ...[
+                              AppText.semiBold(
+                                "Description",
+                                fontSize: 16,
+                                height: 1,
+                                color: AppColors.black,
+                              ),
+                              Gap.h8,
+                              AppText.regular(
+                                _product.description,
+                                fontSize: 14,
+                                height: 1.45,
+                                color: AppColors.tint30,
+                                multiText: true,
+                              ),
+                            ],
+                            if ((_product.terms ?? _product.sponsorshipTerms) !=
+                                null) ...[
+                              Gap.h20,
+                              AppText.medium(
+                                "Sponsorship Terms",
+                                fontSize: 16,
+                                color: AppColors.tertiary60,
+                              ),
+                              Gap.h8,
+                              AppText.regular(
+                                (_product.terms ?? _product.sponsorshipTerms)!,
+                                fontSize: 14,
+                                height: 1.45,
+                                color: AppColors.blackTint20,
+                                multiText: true,
+                              ),
+                            ],
+                            if (_product.sizes.isNotEmpty) ...[
+                              Gap.h24,
+                              AppText.semiBold(
+                                "Select Size",
+                                fontSize: 16,
+                                height: 1,
+                                color: AppColors.black,
+                              ),
+                              Gap.h8,
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _product.sizes.map((size) {
+                                  final selected = size == _selectedSize;
+                                  final available = _product.hasAvailableSize(
+                                    size,
+                                  );
+                                  return _SizeChip(
+                                    label: storeSizeDisplayLabel(size),
+                                    selected: selected,
+                                    available: available,
+                                    onTap: !available || _product.soldOut
+                                        ? null
+                                        : () {
+                                            HapticFeedback.selectionClick();
+                                            _selectSize(size);
+                                          },
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                            if (sizeColors.isNotEmpty) ...[
+                              Gap.h24,
+                              AppText.semiBold(
+                                "Select Color",
+                                fontSize: 16,
+                                height: 1,
+                                color: AppColors.black,
+                              ),
+                              Gap.h8,
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: sizeColors.map((color) {
+                                  final selected = color.name == _selectedColor;
+                                  final available = _product
+                                      .hasAvailableColorForSize(
+                                        color.name,
+                                        _selectedSize,
+                                      );
+                                  final fill = _parseHex(color.hex);
+                                  return _ColorChip(
+                                    fill: fill,
+                                    selected: selected,
+                                    available: available,
+                                    lightBorder: _isLightColor(fill),
+                                    onTap: !available || _product.soldOut
+                                        ? null
+                                        : () {
+                                            HapticFeedback.selectionClick();
+                                            _selectColor(color.name);
+                                          },
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                            Gap.h24,
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottomInset),
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 280),
                 switchInCurve: Curves.easeOutCubic,
@@ -704,35 +750,47 @@ class _SizeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: available ? 1 : 0.4,
-        child: AnimatedScale(
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutBack,
+        scale: selected && available ? 1.06 : 1,
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutBack,
-          scale: selected ? 1.06 : 1,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            width: 52,
-            height: 44,
+          curve: Curves.easeOutCubic,
+          width: 52,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected && available
+                ? AppColors.mainBlack.withValues(alpha: 0.04)
+                : AppColors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected && available
+                  ? AppColors.mainBlack
+                  : AppColors.greyTint35,
+              width: selected && available ? 1.6 : 1,
+            ),
+          ),
+          child: Stack(
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.mainBlack.withValues(alpha: 0.04)
-                  : AppColors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: selected ? AppColors.mainBlack : AppColors.greyTint35,
-                width: selected ? 1.6 : 1,
+            children: [
+              AppText.medium(
+                label,
+                fontSize: 16,
+                fontWeight: selected && available
+                    ? FontWeight.w600
+                    : FontWeight.w500,
+                color: available ? AppColors.black : AppColors.greyTint50,
               ),
-            ),
-            child: AppText.medium(
-              label,
-              fontSize: 16,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: available ? AppColors.black : AppColors.greyTint50,
-            ),
+              if (!available)
+                Positioned.fill(
+                  child: _DiagonalStrike(
+                    color: AppColors.redTint35,
+                    strokeWidth: 1.6,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -759,45 +817,115 @@ class _ColorChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: available ? 1 : 0.35,
-        child: AnimatedScale(
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutBack,
+        scale: selected && available ? 1.08 : 1,
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutBack,
-          scale: selected ? 1.08 : 1,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: selected ? AppColors.mainBlack : Colors.transparent,
-                width: selected ? 1.6 : 0,
-              ),
+          curve: Curves.easeOutCubic,
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected && available
+                  ? AppColors.mainBlack
+                  : Colors.transparent,
+              width: selected && available ? 1.6 : 0,
             ),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              width: selected ? 28 : 28,
-              height: selected ? 28 : 28,
-              decoration: BoxDecoration(
-                color: fill,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: lightBorder
-                      ? AppColors.greyTint50
-                      : AppColors.greyTint35,
-                ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: fill,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: lightBorder
+                            ? AppColors.greyTint50
+                            : AppColors.greyTint35,
+                      ),
+                    ),
+                  ),
+                  if (!available)
+                    _DiagonalStrike(
+                      color: AppColors.redTint35,
+                      strokeWidth: 1.6,
+                      inset: 3,
+                    ),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+  }
+}
+
+/// Diagonal slash used when a size / colour is out of stock.
+class _DiagonalStrike extends StatelessWidget {
+  const _DiagonalStrike({
+    required this.color,
+    this.strokeWidth = 1.5,
+    this.inset = 6,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double inset;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DiagonalStrikePainter(
+        color: color,
+        strokeWidth: strokeWidth,
+        inset: inset,
+      ),
+    );
+  }
+}
+
+class _DiagonalStrikePainter extends CustomPainter {
+  const _DiagonalStrikePainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.inset,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double inset;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(inset, size.height - inset),
+      Offset(size.width - inset, inset),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _DiagonalStrikePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.inset != inset;
   }
 }
 
@@ -916,6 +1044,100 @@ class _RoundIconButton extends StatelessWidget {
         height: 44,
         decoration: BoxDecoration(color: background, shape: BoxShape.circle),
         child: Icon(icon, size: 18, color: AppColors.white),
+      ),
+    );
+  }
+}
+
+class _ProductDescriptionShimmer extends StatelessWidget {
+  const _ProductDescriptionShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.baseShimmer(context),
+      highlightColor: AppColors.hightlightShimmer(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _ShimmerBlock(width: 96, height: 16, radius: 4),
+          Gap.h12,
+          const _ShimmerBlock(height: 12, radius: 4),
+          Gap.h8,
+          const _ShimmerBlock(height: 12, radius: 4),
+          Gap.h8,
+          const _ShimmerBlock(width: 180, height: 12, radius: 4),
+          Gap.h8,
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductDetailBodyShimmer extends StatelessWidget {
+  const _ProductDetailBodyShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.baseShimmer(context),
+      highlightColor: AppColors.hightlightShimmer(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _ShimmerBlock(width: 96, height: 16, radius: 4),
+          Gap.h12,
+          const _ShimmerBlock(height: 12, radius: 4),
+          Gap.h8,
+          const _ShimmerBlock(height: 12, radius: 4),
+          Gap.h8,
+          const _ShimmerBlock(width: 180, height: 12, radius: 4),
+          Gap.h24,
+          const _ShimmerBlock(width: 88, height: 16, radius: 4),
+          Gap.h12,
+          Row(
+            children: const [
+              _ShimmerBlock(width: 44, height: 44, radius: 8),
+              SizedBox(width: 8),
+              _ShimmerBlock(width: 44, height: 44, radius: 8),
+              SizedBox(width: 8),
+              _ShimmerBlock(width: 44, height: 44, radius: 8),
+            ],
+          ),
+          Gap.h24,
+          const _ShimmerBlock(width: 100, height: 16, radius: 4),
+          Gap.h12,
+          Row(
+            children: const [
+              _ShimmerBlock(width: 36, height: 36, radius: 18),
+              SizedBox(width: 8),
+              _ShimmerBlock(width: 36, height: 36, radius: 18),
+              SizedBox(width: 8),
+              _ShimmerBlock(width: 36, height: 36, radius: 18),
+            ],
+          ),
+          Gap.h8,
+        ],
+      ),
+    );
+  }
+}
+
+class _ShimmerBlock extends StatelessWidget {
+  const _ShimmerBlock({this.width, this.height = 12, this.radius = 4});
+
+  final double? width;
+  final double height;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.baseShimmer(context),
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }

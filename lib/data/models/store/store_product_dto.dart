@@ -69,6 +69,7 @@ class StoreProductDto {
     required this.vendor,
     required this.imageUrl,
     required this.price,
+    this.description = "",
     this.compareAtPrice,
     this.discountPercent,
     this.isFree = false,
@@ -80,6 +81,7 @@ class StoreProductDto {
   final String uid;
   final String name;
   final String vendor;
+  final String description;
   final String imageUrl;
 
   /// Whole currency units (fractional part discarded).
@@ -101,6 +103,7 @@ class StoreProductDto {
       uid: (json["uid"] ?? "").toString(),
       name: (json["name"] ?? "").toString(),
       vendor: (json["vendor"] ?? "").toString(),
+      description: (json["description"] ?? "").toString(),
       imageUrl: (json["image_url"] ?? "").toString(),
       price: _parseMoney(json["price"]) ?? 0,
       compareAtPrice: _parseMoney(json["compare_at_price"]),

@@ -4,6 +4,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/core/extension/int_extension.dart";
 import "package:dth_v4/core/extension/string_extension.dart";
+import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/store/store.dart";
 import "package:dth_v4/widgets/text/textstyles.dart";
 import "package:dth_v4/widgets/widgets.dart";
@@ -36,17 +37,20 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
     if (promo != null && promo.isNotEmpty) {
       _promoController.text = promo;
     }
-    // Fallback if opened without a quote (e.g. deep link).
-    if (checkout.quote == null || checkout.kind != widget.kind) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Prefetch so the addresses sheet opens without a cold load.
+      unawaited(ref.read(storeAddressesStateProvider).fetchAddresses());
+
+      // Fallback if opened without a quote (e.g. deep link).
+      if (checkout.quote == null || checkout.kind != widget.kind) {
         final addressUid = ref.read(cartViewModelProvider).shippingAddress?.uid;
         unawaited(
           ref
               .read(storeCheckoutViewModelProvider)
               .load(widget.kind, addressUid: addressUid),
         );
-      });
-    }
+      }
+    });
   }
 
   @override
@@ -77,7 +81,7 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
 
   String _itemSubtitle(StoreCartItem item) {
     if (widget.kind == StoreKind.merch) {
-      final sizeLabel = item.variant.size.trim();
+      final sizeLabel = storeSizeFullLabel(item.variant.size);
       final colorName = item.variant.color?.name.trim() ?? "";
       final parts = [
         if (sizeLabel.isNotEmpty) sizeLabel,
@@ -140,15 +144,17 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
         : "Checkout ${_formatAmount(quote.total.value, currencySymbol)}";
     final canPay = checkout.canCheckout && !checkout.isQuoteBusy;
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: const DthAppBar(title: "Checkout"),
-      body: Column(
-        children: [
-          Expanded(
-            child: busy
-                ? const Center(child: CircularProgressIndicator.adaptive())
-                : ListView(
+    return Loader.page(
+      isLoading: checkout.isPlacingOrder,
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        appBar: const DthAppBar(title: "Checkout"),
+        body: Column(
+          children: [
+            Expanded(
+              child: busy
+                  ? const Center(child: CircularProgressIndicator.adaptive())
+                  : ListView(
                     padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
                     children: [
                       Padding(
@@ -541,6 +547,7 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

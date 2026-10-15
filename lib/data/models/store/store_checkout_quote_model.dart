@@ -319,6 +319,74 @@ class StoreCheckoutResult {
   }
 }
 
+/// Item that could not be restored to the cart after abandoning payment.
+@immutable
+class StoreAbandonSkippedItem {
+  const StoreAbandonSkippedItem({required this.name, required this.reason});
+
+  final String name;
+  final String reason;
+
+  factory StoreAbandonSkippedItem.fromJson(Map<String, dynamic> json) {
+    return StoreAbandonSkippedItem(
+      name: (json["name"] ?? "").toString(),
+      reason: (json["reason"] ?? "").toString(),
+    );
+  }
+}
+
+/// `event` values from `POST /api/store/orders/{order}/abandon` failures.
+abstract final class StoreAbandonEvents {
+  static const orderNotFound = "order_not_found";
+  static const orderAlreadyPaid = "order_already_paid";
+  static const orderNotAwaitingPayment = "order_not_awaiting_payment";
+  static const paymentCheckFailed = "payment_check_failed";
+}
+
+/// Payload from `POST /api/store/orders/{order}/abandon`.
+@immutable
+class StoreAbandonOrderResult {
+  const StoreAbandonOrderResult({
+    required this.isPaid,
+    required this.added,
+    required this.skipped,
+    required this.storeType,
+    required this.count,
+    this.message = "",
+  });
+
+  final bool isPaid;
+  final int added;
+  final List<StoreAbandonSkippedItem> skipped;
+  final String storeType;
+  final int count;
+  final String message;
+
+  factory StoreAbandonOrderResult.fromJson(
+    Map<String, dynamic> json, {
+    String message = "",
+  }) {
+    final skippedRaw = json["skipped"];
+    return StoreAbandonOrderResult(
+      isPaid: json["is_paid"] == true,
+      added: (json["added"] as num?)?.toInt() ?? 0,
+      skipped: skippedRaw is List
+          ? skippedRaw
+                .whereType<Map>()
+                .map(
+                  (e) => StoreAbandonSkippedItem.fromJson(
+                    Map<String, dynamic>.from(e),
+                  ),
+                )
+                .toList(growable: false)
+          : const [],
+      storeType: (json["store_type"] ?? "").toString(),
+      count: (json["count"] as num?)?.toInt() ?? 0,
+      message: message,
+    );
+  }
+}
+
 String? _nullableString(dynamic value) {
   if (value == null) return null;
   final s = value.toString().trim();

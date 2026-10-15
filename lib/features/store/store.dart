@@ -6,6 +6,7 @@ export "bottomsheets/show_product_detail_sheet.dart";
 export "bottomsheets/show_remove_cart_item_sheet.dart";
 export "components/store_cart_badge_button.dart";
 export "components/store_cart_line_tile.dart";
+export "components/store_cart_skeleton.dart";
 export "components/store_catalog_skeleton.dart";
 export "components/store_empty_state.dart";
 export "components/store_product_card.dart";

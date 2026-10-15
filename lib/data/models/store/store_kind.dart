@@ -19,7 +19,7 @@ class StoreCategory {
   final String label;
 }
 
-/// Short labels for common size names (API may send "Small"/"Medium"/"Large").
+/// Short labels for size chips (API may send "Small"/"Medium"/"Large").
 String storeSizeDisplayLabel(String size) {
   switch (size.trim().toLowerCase()) {
     case "small":
@@ -31,6 +31,23 @@ String storeSizeDisplayLabel(String size) {
     case "large":
     case "l":
       return "L";
+    default:
+      return size.trim();
+  }
+}
+
+/// Full size names for cart / checkout lines.
+String storeSizeFullLabel(String size) {
+  switch (size.trim().toLowerCase()) {
+    case "small":
+    case "s":
+      return "Small";
+    case "medium":
+    case "m":
+      return "Medium";
+    case "large":
+    case "l":
+      return "Large";
     default:
       return size.trim();
   }

@@ -55,6 +55,12 @@ abstract class StoreRepo {
   /// `GET /api/payment/verify/{reference}`.
   Future<void> verifyPayment({required String reference});
 
+  /// `POST /api/store/orders/{order}/abandon` — leave payment without paying.
+  ///
+  /// Provider is checked first: when already paid, [StoreAbandonOrderResult.isPaid]
+  /// is true and nothing is cancelled.
+  Future<StoreAbandonOrderResult> abandonOrder(String orderUid);
+
   /// `GET /api/addresses` — default address first.
   Future<List<StoreCheckoutAddress>> getAddresses();
 

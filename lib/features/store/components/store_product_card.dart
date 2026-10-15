@@ -116,6 +116,7 @@ class StoreProductCard extends StatelessWidget {
           Container(height: 1, color: const Color(0xffF1F3F9)),
           Gap.h8,
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               AppText.bold(
                 "${product.currencySymbol}${product.price.toMoneyWholeNumber()}",
@@ -128,7 +129,7 @@ class StoreProductCard extends StatelessWidget {
                 Gap.w4,
                 AppText.medium(
                   "${product.currencySymbol}${product.originalPrice!.toMoneyWholeNumber()}",
-                  fontSize: 12,
+                  fontSize: 13,
                   height: 1,
                   color: const Color(0xff7482A9),
                   decoration: TextDecoration.lineThrough,
