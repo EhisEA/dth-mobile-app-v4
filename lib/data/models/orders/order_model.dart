@@ -63,6 +63,7 @@ class OrderTimelineStep {
     required this.status,
     required this.title,
     required this.description,
+    this.reached = true,
     this.at,
     this.timeAgo,
   });
@@ -70,17 +71,26 @@ class OrderTimelineStep {
   final String status;
   final String title;
   final String description;
+
+  /// False when the API includes a future step that has not happened yet.
+  final bool reached;
   final DateTime? at;
   final String? timeAgo;
 
   factory OrderTimelineStep.fromJson(Map<String, dynamic> json) {
     final atRaw = (json["at"] ?? "").toString();
+    final at = DateTime.tryParse(atRaw)?.toLocal();
+    final timeAgo = _nullableString(json["time_ago"]);
+    final reached = json.containsKey("reached")
+        ? json["reached"] == true
+        : at != null || timeAgo != null;
     return OrderTimelineStep(
       status: (json["status"] ?? "").toString(),
       title: (json["title"] ?? "").toString(),
       description: (json["description"] ?? "").toString(),
-      at: DateTime.tryParse(atRaw)?.toLocal(),
-      timeAgo: _nullableString(json["time_ago"]),
+      reached: reached,
+      at: at,
+      timeAgo: timeAgo,
     );
   }
 }

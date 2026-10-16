@@ -31,7 +31,7 @@ class StoreCartLineTile extends StatelessWidget {
     final sizeLabel = storeSizeFullLabel(item.variant.size);
     final colorName = item.variant.color?.name;
     final meta = [
-      if (sizeLabel.isNotEmpty) "Size: $sizeLabel",
+      if (sizeLabel.isNotEmpty) sizeLabel,
       if (colorName != null && colorName.isNotEmpty) colorName,
     ].join(" · ");
 
@@ -101,6 +101,7 @@ class StoreCartLineTile extends StatelessWidget {
                       fontSize: 16,
                       color: AppColors.mainBlack,
                       maxLines: 1,
+                      height: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (meta.isNotEmpty) ...[
@@ -113,13 +114,13 @@ class StoreCartLineTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    Gap.h6,
+                    Gap.h2,
                     AppText.semiBold(
                       "$currencySymbol${item.unitPrice.toMoneyWholeNumber()}",
                       fontSize: 14,
                       height: 1,
                       letterSpacing: -0.1,
-                      color: AppColors.blackTint20,
+                      color: AppColors.black,
                     ),
                   ],
                 ),

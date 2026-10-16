@@ -84,7 +84,7 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
       final sizeLabel = storeSizeFullLabel(item.variant.size);
       final colorName = item.variant.color?.name.trim() ?? "";
       final parts = [
-        if (sizeLabel.isNotEmpty) "Size: $sizeLabel",
+        if (sizeLabel.isNotEmpty) sizeLabel,
         if (colorName.isNotEmpty) colorName,
       ];
       if (parts.isNotEmpty) return parts.join(" · ");
