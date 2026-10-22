@@ -104,9 +104,14 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
             ? promo.message!
             : "Promo code applied.",
       );
-    } else if (promo.message != null && promo.message!.trim().isNotEmpty) {
+      return;
+    }
+    _promoCode = null;
+    notifyListeners();
+    if (promo.message != null && promo.message!.trim().isNotEmpty) {
       DthFlushBar.instance.showError(title: "Promo", message: promo.message!);
     }
+    await fetchQuote();
   }
 
   /// Keep [uid] for the next quote / checkout (Merch Store delivery address).
@@ -117,7 +122,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
 
   /// Call after the shipping address screen closes.
   Future<void> onAddressChanged({String? addressUid}) async {
-    if (addressUid != null) setAddressUid(addressUid);
+    setAddressUid(addressUid);
     await fetchQuote();
   }
 
@@ -165,8 +170,24 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
             );
 
         if (returnedFromCallback == true) {
-          paymentSucceeded = true;
-          await _repo.verifyPayment(reference: reference);
+          try {
+            await _repo.verifyPayment(reference: reference);
+            paymentSucceeded = true;
+          } catch (e, s) {
+            _log.e("[verify] failed after callback", error: e, stackTrace: s);
+            // Recheck the existing order. Do not start a second checkout.
+            final leave = await _leavePayment(orderUid);
+            switch (leave) {
+              case _LeavePaymentOutcome.paid:
+                paymentSucceeded = true;
+              case _LeavePaymentOutcome.restoredToCart:
+                restoredToCart = true;
+              case _LeavePaymentOutcome.openOrders:
+                openOrders = true;
+              case _LeavePaymentOutcome.stayOnCheckout:
+                return;
+            }
+          }
         } else {
           // Left payment — provider checked first; act on abandon `event`.
           final leave = await _leavePayment(orderUid);

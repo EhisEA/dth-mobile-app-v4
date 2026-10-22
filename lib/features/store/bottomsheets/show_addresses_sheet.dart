@@ -14,7 +14,7 @@ import "package:shimmer/shimmer.dart";
 Future<StoreCheckoutAddress?> showAddressesSheet(BuildContext context) {
   return showBlurredModalBottomSheet<StoreCheckoutAddress>(
     context: context,
-    useRootNavigator: true,
+    useRootNavigator: false,
     margin: const EdgeInsets.all(16),
     isScrollControlled: true,
     useSafeArea: true,
@@ -44,12 +44,14 @@ class _AddressesSheetBodyState extends ConsumerState<_AddressesSheetBody> {
 
   Future<void> _openAddAddress() async {
     HapticFeedback.selectionClick();
-    Navigator.of(context).pop();
     await MobileNavigationService.instance.navigateTo(
       StoreShippingAddressView.path,
     );
     if (!mounted) return;
     await ref.read(storeAddressesStateProvider).refreshQuiet();
+    if (!mounted) return;
+    // Pop after save so checkout re-quotes once, with the address just saved.
+    Navigator.of(context).pop();
   }
 
   void _selectAddress(StoreCheckoutAddress address) {

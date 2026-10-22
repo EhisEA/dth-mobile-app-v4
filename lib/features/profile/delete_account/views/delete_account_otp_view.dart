@@ -1,6 +1,7 @@
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/authentication/views/get_started_view.dart";
+import "package:dth_v4/features/store/store.dart";
 import "package:dth_v4/features/profile/delete_account/view_model/delete_account_view_model.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
@@ -95,6 +96,7 @@ class _DeleteAccountOtpViewState extends ConsumerState<DeleteAccountOtpView> {
                     if (!mounted || successMessage == null) return;
                     vm.clearDeletionSession();
                     await ref.read(userStateProvider).signOut();
+                    clearStoreSession(ref);
                     if (!mounted) return;
                     MobileNavigationService.instance.navigateAndClearStack(
                       GetStartedView.path,
