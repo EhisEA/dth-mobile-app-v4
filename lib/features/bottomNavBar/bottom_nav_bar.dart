@@ -357,6 +357,11 @@ class BottomNavBarState extends ConsumerState<BottomNavBar> {
                 onPopInvokedWithResult: _onPopInvoked,
                 child: PersistentTabView.custom(
                   context,
+                  // The package sizes its per-tab context list once in
+                  // initState and never resizes it, so a server-driven change
+                  // to the tab layout must recreate the view or it throws a
+                  // RangeError when the new tab builds.
+                  key: ValueKey(bindings.map((b) => b.name).join("|")),
                   backgroundColor: Colors.transparent,
                   controller: _tabController,
                   handleAndroidBackButtonPress: false,

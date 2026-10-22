@@ -27,6 +27,7 @@ class _AddBankAccountViewState extends ConsumerState<AddBankAccountView> {
   String? _bankUid;
   Timer? _resolveDebounce;
   int _resolveGeneration = 0;
+  String? _resolveKey;
 
   @override
   void initState() {
@@ -56,35 +57,42 @@ class _AddBankAccountViewState extends ConsumerState<AddBankAccountView> {
 
   void _onBankChanged(String? uid) {
     setState(() => _bankUid = uid);
-    _accountNameController.clear();
     _scheduleResolve();
   }
 
+  /// Any bank/account-number change bumps [_resolveGeneration] so a lookup
+  /// still in flight for the old inputs can't fill in the account name.
+  /// Controller notifications that don't change the inputs (e.g. cursor moves)
+  /// are ignored.
   void _scheduleResolve() {
-    _resolveDebounce?.cancel();
     final bankUid = _bankUid?.trim() ?? "";
     final digits = _digitsOnly(_accountNumberController.text);
-    if (bankUid.isEmpty || digits.length != 10) {
-      if (_accountNameController.text.isNotEmpty) {
-        _accountNameController.clear();
-      }
-      return;
+    final key = "$bankUid|$digits";
+    if (key == _resolveKey) return;
+    _resolveKey = key;
+    _resolveDebounce?.cancel();
+    final gen = ++_resolveGeneration;
+    if (_accountNameController.text.isNotEmpty) {
+      _accountNameController.clear();
     }
+    if (bankUid.isEmpty || digits.length != 10) return;
     _resolveDebounce = Timer(const Duration(milliseconds: 400), () {
-      unawaited(_resolve(bankUid: bankUid, accountNumber: digits));
+      unawaited(_resolve(gen: gen, bankUid: bankUid, accountNumber: digits));
     });
   }
 
   Future<void> _resolve({
+    required int gen,
     required String bankUid,
     required String accountNumber,
   }) async {
-    final gen = ++_resolveGeneration;
     final name = await ref
         .read(bankAccountViewModelProvider)
         .resolveAccountName(bankUid: bankUid, accountNumber: accountNumber);
     if (!mounted || gen != _resolveGeneration) return;
     if (name == null || name.isEmpty) {
+      // Allow re-selecting the same bank/number to retry a failed lookup.
+      _resolveKey = null;
       _accountNameController.clear();
       setState(() {});
       return;
@@ -117,6 +125,14 @@ class _AddBankAccountViewState extends ConsumerState<AddBankAccountView> {
 
   Future<void> _onSave() async {
     HapticFeedback.lightImpact();
+    final vm = ref.read(bankAccountViewModelProvider);
+    if (vm.resolving || (_resolveDebounce?.isActive ?? false)) {
+      DthFlushBar.instance.showGeneric(
+        title: "Account name",
+        message: "Please wait while we confirm the account name.",
+      );
+      return;
+    }
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) return;
     final bankUid = _bankUid?.trim() ?? "";
@@ -136,13 +152,11 @@ class _AddBankAccountViewState extends ConsumerState<AddBankAccountView> {
       return;
     }
 
-    final ok = await ref
-        .read(bankAccountViewModelProvider)
-        .addBankAccount(
-          bankUid: bankUid,
-          accountNumber: _digitsOnly(_accountNumberController.text),
-          accountName: accountName,
-        );
+    final ok = await vm.addBankAccount(
+      bankUid: bankUid,
+      accountNumber: _digitsOnly(_accountNumberController.text),
+      accountName: accountName,
+    );
     if (!mounted) return;
     if (ok) Navigator.of(context).pop();
   }

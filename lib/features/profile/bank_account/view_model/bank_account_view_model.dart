@@ -102,20 +102,32 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         accountNumber: accountNumber,
         accountName: accountName,
       );
-      await _bankAccountsState.refresh();
-      changeBaseState(const ViewModelState.idle());
-      DthFlushBar.instance.showSuccess(
-        title: "Bank account",
-        message: "Your bank account was saved.",
-      );
-      return true;
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not save",
-        message: e.message,
+        message: failure.message,
       );
       return false;
+    }
+    await _refreshAccountsAfterMutation();
+    changeBaseState(const ViewModelState.idle());
+    DthFlushBar.instance.showSuccess(
+      title: "Bank account",
+      message: "Your bank account was saved.",
+    );
+    return true;
+  }
+
+  /// The mutation already succeeded, so a failed list refresh must not be
+  /// reported as a failed save/delete (retrying could duplicate or reuse a
+  /// spent OTP). The list stays stale until the next load.
+  Future<void> _refreshAccountsAfterMutation() async {
+    try {
+      await _bankAccountsState.refresh();
+    } on Object {
+      // Best-effort; see doc comment.
     }
   }
 
@@ -176,11 +188,12 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
       assignEndTime();
       notifyListeners();
       return true;
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not send code",
-        message: e.message,
+        message: failure.message,
       );
       return false;
     }
@@ -213,11 +226,12 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         message: "A new verification code has been sent to your email.",
       );
       notifyListeners();
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not resend",
-        message: e.message,
+        message: failure.message,
       );
     }
   }
@@ -249,18 +263,27 @@ class BankAccountViewModel extends BaseChangeNotifierViewModel {
         token: otp,
         signature: sig,
       );
-      await _bankAccountsState.refresh();
-      clearDeleteSession();
-      changeBaseState(const ViewModelState.idle());
-      return true;
-    } on ApiFailure catch (e) {
-      changeBaseState(ViewModelState.error(e));
+    } catch (e, st) {
+      final failure = _toFailure(e, st);
+      changeBaseState(ViewModelState.error(failure));
       DthFlushBar.instance.showError(
         title: "Could not delete",
-        message: e.message,
+        message: failure.message,
       );
       return false;
     }
+    clearDeleteSession();
+    await _refreshAccountsAfterMutation();
+    changeBaseState(const ViewModelState.idle());
+    return true;
+  }
+
+  /// Maps any thrown error to a [Failure] so an unexpected exception (e.g. a
+  /// malformed 2xx body) can't leave the VM stuck in the busy state.
+  Failure _toFailure(Object error, StackTrace stackTrace) {
+    if (error is Failure) return error;
+    logger.e("Unexpected error", error: error, stackTrace: stackTrace);
+    return ApiFailure("Something went wrong. Please try again.");
   }
 
   @override

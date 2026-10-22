@@ -43,48 +43,60 @@ Future<T?> _showBlurredSheet<T>(
       );
       return Material(
         color: Colors.transparent,
-        child: SizedBox.expand(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Positioned.fill(
-                child: FadeTransition(
-                  opacity: animation,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.of(dialogContext).pop(),
-                    child: ClipRect(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                        child: Container(
-                          color: const Color(
-                            0xff044423,
-                          ).withValues(alpha: 0.12),
+        child: Consumer(
+          builder: (context, ref, _) {
+            // Block backdrop/back dismissal while a withdrawal is submitting:
+            // closing disposes the autoDispose VM mid-request.
+            final busy = ref.watch(withdrawalViewModelProvider).isBaseBusy;
+            return PopScope(
+              canPop: !busy,
+              child: SizedBox.expand(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned.fill(
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: busy
+                              ? null
+                              : () => Navigator.of(dialogContext).pop(),
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                              child: Container(
+                                color: const Color(
+                                  0xff044423,
+                                ).withValues(alpha: 0.12),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-              SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(sheetCurve),
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Material(
-                    color: AppColors.white,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
+                    SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 1),
+                        end: Offset.zero,
+                      ).animate(sheetCurve),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Material(
+                          color: AppColors.white,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(32),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: builder(dialogContext),
+                        ),
+                      ),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: builder(dialogContext),
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       );
     },
@@ -836,30 +848,31 @@ class _BankSelectCard extends StatelessWidget {
               ],
             ),
           ),
-          Positioned(
-            top: 13,
-            right: 13,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: const Color(0xffE5FBF0),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xffCCF7E1)),
-              ),
+          if (selected)
+            Positioned(
+              top: 13,
+              right: 13,
               child: Container(
-                padding: const EdgeInsets.all(0.5),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: const Color(0xffE5FBF0),
                   shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xffCCF7E1)),
                 ),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  size: 16,
-                  color: AppColors.primary,
+                child: Container(
+                  padding: const EdgeInsets.all(0.5),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
