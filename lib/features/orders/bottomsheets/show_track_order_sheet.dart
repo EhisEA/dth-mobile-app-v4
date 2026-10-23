@@ -11,9 +11,9 @@ Future<void> showTrackOrderSheet(BuildContext context, {required Order order}) {
 
   return showBlurredModalBottomSheet<void>(
     context: context,
-    useRootNavigator: true,
+    useRootNavigator: false,
     isScrollControlled: true,
-    useSafeArea: false,
+    useSafeArea: true,
     borderRadius: BorderRadius.circular(48),
     margin: const EdgeInsets.all(16),
     builder: (sheetContext) {

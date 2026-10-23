@@ -195,20 +195,25 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
           if (items.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              child: AppButton.primary(
-                text: "Proceed to checkout",
-                enabled: canCheckout && checkoutStore != null && !quoting,
-                isLoading: quoting,
-                suffixIcon: quoting
-                    ? null
-                    : Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 18,
-                        color: canCheckout ? AppColors.white : AppColors.tint15,
-                      ),
-                press: canCheckout && checkoutStore != null && !quoting
-                    ? () => unawaited(_proceedToCheckout(checkoutStore))
-                    : null,
+              child: SafeArea(
+                top: false,
+                child: AppButton.primary(
+                  text: "Proceed to checkout",
+                  enabled: canCheckout && checkoutStore != null && !quoting,
+                  isLoading: quoting,
+                  suffixIcon: quoting
+                      ? null
+                      : Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: canCheckout
+                              ? AppColors.white
+                              : AppColors.tint15,
+                        ),
+                  press: canCheckout && checkoutStore != null && !quoting
+                      ? () => unawaited(_proceedToCheckout(checkoutStore))
+                      : null,
+                ),
               ),
             ),
         ],

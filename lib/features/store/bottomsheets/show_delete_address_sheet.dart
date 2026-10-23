@@ -7,7 +7,7 @@ import "package:flutter_utils/flutter_utils.dart";
 Future<bool> showDeleteAddressSheet(BuildContext context) async {
   final result = await showBlurredModalBottomSheet<bool>(
     context: context,
-    useRootNavigator: true,
+    useRootNavigator: false,
     isScrollControlled: true,
     borderRadius: BorderRadius.circular(48),
     margin: const EdgeInsets.all(16),

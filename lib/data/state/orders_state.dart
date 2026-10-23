@@ -15,6 +15,7 @@ class OrdersState extends ChangeNotifier {
   ViewModelState _loadState = const ViewModelState.idle();
   bool _loadingMore = false;
   bool _hasLoaded = false;
+  int _generation = 0;
 
   List<Order> get orders => _orders;
   ViewModelState get loadState => _loadState;
@@ -42,23 +43,27 @@ class OrdersState extends ChangeNotifier {
   }
 
   Future<void> fetch({bool quiet = false}) async {
+    final generation = ++_generation;
     if (!quiet) {
       _loadState = const ViewModelState.busy();
       notifyListeners();
     }
     try {
       final page = await _repo.getOrders();
+      if (generation != _generation) return;
       _orders = page.orders.items;
       _nextCursor = page.orders.nextCursor;
       _hasLoaded = true;
       _loadState = const ViewModelState.idle();
       notifyListeners();
     } on ApiFailure catch (e) {
+      if (generation != _generation) return;
       if (!quiet || !_hasLoaded) {
         _loadState = ViewModelState.error(e);
       }
       notifyListeners();
     } catch (e) {
+      if (generation != _generation) return;
       if (!quiet || !_hasLoaded) {
         _loadState = ViewModelState.error(ApiFailure(e.toString()));
       }
@@ -68,11 +73,13 @@ class OrdersState extends ChangeNotifier {
 
   Future<void> loadMore() async {
     final cursor = _nextCursor;
+    final generation = _generation;
     if (cursor == null || _loadingMore || _loadState.isBusy) return;
     _loadingMore = true;
     notifyListeners();
     try {
       final page = await _repo.getOrders(cursor: cursor);
+      if (generation != _generation) return;
       _orders = [..._orders, ...page.orders.items];
       _nextCursor = page.orders.nextCursor;
     } on ApiFailure {
@@ -83,6 +90,16 @@ class OrdersState extends ChangeNotifier {
       _loadingMore = false;
       notifyListeners();
     }
+  }
+
+  void clear() {
+    _generation++;
+    _orders = const [];
+    _nextCursor = null;
+    _loadingMore = false;
+    _hasLoaded = false;
+    _loadState = const ViewModelState.idle();
+    notifyListeners();
   }
 }
 

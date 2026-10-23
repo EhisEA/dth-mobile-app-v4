@@ -23,6 +23,10 @@ class StoreCartState extends ChangeNotifier {
   /// stale `GET /stores/{store}` `cart_count` seed.
   bool _authoritative = false;
 
+  /// Bumped when a quantity or selection edit starts. In-flight cart fetches
+  /// captured before the bump are ignored so they cannot overwrite it.
+  int _editGeneration = 0;
+
   StoreCartData? get cart => _cart;
   ViewModelState get loadState => _loadState;
   int get count => _count;
@@ -32,9 +36,7 @@ class StoreCartState extends ChangeNotifier {
   List<StoreCartStoreBlock> get stores => _cart?.stores ?? const [];
   List<StoreCartItem> get allItems => _cart?.allItems ?? const [];
   String get currencySymbol =>
-      _cart?.currency.symbol.isNotEmpty == true
-      ? _cart!.currency.symbol
-      : "₦";
+      _cart?.currency.symbol.isNotEmpty == true ? _cart!.currency.symbol : "₦";
 
   bool get canCheckout =>
       stores.any((s) => s.isOpen && s.hasSelectedCheckoutable);
@@ -85,18 +87,27 @@ class StoreCartState extends ChangeNotifier {
   }
 
   Future<void> fetchCart({bool quiet = false}) async {
+    final generation = _editGeneration;
     if (!quiet) {
       _loadState = const ViewModelState.busy();
       notifyListeners();
     }
     try {
       final cart = await _repo.getCart();
+      if (generation != _editGeneration) {
+        _releaseStaleCartLoad(quiet);
+        return;
+      }
       _cart = cart;
       _count = cart.count < 0 ? _sumItemQuantities() : cart.count;
       _authoritative = true;
       _loadState = const ViewModelState.idle();
       notifyListeners();
     } on ApiFailure catch (e) {
+      if (generation != _editGeneration) {
+        _releaseStaleCartLoad(quiet);
+        return;
+      }
       if (!quiet) {
         _loadState = ViewModelState.error(e);
         notifyListeners();
@@ -104,6 +115,10 @@ class StoreCartState extends ChangeNotifier {
         rethrow;
       }
     } catch (e) {
+      if (generation != _editGeneration) {
+        _releaseStaleCartLoad(quiet);
+        return;
+      }
       if (!quiet) {
         _loadState = ViewModelState.error(ApiFailure(e.toString()));
         notifyListeners();
@@ -113,9 +128,16 @@ class StoreCartState extends ChangeNotifier {
     }
   }
 
+  void _releaseStaleCartLoad(bool quiet) {
+    if (quiet) return;
+    _loadState = const ViewModelState.idle();
+    notifyListeners();
+  }
+
   /// After a paid order: clear local cart immediately, then sync from API.
   Future<void> clearAfterCheckout() async {
-    final currency = _cart?.currency ?? const StoreCurrencyDto(code: "", symbol: "₦");
+    final currency =
+        _cart?.currency ?? const StoreCurrencyDto(code: "", symbol: "₦");
     _cart = StoreCartData(currency: currency, count: 0, stores: const []);
     _count = 0;
     _authoritative = true;
@@ -161,10 +183,7 @@ class StoreCartState extends ChangeNotifier {
   }
 
   Future<void> setItemQuantity(String itemUid, int quantity) async {
-    await _updateItemOptimistic(
-      itemUid,
-      quantity: quantity.clamp(1, 1000),
-    );
+    await _updateItemOptimistic(itemUid, quantity: quantity.clamp(1, 1000));
   }
 
   Future<void> incrementItem(String itemUid) async {
@@ -198,19 +217,24 @@ class StoreCartState extends ChangeNotifier {
 
     final snapshot = _cart;
     final snapshotCount = _count;
+    _editGeneration++;
     _applyLocalRemove(uid);
     _setCountFromItems();
     notifyListeners();
 
     try {
       await _repo.removeCartItem(uid);
-      // Authoritative refresh so badge / list stay in sync after delete.
-      await fetchCart(quiet: true);
     } catch (e) {
       _cart = snapshot;
       _count = snapshotCount;
       notifyListeners();
       rethrow;
+    }
+
+    try {
+      await fetchCart(quiet: true);
+    } catch (_) {
+      // Delete already succeeded. Keep the item gone if the refresh fails.
     }
   }
 
@@ -225,14 +249,11 @@ class StoreCartState extends ChangeNotifier {
 
     final previous = existing;
     final previousCount = _count;
+    _editGeneration++;
     final nextQty = quantity ?? existing.quantity;
     final nextSelected = isSelected ?? existing.isSelected;
 
-    _patchItemLocally(
-      uid,
-      quantity: nextQty,
-      isSelected: nextSelected,
-    );
+    _patchItemLocally(uid, quantity: nextQty, isSelected: nextSelected);
     if (quantity != null) {
       _setCountFromItems();
     } else {
@@ -299,14 +320,16 @@ class StoreCartState extends ChangeNotifier {
     if (cart == null) return;
     final stores = <StoreCartStoreBlock>[];
     for (final store in cart.stores) {
-      final items = store.items.map((item) {
-        if (item.uid != itemUid) return item;
-        return item.copyWith(
-          quantity: quantity,
-          isSelected: isSelected,
-          lineTotal: lineTotal ?? item.unitPrice * quantity,
-        );
-      }).toList(growable: false);
+      final items = store.items
+          .map((item) {
+            if (item.uid != itemUid) return item;
+            return item.copyWith(
+              quantity: quantity,
+              isSelected: isSelected,
+              lineTotal: lineTotal ?? item.unitPrice * quantity,
+            );
+          })
+          .toList(growable: false);
       stores.add(
         store.copyWith(
           items: items,
@@ -326,15 +349,17 @@ class StoreCartState extends ChangeNotifier {
     if (cart == null) return;
     final stores = <StoreCartStoreBlock>[];
     for (final store in cart.stores) {
-      final items = store.items.map((item) {
-        if (item.uid != result.itemUid) return item;
-        final qty = result.quantity;
-        return item.copyWith(
-          quantity: qty,
-          isSelected: result.isSelected,
-          lineTotal: item.unitPrice * qty,
-        );
-      }).toList(growable: false);
+      final items = store.items
+          .map((item) {
+            if (item.uid != result.itemUid) return item;
+            final qty = result.quantity;
+            return item.copyWith(
+              quantity: qty,
+              isSelected: result.isSelected,
+              lineTotal: item.unitPrice * qty,
+            );
+          })
+          .toList(growable: false);
       stores.add(
         store.copyWith(
           items: items,

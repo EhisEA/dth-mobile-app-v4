@@ -1,6 +1,7 @@
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/authentication/views/get_started_view.dart";
+import "package:dth_v4/features/store/store.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -42,6 +43,7 @@ class _LogoutConfirmationBodyState
     setState(() => _busy = true);
     try {
       await ref.read(userStateProvider).signOut();
+      clearStoreSession(ref);
       if (!mounted) return;
       Navigator.of(context).pop();
       MobileNavigationService.instance.navigateAndClearStack(

@@ -400,13 +400,15 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
                               GestureDetector(
                                 onTap: checkout.isQuoteBusy
                                     ? null
-                                    : () {
+                                    : () async {
                                         HapticFeedback.selectionClick();
-                                        unawaited(
-                                          checkout.applyPromo(
-                                            _promoController.text,
-                                          ),
+                                        await checkout.applyPromo(
+                                          _promoController.text,
                                         );
+                                        if (!mounted) return;
+                                        if (checkout.promoCode == null) {
+                                          _promoController.clear();
+                                        }
                                       },
                                 child: AppText.semiBold(
                                   "|    Apply",
@@ -535,26 +537,31 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              child: AppButton(
-                text: quote?.hasItemProblems == true ? "Edit cart" : totalLabel,
-                enabled: quote?.hasItemProblems == true
-                    ? !checkout.isPlacingOrder
-                    : canPay && !checkout.isPlacingOrder,
-                isLoading:
-                    checkout.isPlacingOrder ||
-                    (checkout.isQuoteBusy && quote != null),
-                disableTextColor: AppColors.tint10,
-                press: quote?.hasItemProblems == true
-                    ? () {
-                        HapticFeedback.lightImpact();
-                        Navigator.of(context).pop();
-                      }
-                    : canPay && !checkout.isPlacingOrder
-                    ? () {
-                        HapticFeedback.lightImpact();
-                        unawaited(checkout.placeOrder());
-                      }
-                    : null,
+              child: SafeArea(
+                top: false,
+                child: AppButton(
+                  text: quote?.hasItemProblems == true
+                      ? "Edit cart"
+                      : totalLabel,
+                  enabled: quote?.hasItemProblems == true
+                      ? !checkout.isPlacingOrder
+                      : canPay && !checkout.isPlacingOrder,
+                  isLoading:
+                      checkout.isPlacingOrder ||
+                      (checkout.isQuoteBusy && quote != null),
+                  disableTextColor: AppColors.tint10,
+                  press: quote?.hasItemProblems == true
+                      ? () {
+                          HapticFeedback.lightImpact();
+                          Navigator.of(context).pop();
+                        }
+                      : canPay && !checkout.isPlacingOrder
+                      ? () {
+                          HapticFeedback.lightImpact();
+                          unawaited(checkout.placeOrder());
+                        }
+                      : null,
+                ),
               ),
             ),
           ],

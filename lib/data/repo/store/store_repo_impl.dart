@@ -357,7 +357,18 @@ class StoreRepoImpl implements StoreRepo {
     if (ref.isEmpty) {
       throw ApiFailure("Missing payment reference.");
     }
-    await _networkService.get(ApiRoute.paymentVerify(ref));
+    final response = await _networkService.get(ApiRoute.paymentVerify(ref));
+    final root = response.data;
+    if (root is! Map<String, dynamic>) {
+      throw ApiFailure("Could not verify payment.");
+    }
+    final status = root["status"]?.toString();
+    if (status == "failed") {
+      throw ApiFailure(
+        root["message"]?.toString() ?? "Payment was not confirmed.",
+        event: root["event"],
+      );
+    }
   }
 
   @override

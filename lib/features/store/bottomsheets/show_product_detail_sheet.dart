@@ -25,7 +25,7 @@ Future<void> showProductDetailSheet(
   return showBlurredModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    useRootNavigator: true,
+    useRootNavigator: false,
     useSafeArea: true,
     requestFocus: true,
     margin: const EdgeInsets.all(16),
