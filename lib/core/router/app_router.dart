@@ -371,9 +371,14 @@ class AppRouter {
       case StorePaymentResultView.path:
         final isSuccess =
             routeArgs[RoutingArgumentKey.storePaymentSuccess] as bool? ?? true;
+        final isPending =
+            routeArgs[RoutingArgumentKey.storePaymentPending] as bool? ?? false;
         return _getPageRoute(
           settings: settings,
-          viewToShow: StorePaymentResultView(isSuccess: isSuccess),
+          viewToShow: StorePaymentResultView(
+            isSuccess: isSuccess,
+            isPending: isPending,
+          ),
         );
       case MyOrdersView.path:
         return _getPageRoute(

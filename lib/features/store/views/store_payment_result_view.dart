@@ -11,20 +11,33 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class StorePaymentResultView extends ConsumerWidget {
-  const StorePaymentResultView({super.key, required this.isSuccess});
+  const StorePaymentResultView({
+    super.key,
+    required this.isSuccess,
+    this.isPending = false,
+  });
 
   static const String path = NavigatorRoutes.storePaymentResult;
 
   final bool isSuccess;
 
+  /// Paystack returned but the payment could not be confirmed yet.
+  final bool isPending;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final title = isSuccess ? "Payment Successful" : "Payment Failed";
-    final description = isSuccess
+    final title = isPending
+        ? "Confirming Payment"
+        : isSuccess
+        ? "Payment Successful"
+        : "Payment Failed";
+    final description = isPending
+        ? "We're still confirming your payment. Check My Orders in a few minutes before paying again."
+        : isSuccess
         ? "Your order has been confirmed. We'll notify you when your item(s) have been shipped."
         : "We couldn't process your payment. Please try again or use a different payment method.";
-    final cta = isSuccess ? "Go to orders" : "Try again";
-    final bgAsset = isSuccess
+    final cta = isSuccess || isPending ? "Go to orders" : "Try again";
+    final bgAsset = isSuccess || isPending
         ? ImageAssets.storePaymentSuccessBg
         : ImageAssets.storePaymentFailedBg;
 
@@ -67,7 +80,13 @@ class StorePaymentResultView extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (isSuccess)
+                      if (isPending)
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 140,
+                          color: AppColors.white,
+                        )
+                      else if (isSuccess)
                         Image.asset(ImageAssets.confirmed, height: 160)
                       else
                         Image.asset(
@@ -127,6 +146,10 @@ class StorePaymentResultView extends ConsumerWidget {
   }
 
   Future<void> _onClose(WidgetRef ref) async {
+    if (isPending) {
+      MobileNavigationService.instance.popUntil(StoreCartView.path);
+      return;
+    }
     if (isSuccess) {
       await _ensureCartCleared(ref);
       MobileNavigationService.instance.popUntil(StoreCartView.path);
@@ -136,7 +159,7 @@ class StorePaymentResultView extends ConsumerWidget {
   }
 
   Future<void> _onPrimaryAction(WidgetRef ref) async {
-    if (isSuccess) {
+    if (isSuccess || isPending) {
       await _ensureCartCleared(ref);
       MobileNavigationService.instance.popUntil(StoreCartView.path);
       await MobileNavigationService.instance.navigateTo(MyOrdersView.path);

@@ -101,6 +101,7 @@ class RoutingArgumentKey {
 
   /// [StorePaymentResultView] — `bool` payment outcome.
   static const String storePaymentSuccess = "storePaymentSuccess";
+  static const String storePaymentPending = "storePaymentPending";
 
   static const String form = "form";
 }

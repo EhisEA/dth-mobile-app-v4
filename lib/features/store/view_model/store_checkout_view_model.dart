@@ -26,6 +26,16 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   int _requestId = 0;
   bool _placing = false;
 
+  /// A Paystack order whose payment could not be confirmed either way. While
+  /// set, Pay settles this order instead of starting a second checkout.
+  _PendingPayment? _pending;
+
+  /// Waits between verify attempts after the Paystack callback.
+  static const _verifyRetryDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+  ];
+
   StoreKind? get kind => _kind;
   StoreCheckoutQuote? get quote => _quote;
   String? get promoCode => _promoCode;
@@ -39,7 +49,11 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   /// Prepare [kind], optional address, and fetch the initial quote.
   /// Returns `true` when a quote was loaded successfully.
   Future<bool> load(StoreKind kind, {String? addressUid}) async {
+    // Keep an unresolved payment across reloads so it is settled before the
+    // next charge. Logout clears it through [reset].
+    final pending = _pending;
     reset();
+    _pending = pending;
     _kind = kind;
     if (addressUid != null) setAddressUid(addressUid);
     return fetchQuote();
@@ -165,106 +179,81 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   /// Create the order, open Paystack when needed, verify, then result screen.
   Future<void> placeOrder() async {
     final kind = _kind;
-    if (kind == null || !canCheckout || _placing) return;
+    if (kind == null || _placing) return;
+    final pending = _pending;
+    if (pending == null && !canCheckout) return;
 
     _placing = true;
     notifyListeners();
     try {
+      if (pending != null) {
+        // An earlier payment is unresolved. Settle it before charging again.
+        final confirmed = await _verifyWithRetry(pending.reference);
+        await _settle(pending, confirmed: confirmed);
+        return;
+      }
+
       final result = await _repo.checkout(
         kind.apiStoreId,
         promoCode: _promoCode,
         addressUid: _addressUid,
       );
 
-      var paymentSucceeded = false;
-      var restoredToCart = false;
-      var openOrders = false;
-
       if (!result.requiresPayment) {
-        paymentSucceeded = true;
-      } else {
-        final authUrl = result.authorizationUrl?.trim() ?? "";
-        final reference = result.reference?.trim() ?? "";
-        final orderUid = result.order.uid.trim();
-        if (authUrl.isEmpty || reference.isEmpty || orderUid.isEmpty) {
-          DthFlushBar.instance.showError(
-            title: "Checkout",
-            message: "Could not start checkout. Please try again.",
-          );
-          return;
-        }
-
-        final returnedFromCallback = await MobileNavigationService.instance
-            .navigateTo(
-              AppWebView.path,
-              extra: {
-                RoutingArgumentKey.title: "Checkout",
-                RoutingArgumentKey.initialURl: authUrl,
-                RoutingArgumentKey.callbackUrl: result.callbackUrl,
-                RoutingArgumentKey.showOpenInExternalBrowser: false,
-              },
-            );
-
-        if (returnedFromCallback == true) {
-          try {
-            await _repo.verifyPayment(reference: reference);
-            paymentSucceeded = true;
-          } catch (e, s) {
-            _log.e("[verify] failed after callback", error: e, stackTrace: s);
-            // Recheck the existing order. Do not start a second checkout.
-            final leave = await _leavePayment(orderUid);
-            switch (leave) {
-              case _LeavePaymentOutcome.paid:
-                paymentSucceeded = true;
-              case _LeavePaymentOutcome.restoredToCart:
-                restoredToCart = true;
-              case _LeavePaymentOutcome.openOrders:
-                openOrders = true;
-              case _LeavePaymentOutcome.stayOnCheckout:
-                return;
-            }
-          }
-        } else {
-          // Left payment — provider checked first; act on abandon `event`.
-          final leave = await _leavePayment(orderUid);
-          switch (leave) {
-            case _LeavePaymentOutcome.paid:
-              paymentSucceeded = true;
-            case _LeavePaymentOutcome.restoredToCart:
-              restoredToCart = true;
-            case _LeavePaymentOutcome.openOrders:
-              openOrders = true;
-            case _LeavePaymentOutcome.stayOnCheckout:
-              return;
-          }
-        }
-      }
-
-      if (restoredToCart) {
-        MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+        await _showPaid();
         return;
       }
 
-      if (openOrders) {
-        MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+      final authUrl = result.authorizationUrl?.trim() ?? "";
+      final reference = result.reference?.trim() ?? "";
+      final orderUid = result.order.uid.trim();
+      if (authUrl.isEmpty || reference.isEmpty || orderUid.isEmpty) {
+        DthFlushBar.instance.showError(
+          title: "Checkout",
+          message: "Could not start checkout. Please try again.",
+        );
+        return;
+      }
+      final payment = _PendingPayment(orderUid: orderUid, reference: reference);
+
+      final returnedFromCallback = await MobileNavigationService.instance
+          .navigateTo(
+            AppWebView.path,
+            extra: {
+              RoutingArgumentKey.title: "Checkout",
+              RoutingArgumentKey.initialURl: authUrl,
+              RoutingArgumentKey.callbackUrl: result.callbackUrl,
+              RoutingArgumentKey.showOpenInExternalBrowser: false,
+            },
+          );
+
+      if (returnedFromCallback == true) {
+        if (await _verifyWithRetry(reference)) {
+          await _showPaid();
+          return;
+        }
+        // Paystack reached the callback, so the customer has probably paid.
+        // Do not abandon the order or allow a second charge: lock checkout,
+        // remember the order, and tell them we are still confirming.
+        _pending = payment;
+        _quote = null;
+        try {
+          await _onCartRestored?.call();
+        } catch (e, s) {
+          _log.e("[checkout] cart refresh failed", error: e, stackTrace: s);
+        }
         await MobileNavigationService.instance.navigateTo(
-          NavigatorRoutes.myOrders,
+          StorePaymentResultView.path,
+          extra: {
+            RoutingArgumentKey.storePaymentSuccess: false,
+            RoutingArgumentKey.storePaymentPending: true,
+          },
         );
         return;
       }
 
-      if (paymentSucceeded) {
-        try {
-          await _onOrderPaid?.call();
-        } catch (e, s) {
-          _log.e("[checkout] cart clear failed", error: e, stackTrace: s);
-        }
-      }
-
-      await MobileNavigationService.instance.navigateTo(
-        StorePaymentResultView.path,
-        extra: {RoutingArgumentKey.storePaymentSuccess: paymentSucceeded},
-      );
+      // Left payment without reaching the callback.
+      await _settle(payment, confirmed: false);
     } on ApiFailure catch (e, s) {
       _log.e("[checkout] ApiFailure: ${e.message}", error: e, stackTrace: s);
       DthFlushBar.instance.showError(title: "Checkout", message: e.message);
@@ -278,6 +267,67 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       _placing = false;
       notifyListeners();
     }
+  }
+
+  /// `true` once verify succeeds; `false` if every attempt fails.
+  Future<bool> _verifyWithRetry(String reference) async {
+    for (var attempt = 0; ; attempt++) {
+      try {
+        await _repo.verifyPayment(reference: reference);
+        return true;
+      } catch (e, s) {
+        _log.e(
+          "[verify] attempt ${attempt + 1} failed",
+          error: e,
+          stackTrace: s,
+        );
+        if (attempt >= _verifyRetryDelays.length) return false;
+        await Future<void>.delayed(_verifyRetryDelays[attempt]);
+      }
+    }
+  }
+
+  /// Resolves [payment]: success when [confirmed], otherwise abandon, which
+  /// checks the provider first and reports an already-paid order.
+  Future<void> _settle(
+    _PendingPayment payment, {
+    required bool confirmed,
+  }) async {
+    if (confirmed) {
+      _pending = null;
+      await _showPaid();
+      return;
+    }
+    final leave = await _leavePayment(payment.orderUid);
+    switch (leave) {
+      case _LeavePaymentOutcome.paid:
+        _pending = null;
+        await _showPaid();
+      case _LeavePaymentOutcome.restoredToCart:
+        _pending = null;
+        MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+      case _LeavePaymentOutcome.openOrders:
+        _pending = null;
+        MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+        await MobileNavigationService.instance.navigateTo(
+          NavigatorRoutes.myOrders,
+        );
+      case _LeavePaymentOutcome.stayOnCheckout:
+        // Still unknown. The next Pay settles this order again.
+        _pending = payment;
+    }
+  }
+
+  Future<void> _showPaid() async {
+    try {
+      await _onOrderPaid?.call();
+    } catch (e, s) {
+      _log.e("[checkout] cart clear failed", error: e, stackTrace: s);
+    }
+    await MobileNavigationService.instance.navigateTo(
+      StorePaymentResultView.path,
+      extra: {RoutingArgumentKey.storePaymentSuccess: true},
+    );
   }
 
   /// Handles leave-payment / abandon, including typed API `event`s.
@@ -367,11 +417,19 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     _promoCode = null;
     _addressUid = null;
     _placing = false;
+    _pending = null;
     changeBaseState(const ViewModelState.idle());
   }
 }
 
 enum _LeavePaymentOutcome { paid, restoredToCart, openOrders, stayOnCheckout }
+
+class _PendingPayment {
+  const _PendingPayment({required this.orderUid, required this.reference});
+
+  final String orderUid;
+  final String reference;
+}
 
 final storeCheckoutViewModelProvider =
     ChangeNotifierProvider<StoreCheckoutViewModel>((ref) {
