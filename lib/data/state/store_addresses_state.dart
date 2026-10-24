@@ -13,10 +13,14 @@ class StoreAddressesState extends ChangeNotifier {
   List<StoreCheckoutAddress> _addresses = const [];
   ViewModelState _loadState = const ViewModelState.idle();
   bool _loaded = false;
+  StoreShippingAddress? _shippingAddress;
 
   List<StoreCheckoutAddress> get addresses => _addresses;
   ViewModelState get loadState => _loadState;
   bool get hasLoaded => _loaded;
+
+  /// Address chosen for Merch Store delivery; sent as `address_uid` on quote.
+  StoreShippingAddress? get shippingAddress => _shippingAddress;
 
   /// Fetches only when cold (or [force]). [quiet] skips the busy shimmer state.
   Future<void> fetchAddresses({bool force = false, bool quiet = false}) async {
@@ -53,8 +57,14 @@ class StoreAddressesState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setShippingAddress(StoreShippingAddress? address) {
+    _shippingAddress = address;
+    notifyListeners();
+  }
+
   void clear() {
     _addresses = const [];
+    _shippingAddress = null;
     _loaded = false;
     _loadState = const ViewModelState.idle();
     notifyListeners();

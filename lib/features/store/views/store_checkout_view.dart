@@ -43,7 +43,10 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
 
       // Fallback if opened without a quote (e.g. deep link).
       if (checkout.quote == null || checkout.kind != widget.kind) {
-        final addressUid = ref.read(cartViewModelProvider).shippingAddress?.uid;
+        final addressUid = ref
+            .read(storeAddressesStateProvider)
+            .shippingAddress
+            ?.uid;
         unawaited(
           ref
               .read(storeCheckoutViewModelProvider)
@@ -94,12 +97,12 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
 
   Future<void> _refreshQuoteAfterAddressChange() async {
     if (!mounted) return;
-    final cart = ref.read(cartViewModelProvider);
+    final addresses = ref.read(storeAddressesStateProvider);
     final checkout = ref.read(storeCheckoutViewModelProvider);
-    await checkout.onAddressChanged(addressUid: cart.shippingAddress?.uid);
+    await checkout.onAddressChanged(addressUid: addresses.shippingAddress?.uid);
     final quoted = checkout.quote?.address;
     if (quoted != null) {
-      cart.setShippingAddress(quoted.toShippingAddress());
+      addresses.setShippingAddress(quoted.toShippingAddress());
     }
   }
 
@@ -133,11 +136,11 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
   @override
   Widget build(BuildContext context) {
     final checkout = ref.watch(storeCheckoutViewModelProvider);
-    final cart = ref.watch(cartViewModelProvider);
+    final addresses = ref.watch(storeAddressesStateProvider);
     final quote = checkout.quote;
     final items = quote?.items ?? const <StoreCartItem>[];
     final currencySymbol = quote?.currencySymbol ?? "₦";
-    final address = _displayAddress(quote, cart.shippingAddress);
+    final address = _displayAddress(quote, addresses.shippingAddress);
     final busy = checkout.isQuoteBusy && quote == null;
     final totalLabel = quote == null
         ? "Checkout"

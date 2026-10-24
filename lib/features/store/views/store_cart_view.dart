@@ -46,14 +46,17 @@ class _StoreCartViewState extends ConsumerState<StoreCartView> {
     // Warm addresses while the quote loads so checkout feels snappy.
     unawaited(ref.read(storeAddressesStateProvider).fetchAddresses());
     final checkout = ref.read(storeCheckoutViewModelProvider);
-    final addressUid = ref.read(cartViewModelProvider).shippingAddress?.uid;
+    final addressUid = ref
+        .read(storeAddressesStateProvider)
+        .shippingAddress
+        ?.uid;
     final ok = await checkout.load(checkoutStore.kind, addressUid: addressUid);
     if (!mounted || !ok) return;
 
     final quotedAddress = checkout.quote?.address;
     if (quotedAddress != null) {
       ref
-          .read(cartViewModelProvider)
+          .read(storeAddressesStateProvider)
           .setShippingAddress(quotedAddress.toShippingAddress());
     }
 

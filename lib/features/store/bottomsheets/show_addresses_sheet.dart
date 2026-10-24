@@ -57,7 +57,7 @@ class _AddressesSheetBodyState extends ConsumerState<_AddressesSheetBody> {
   void _selectAddress(StoreCheckoutAddress address) {
     HapticFeedback.selectionClick();
     ref
-        .read(cartViewModelProvider)
+        .read(storeAddressesStateProvider)
         .setShippingAddress(address.toShippingAddress());
     Navigator.of(context).pop(address);
   }
@@ -72,16 +72,14 @@ class _AddressesSheetBodyState extends ConsumerState<_AddressesSheetBody> {
       await ref.read(storeRepositoryProvider).deleteAddress(address.uid);
       if (!mounted) return false;
 
-      final selectedUid = ref.read(cartViewModelProvider).shippingAddress?.uid;
+      final selectedUid = addressesState.shippingAddress?.uid;
       addressesState.removeLocally(address.uid);
 
       if (selectedUid == address.uid) {
         final next = addressesState.addresses.isNotEmpty
             ? addressesState.addresses.first
             : null;
-        ref
-            .read(cartViewModelProvider)
-            .setShippingAddress(next?.toShippingAddress());
+        addressesState.setShippingAddress(next?.toShippingAddress());
       }
 
       setState(() => _deletingUid = null);
@@ -111,7 +109,7 @@ class _AddressesSheetBodyState extends ConsumerState<_AddressesSheetBody> {
   Widget build(BuildContext context) {
     final addressesState = ref.watch(storeAddressesStateProvider);
     final addresses = addressesState.addresses;
-    final selectedUid = ref.watch(cartViewModelProvider).shippingAddress?.uid;
+    final selectedUid = addressesState.shippingAddress?.uid;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.72;
     final showShimmer =
         addressesState.loadState.isBusy && !addressesState.hasLoaded;

@@ -1,6 +1,5 @@
 import "package:dth_v4/data/models/store/store_kind.dart";
 import "package:dth_v4/data/models/store/store_product_dto.dart";
-import "package:dth_v4/data/models/store/store_product_model.dart";
 import "package:flutter/foundation.dart";
 
 /// Payload from `POST /api/store/cart/items`.
@@ -279,60 +278,6 @@ class StoreCartData {
                 .where((s) => s.items.isNotEmpty)
                 .toList(growable: false)
           : const [],
-    );
-  }
-}
-
-/// Local checkout / shipping helpers (not from cart GET).
-@immutable
-class CartLine {
-  const CartLine({
-    required this.product,
-    required this.quantity,
-    required this.selected,
-    this.selectedSize,
-    this.selectedColor,
-    this.variantUid,
-    this.cartItemUid,
-  });
-
-  final StoreProduct product;
-  final int quantity;
-  final bool selected;
-  final String? selectedSize;
-  final String? selectedColor;
-  final String? variantUid;
-  final String? cartItemUid;
-
-  String get lineKey {
-    final item = cartItemUid?.trim();
-    if (item != null && item.isNotEmpty) return item;
-    final variant = variantUid?.trim();
-    if (variant != null && variant.isNotEmpty) return variant;
-    final size = selectedSize?.trim().isEmpty ?? true ? "_" : selectedSize;
-    final color = selectedColor?.trim().isEmpty ?? true ? "_" : selectedColor;
-    return "${product.id}|$size|$color";
-  }
-
-  int get lineTotal => product.price * quantity;
-
-  CartLine copyWith({
-    StoreProduct? product,
-    int? quantity,
-    bool? selected,
-    String? selectedSize,
-    String? selectedColor,
-    String? variantUid,
-    String? cartItemUid,
-  }) {
-    return CartLine(
-      product: product ?? this.product,
-      quantity: quantity ?? this.quantity,
-      selected: selected ?? this.selected,
-      selectedSize: selectedSize ?? this.selectedSize,
-      selectedColor: selectedColor ?? this.selectedColor,
-      variantUid: variantUid ?? this.variantUid,
-      cartItemUid: cartItemUid ?? this.cartItemUid,
     );
   }
 }

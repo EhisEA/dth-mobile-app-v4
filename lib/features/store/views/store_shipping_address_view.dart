@@ -2,7 +2,6 @@ import "dart:async";
 
 import "package:dth_v4/core/core.dart";
 import "package:dth_v4/data/data.dart";
-import "package:dth_v4/features/store/store.dart";
 import "package:dth_v4/widgets/widgets.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -60,7 +59,7 @@ class _StoreShippingAddressViewState
     super.initState();
     // Prefill address fields only when editing; Add starts blank.
     final existing = _isEditing
-        ? ref.read(cartViewModelProvider).shippingAddress
+        ? ref.read(storeAddressesStateProvider).shippingAddress
         : null;
     _buildingController = TextEditingController(
       text: existing?.buildingNo ?? "",
@@ -292,7 +291,7 @@ class _StoreShippingAddressViewState
 
       if (!mounted) return;
       ref
-          .read(cartViewModelProvider)
+          .read(storeAddressesStateProvider)
           .setShippingAddress(saved.toShippingAddress());
       unawaited(ref.read(storeAddressesStateProvider).refreshQuiet());
       DthFlushBar.instance.showSuccess(

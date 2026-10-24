@@ -1,5 +1,4 @@
 import "package:dth_v4/data/data.dart";
-import "package:dth_v4/features/store/view_model/cart_view_model.dart";
 import "package:dth_v4/features/store/view_model/store_checkout_view_model.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -9,7 +8,6 @@ void clearStoreSession(ProviderContainer container) {
   container.read(storeAddressesStateProvider).clear();
   container.read(storeStateProvider).clear();
   container.read(ordersStateProvider).clear();
-  container.read(cartViewModelProvider).setShippingAddress(null);
   container.read(storeCheckoutViewModelProvider).reset();
 }
 
