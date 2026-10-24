@@ -31,7 +31,9 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   int _session = 0;
 
   /// A Paystack order whose payment could not be confirmed either way. While
-  /// set, Pay settles this order instead of starting a second checkout.
+  /// set, Pay settles this order instead of starting a second checkout. Scoped
+  /// to the current checkout: [load] and logout clear it via [reset], so a
+  /// later checkout for another cart or store never settles it by mistake.
   _PendingPayment? _pending;
 
   /// Waits between verify attempts after the Paystack callback.
@@ -53,11 +55,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   /// Prepare [kind], optional address, and fetch the initial quote.
   /// Returns `true` when a quote was loaded successfully.
   Future<bool> load(StoreKind kind, {String? addressUid}) async {
-    // Keep an unresolved payment across reloads so it is settled before the
-    // next charge. Logout clears it through [reset].
-    final pending = _pending;
     reset();
-    _pending = pending;
     _kind = kind;
     if (addressUid != null) setAddressUid(addressUid);
     return fetchQuote();
