@@ -23,9 +23,24 @@ class StoreCartState extends ChangeNotifier {
   /// stale `GET /stores/{store}` `cart_count` seed.
   bool _authoritative = false;
 
-  /// Bumped when a quantity or selection edit starts. In-flight cart fetches
-  /// captured before the bump are ignored so they cannot overwrite it.
+  /// Bumped when an optimistic edit starts and again when it settles. A cart
+  /// fetch whose generation changed, or that lands while an edit is pending,
+  /// overlapped an edit and may hold pre-edit data, so it is ignored.
   int _editGeneration = 0;
+  int _pendingEdits = 0;
+
+  void _beginEdit() {
+    _pendingEdits++;
+    _editGeneration++;
+  }
+
+  void _endEdit() {
+    _pendingEdits--;
+    _editGeneration++;
+  }
+
+  bool _isStaleFetch(int generation) =>
+      generation != _editGeneration || _pendingEdits > 0;
 
   StoreCartData? get cart => _cart;
   ViewModelState get loadState => _loadState;
@@ -94,7 +109,7 @@ class StoreCartState extends ChangeNotifier {
     }
     try {
       final cart = await _repo.getCart();
-      if (generation != _editGeneration) {
+      if (_isStaleFetch(generation)) {
         _releaseStaleCartLoad(quiet);
         return;
       }
@@ -104,7 +119,7 @@ class StoreCartState extends ChangeNotifier {
       _loadState = const ViewModelState.idle();
       notifyListeners();
     } on ApiFailure catch (e) {
-      if (generation != _editGeneration) {
+      if (_isStaleFetch(generation)) {
         _releaseStaleCartLoad(quiet);
         return;
       }
@@ -115,7 +130,7 @@ class StoreCartState extends ChangeNotifier {
         rethrow;
       }
     } catch (e) {
-      if (generation != _editGeneration) {
+      if (_isStaleFetch(generation)) {
         _releaseStaleCartLoad(quiet);
         return;
       }
@@ -217,7 +232,7 @@ class StoreCartState extends ChangeNotifier {
 
     final snapshot = _cart;
     final snapshotCount = _count;
-    _editGeneration++;
+    _beginEdit();
     _applyLocalRemove(uid);
     _setCountFromItems();
     notifyListeners();
@@ -229,6 +244,8 @@ class StoreCartState extends ChangeNotifier {
       _count = snapshotCount;
       notifyListeners();
       rethrow;
+    } finally {
+      _endEdit();
     }
 
     try {
@@ -249,7 +266,7 @@ class StoreCartState extends ChangeNotifier {
 
     final previous = existing;
     final previousCount = _count;
-    _editGeneration++;
+    _beginEdit();
     final nextQty = quantity ?? existing.quantity;
     final nextSelected = isSelected ?? existing.isSelected;
 
@@ -261,17 +278,19 @@ class StoreCartState extends ChangeNotifier {
     }
     notifyListeners();
 
+    var refresh = false;
     try {
       final result = await _repo.updateCartItem(
         uid,
         quantity: quantity,
         isSelected: isSelected,
       );
+      // Quiet refresh after edits so server count/problems stay accurate. It
+      // is ignored while a newer edit is still pending.
+      refresh = true;
       final current = _findItem(uid);
-      if (current == null) {
-        unawaited(fetchCart(quiet: true).catchError((_) {}));
-        return;
-      }
+      if (current == null) return;
+      // A newer edit to this item superseded this response.
       if (quantity != null && current.quantity != result.quantity) return;
       if (isSelected != null &&
           quantity == null &&
@@ -281,8 +300,6 @@ class StoreCartState extends ChangeNotifier {
       _applyLocalUpdate(result);
       _setCountFromItems();
       notifyListeners();
-      // Quiet refresh after edits so server count/problems stay accurate.
-      unawaited(fetchCart(quiet: true).catchError((_) {}));
     } catch (e) {
       final current = _findItem(uid);
       final stillOurs =
@@ -300,6 +317,10 @@ class StoreCartState extends ChangeNotifier {
         notifyListeners();
       }
       rethrow;
+    } finally {
+      _endEdit();
+      // Started after _endEdit so this fetch is not discarded as stale.
+      if (refresh) unawaited(fetchCart(quiet: true).catchError((_) {}));
     }
   }
 
