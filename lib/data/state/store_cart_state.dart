@@ -244,9 +244,11 @@ class StoreCartState extends ChangeNotifier {
     _setCountFromItems();
     notifyListeners();
 
+    var failed = false;
     try {
       await _repo.removeCartItem(uid);
     } catch (e) {
+      failed = true;
       if (session == _session) {
         _cart = snapshot;
         _count = snapshotCount;
@@ -255,6 +257,11 @@ class StoreCartState extends ChangeNotifier {
       rethrow;
     } finally {
       _endEdit();
+      // The snapshot can predate other edits, so let the server settle it.
+      // Started after _endEdit so this fetch is not discarded as stale.
+      if (failed && session == _session) {
+        unawaited(fetchCart(quiet: true).catchError((_) {}));
+      }
     }
     // Logged out while deleting: no refresh for the previous account.
     if (session != _session) return;
@@ -328,6 +335,9 @@ class StoreCartState extends ChangeNotifier {
         _count = previousCount;
         notifyListeners();
       }
+      // Refresh on failure too: overlapping edits may have dropped the
+      // refresh that would otherwise correct the rollback.
+      refresh = true;
       rethrow;
     } finally {
       _endEdit();
