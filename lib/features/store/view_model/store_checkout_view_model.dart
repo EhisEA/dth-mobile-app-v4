@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:dth_v4/core/router/router.dart";
 import "package:dth_v4/data/data.dart";
 import "package:dth_v4/features/app_web_view/app_web_view.dart";
@@ -49,6 +51,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
 
   bool get isQuoteBusy => isBaseBusy && !_placing;
   bool get isPlacingOrder => _placing;
+  bool get hasPendingPayment => _pending != null;
   bool get canCheckout => _quote?.canCheckout == true;
   bool get requiresAddress => _quote?.requiresAddress == true;
 
@@ -251,12 +254,16 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
           _log.e("[checkout] cart refresh failed", error: e, stackTrace: s);
         }
         if (session != _session) return;
-        await MobileNavigationService.instance.navigateTo(
-          StorePaymentResultView.path,
-          extra: {
-            RoutingArgumentKey.storePaymentSuccess: false,
-            RoutingArgumentKey.storePaymentPending: true,
-          },
+        // Not awaited: _placing must clear so that screen's polling can run
+        // [recheckPendingPayment].
+        unawaited(
+          MobileNavigationService.instance.navigateTo(
+            StorePaymentResultView.path,
+            extra: {
+              RoutingArgumentKey.storePaymentSuccess: false,
+              RoutingArgumentKey.storePaymentPending: true,
+            },
+          ),
         );
         return;
       }
@@ -280,10 +287,51 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
+  /// Polled by the Confirming Payment screen (and its pull-to-refresh). One
+  /// verify attempt; settles the order without starting a new checkout, and
+  /// stays put if still unknown. [quiet] skips the toasts for background polls.
+  Future<void> recheckPendingPayment({bool quiet = false}) async {
+    final pending = _pending;
+    if (pending == null || _placing) return;
+
+    final session = _session;
+    _placing = true;
+    notifyListeners();
+    try {
+      final verify = await _verifyWithRetry(
+        pending.reference,
+        delays: const [],
+      );
+      if (session != _session) return;
+      if (verify == _VerifyResult.unknown) {
+        if (quiet) return;
+        DthFlushBar.instance.showError(
+          title: "Payment",
+          message: "We still can't confirm your payment. Try again shortly.",
+        );
+        return;
+      }
+      await _settle(pending, verify, session);
+    } catch (e, s) {
+      _log.e("[recheck] unexpected", error: e, stackTrace: s);
+      if (session != _session || quiet) return;
+      DthFlushBar.instance.showError(
+        title: "Payment",
+        message: "Something went wrong checking your payment.",
+      );
+    } finally {
+      _placing = false;
+      notifyListeners();
+    }
+  }
+
   /// Verify contract: 200 means paid. A client error (4xx) means the backend
   /// checked and the payment did not succeed. Anything else (no connection,
   /// timeout, 5xx, rate limit) is retried, then reported as unknown.
-  Future<_VerifyResult> _verifyWithRetry(String reference) async {
+  Future<_VerifyResult> _verifyWithRetry(
+    String reference, {
+    List<Duration> delays = _verifyRetryDelays,
+  }) async {
     for (var attempt = 0; ; attempt++) {
       try {
         await _repo.verifyPayment(reference: reference);
@@ -302,8 +350,8 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
           stackTrace: s,
         );
       }
-      if (attempt >= _verifyRetryDelays.length) return _VerifyResult.unknown;
-      await Future<void>.delayed(_verifyRetryDelays[attempt]);
+      if (attempt >= delays.length) return _VerifyResult.unknown;
+      await Future<void>.delayed(delays[attempt]);
     }
   }
 
