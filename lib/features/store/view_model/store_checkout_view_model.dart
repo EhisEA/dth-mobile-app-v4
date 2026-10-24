@@ -26,6 +26,10 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   int _requestId = 0;
   bool _placing = false;
 
+  /// Bumped by [reset] (including logout). A payment flow that was waiting
+  /// when it changed stops instead of writing the previous session's state.
+  int _session = 0;
+
   /// A Paystack order whose payment could not be confirmed either way. While
   /// set, Pay settles this order instead of starting a second checkout.
   _PendingPayment? _pending;
@@ -183,13 +187,15 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     final pending = _pending;
     if (pending == null && !canCheckout) return;
 
+    final session = _session;
     _placing = true;
     notifyListeners();
     try {
       if (pending != null) {
         // An earlier payment is unresolved. Settle it before charging again.
         final verify = await _verifyWithRetry(pending.reference);
-        await _settle(pending, verify);
+        if (session != _session) return;
+        await _settle(pending, verify, session);
         return;
       }
 
@@ -198,9 +204,10 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
         promoCode: _promoCode,
         addressUid: _addressUid,
       );
+      if (session != _session) return;
 
       if (!result.requiresPayment) {
-        await _showPaid();
+        await _showPaid(session);
         return;
       }
 
@@ -226,11 +233,13 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
               RoutingArgumentKey.showOpenInExternalBrowser: false,
             },
           );
+      if (session != _session) return;
 
       if (returnedFromCallback == true) {
         final verify = await _verifyWithRetry(reference);
+        if (session != _session) return;
         if (verify != _VerifyResult.unknown) {
-          await _settle(payment, verify);
+          await _settle(payment, verify, session);
           return;
         }
         // Paystack reached the callback, so the customer has probably paid.
@@ -243,6 +252,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
         } catch (e, s) {
           _log.e("[checkout] cart refresh failed", error: e, stackTrace: s);
         }
+        if (session != _session) return;
         await MobileNavigationService.instance.navigateTo(
           StorePaymentResultView.path,
           extra: {
@@ -254,12 +264,14 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       }
 
       // Left payment without reaching the callback.
-      await _settle(payment, _VerifyResult.unknown);
+      await _settle(payment, _VerifyResult.unknown, session);
     } on ApiFailure catch (e, s) {
       _log.e("[checkout] ApiFailure: ${e.message}", error: e, stackTrace: s);
+      if (session != _session) return;
       DthFlushBar.instance.showError(title: "Checkout", message: e.message);
     } catch (e, s) {
       _log.e("[checkout] unexpected", error: e, stackTrace: s);
+      if (session != _session) return;
       DthFlushBar.instance.showError(
         title: "Checkout",
         message: "Something went wrong confirming your payment.",
@@ -306,17 +318,22 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
 
   /// Resolves [payment] from [verify]. Paid shows success. Otherwise abandon,
   /// which checks the provider first and reports an already-paid order.
-  Future<void> _settle(_PendingPayment payment, _VerifyResult verify) async {
+  Future<void> _settle(
+    _PendingPayment payment,
+    _VerifyResult verify,
+    int session,
+  ) async {
     if (verify == _VerifyResult.paid) {
       _pending = null;
-      await _showPaid();
+      await _showPaid(session);
       return;
     }
-    final leave = await _leavePayment(payment.orderUid);
+    final leave = await _leavePayment(payment.orderUid, session);
+    if (leave == null) return;
     switch (leave) {
       case _LeavePaymentOutcome.paid:
         _pending = null;
-        await _showPaid();
+        await _showPaid(session);
       case _LeavePaymentOutcome.restoredToCart:
         _pending = null;
         MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
@@ -338,12 +355,13 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
-  Future<void> _showPaid() async {
+  Future<void> _showPaid(int session) async {
     try {
       await _onOrderPaid?.call();
     } catch (e, s) {
       _log.e("[checkout] cart clear failed", error: e, stackTrace: s);
     }
+    if (session != _session) return;
     await MobileNavigationService.instance.navigateTo(
       StorePaymentResultView.path,
       extra: {RoutingArgumentKey.storePaymentSuccess: true},
@@ -351,9 +369,14 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
   }
 
   /// Handles leave-payment / abandon, including typed API `event`s.
-  Future<_LeavePaymentOutcome> _leavePayment(String orderUid) async {
+  /// Returns null when the session changed (logout) while abandoning.
+  Future<_LeavePaymentOutcome?> _leavePayment(
+    String orderUid,
+    int session,
+  ) async {
     try {
       final abandon = await _repo.abandonOrder(orderUid);
+      if (session != _session) return null;
       if (abandon.isPaid) return _LeavePaymentOutcome.paid;
 
       try {
@@ -365,6 +388,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       return _LeavePaymentOutcome.restoredToCart;
     } on ApiFailure catch (e, s) {
       _log.e("[abandon] ApiFailure: ${e.message}", error: e, stackTrace: s);
+      if (session != _session) return null;
       final event = e.event?.toString().trim().toLowerCase() ?? "";
       switch (event) {
         case StoreAbandonEvents.orderAlreadyPaid:
@@ -432,6 +456,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
 
   void reset() {
     _requestId++;
+    _session++;
     _kind = null;
     _quote = null;
     _promoCode = null;

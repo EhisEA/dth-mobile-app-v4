@@ -256,6 +256,8 @@ class StoreCartState extends ChangeNotifier {
     } finally {
       _endEdit();
     }
+    // Logged out while deleting: no refresh for the previous account.
+    if (session != _session) return;
 
     try {
       await fetchCart(quiet: true);
@@ -275,6 +277,7 @@ class StoreCartState extends ChangeNotifier {
 
     final previous = existing;
     final previousCount = _count;
+    final session = _session;
     _beginEdit();
     final nextQty = quantity ?? existing.quantity;
     final nextSelected = isSelected ?? existing.isSelected;
@@ -329,7 +332,10 @@ class StoreCartState extends ChangeNotifier {
     } finally {
       _endEdit();
       // Started after _endEdit so this fetch is not discarded as stale.
-      if (refresh) unawaited(fetchCart(quiet: true).catchError((_) {}));
+      // Skipped after logout so it does not run for the previous account.
+      if (refresh && session == _session) {
+        unawaited(fetchCart(quiet: true).catchError((_) {}));
+      }
     }
   }
 
