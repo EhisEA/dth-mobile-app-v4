@@ -17,6 +17,10 @@ class OrdersState extends ChangeNotifier {
   bool _hasLoaded = false;
   int _generation = 0;
 
+  /// True while the latest [fetch] runs. A quiet fetch never sets busy, so
+  /// [loadMore] checks this to avoid paging from a cursor about to be replaced.
+  bool _fetching = false;
+
   List<Order> get orders => _orders;
   ViewModelState get loadState => _loadState;
   bool get loadingMore => _loadingMore;
@@ -44,6 +48,7 @@ class OrdersState extends ChangeNotifier {
 
   Future<void> fetch({bool quiet = false}) async {
     final generation = ++_generation;
+    _fetching = true;
     if (!quiet) {
       _loadState = const ViewModelState.busy();
       notifyListeners();
@@ -68,18 +73,22 @@ class OrdersState extends ChangeNotifier {
         _loadState = ViewModelState.error(ApiFailure(e.toString()));
       }
       notifyListeners();
+    } finally {
+      if (generation == _generation) _fetching = false;
     }
   }
 
   Future<void> loadMore() async {
     final cursor = _nextCursor;
     final generation = _generation;
-    if (cursor == null || _loadingMore || _loadState.isBusy) return;
+    if (cursor == null || _loadingMore || _fetching || _loadState.isBusy) {
+      return;
+    }
     _loadingMore = true;
     notifyListeners();
     try {
       final page = await _repo.getOrders(cursor: cursor);
-      if (generation != _generation) return;
+      if (generation != _generation || cursor != _nextCursor) return;
       _orders = [..._orders, ...page.orders.items];
       _nextCursor = page.orders.nextCursor;
     } on ApiFailure {
@@ -94,6 +103,7 @@ class OrdersState extends ChangeNotifier {
 
   void clear() {
     _generation++;
+    _fetching = false;
     _orders = const [];
     _nextCursor = null;
     _loadingMore = false;
