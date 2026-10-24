@@ -53,6 +53,9 @@ abstract class StoreRepo {
   });
 
   /// `GET /api/payment/verify/{reference}`.
+  ///
+  /// The backend returns 200 only when the payment is verified and successful;
+  /// any other outcome is a non-2xx response, which throws [ApiFailure].
   Future<void> verifyPayment({required String reference});
 
   /// `POST /api/store/orders/{order}/abandon` — leave payment without paying.

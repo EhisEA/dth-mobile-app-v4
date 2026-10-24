@@ -188,8 +188,8 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     try {
       if (pending != null) {
         // An earlier payment is unresolved. Settle it before charging again.
-        final confirmed = await _verifyWithRetry(pending.reference);
-        await _settle(pending, confirmed: confirmed);
+        final verify = await _verifyWithRetry(pending.reference);
+        await _settle(pending, verify);
         return;
       }
 
@@ -228,8 +228,9 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
           );
 
       if (returnedFromCallback == true) {
-        if (await _verifyWithRetry(reference)) {
-          await _showPaid();
+        final verify = await _verifyWithRetry(reference);
+        if (verify != _VerifyResult.unknown) {
+          await _settle(payment, verify);
           return;
         }
         // Paystack reached the callback, so the customer has probably paid.
@@ -253,7 +254,7 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       }
 
       // Left payment without reaching the callback.
-      await _settle(payment, confirmed: false);
+      await _settle(payment, _VerifyResult.unknown);
     } on ApiFailure catch (e, s) {
       _log.e("[checkout] ApiFailure: ${e.message}", error: e, stackTrace: s);
       DthFlushBar.instance.showError(title: "Checkout", message: e.message);
@@ -269,31 +270,44 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
-  /// `true` once verify succeeds; `false` if every attempt fails.
-  Future<bool> _verifyWithRetry(String reference) async {
+  /// Verify contract: 200 means paid. A client error (4xx) means the backend
+  /// checked and the payment did not succeed. Anything else (no connection,
+  /// timeout, 5xx, rate limit) is retried, then reported as unknown.
+  Future<_VerifyResult> _verifyWithRetry(String reference) async {
     for (var attempt = 0; ; attempt++) {
       try {
         await _repo.verifyPayment(reference: reference);
-        return true;
+        return _VerifyResult.paid;
+      } on ApiFailure catch (e, s) {
+        _log.e(
+          "[verify] attempt ${attempt + 1} failed",
+          error: e,
+          stackTrace: s,
+        );
+        if (_isDefiniteDecline(e)) return _VerifyResult.failed;
       } catch (e, s) {
         _log.e(
           "[verify] attempt ${attempt + 1} failed",
           error: e,
           stackTrace: s,
         );
-        if (attempt >= _verifyRetryDelays.length) return false;
-        await Future<void>.delayed(_verifyRetryDelays[attempt]);
       }
+      if (attempt >= _verifyRetryDelays.length) return _VerifyResult.unknown;
+      await Future<void>.delayed(_verifyRetryDelays[attempt]);
     }
   }
 
-  /// Resolves [payment]: success when [confirmed], otherwise abandon, which
-  /// checks the provider first and reports an already-paid order.
-  Future<void> _settle(
-    _PendingPayment payment, {
-    required bool confirmed,
-  }) async {
-    if (confirmed) {
+  static bool _isDefiniteDecline(ApiFailure e) {
+    final code = e.statusCode;
+    if (code == null || code < 400 || code >= 500) return false;
+    // Auth, timeout and rate-limit errors say nothing about the payment.
+    return code != 401 && code != 403 && code != 408 && code != 429;
+  }
+
+  /// Resolves [payment] from [verify]. Paid shows success. Otherwise abandon,
+  /// which checks the provider first and reports an already-paid order.
+  Future<void> _settle(_PendingPayment payment, _VerifyResult verify) async {
+    if (verify == _VerifyResult.paid) {
       _pending = null;
       await _showPaid();
       return;
@@ -306,6 +320,12 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       case _LeavePaymentOutcome.restoredToCart:
         _pending = null;
         MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
+        if (verify == _VerifyResult.failed) {
+          await MobileNavigationService.instance.navigateTo(
+            StorePaymentResultView.path,
+            extra: {RoutingArgumentKey.storePaymentSuccess: false},
+          );
+        }
       case _LeavePaymentOutcome.openOrders:
         _pending = null;
         MobileNavigationService.instance.popUntil(NavigatorRoutes.storeCart);
@@ -423,6 +443,8 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
 }
 
 enum _LeavePaymentOutcome { paid, restoredToCart, openOrders, stayOnCheckout }
+
+enum _VerifyResult { paid, failed, unknown }
 
 class _PendingPayment {
   const _PendingPayment({required this.orderUid, required this.reference});
