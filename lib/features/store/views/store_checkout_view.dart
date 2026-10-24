@@ -409,9 +409,9 @@ class _StoreCheckoutViewState extends ConsumerState<StoreCheckoutView> {
                                           _promoController.text,
                                         );
                                         if (!mounted) return;
-                                        if (checkout.promoCode == null) {
-                                          _promoController.clear();
-                                        }
+                                        // Show the code actually in use.
+                                        _promoController.text =
+                                            checkout.promoCode ?? "";
                                       },
                                 child: AppText.semiBold(
                                   "|    Apply",

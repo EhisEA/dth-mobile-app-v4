@@ -90,28 +90,64 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     }
   }
 
-  /// Re-quote after the user applies (or clears) a promo code.
+  /// Quote with [code] and keep it only if the server applies it. On
+  /// rejection or error the current promo and quote stay as they were.
   Future<void> applyPromo(String code) async {
+    final kind = _kind;
+    if (kind == null) return;
     final trimmed = code.trim();
-    _promoCode = trimmed.isEmpty ? null : trimmed;
-    await fetchQuote();
-    final promo = _quote?.promo;
-    if (promo == null) return;
-    if (promo.applied) {
-      DthFlushBar.instance.showSuccess(
-        title: "Promo",
-        message: promo.message?.trim().isNotEmpty == true
-            ? promo.message!
-            : "Promo code applied.",
-      );
+    if (trimmed.isEmpty) {
+      _promoCode = null;
+      await fetchQuote();
       return;
     }
-    _promoCode = null;
-    notifyListeners();
-    if (promo.message != null && promo.message!.trim().isNotEmpty) {
-      DthFlushBar.instance.showError(title: "Promo", message: promo.message!);
+
+    final requestId = ++_requestId;
+    changeBaseState(const ViewModelState.busy());
+    try {
+      final result = await _repo.quoteCheckout(
+        kind.apiStoreId,
+        promoCode: trimmed,
+        addressUid: _addressUid,
+      );
+      if (requestId != _requestId) return;
+      final promo = result.promo;
+      final message = promo?.message?.trim() ?? "";
+      if (promo == null || !promo.applied) {
+        changeBaseState(const ViewModelState.idle());
+        DthFlushBar.instance.showError(
+          title: "Promo",
+          message: message.isNotEmpty
+              ? message
+              : "This promo code can't be applied.",
+        );
+        return;
+      }
+      _promoCode = trimmed;
+      _quote = result;
+      final quotedUid = result.address?.uid.trim();
+      if (quotedUid != null && quotedUid.isNotEmpty) {
+        _addressUid = quotedUid;
+      }
+      changeBaseState(const ViewModelState.idle());
+      DthFlushBar.instance.showSuccess(
+        title: "Promo",
+        message: message.isNotEmpty ? message : "Promo code applied.",
+      );
+    } on ApiFailure catch (e, s) {
+      if (requestId != _requestId) return;
+      _log.e("[promo] ApiFailure: ${e.message}", error: e, stackTrace: s);
+      changeBaseState(const ViewModelState.idle());
+      DthFlushBar.instance.showError(title: "Promo", message: e.message);
+    } catch (e, s) {
+      if (requestId != _requestId) return;
+      _log.e("[promo] unexpected", error: e, stackTrace: s);
+      changeBaseState(const ViewModelState.idle());
+      DthFlushBar.instance.showError(
+        title: "Promo",
+        message: "Could not apply promo. Please try again.",
+      );
     }
-    await fetchQuote();
   }
 
   /// Keep [uid] for the next quote / checkout (Merch Store delivery address).
