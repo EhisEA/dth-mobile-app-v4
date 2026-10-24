@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:dth_v4/core/extension/view_model_state.dart";
 import "package:dth_v4/data/data.dart";
 import "package:flutter/foundation.dart";
@@ -20,6 +22,11 @@ class OrdersState extends ChangeNotifier {
   /// True while the latest [fetch] runs. A quiet fetch never sets busy, so
   /// [loadMore] checks this to avoid paging from a cursor about to be replaced.
   bool _fetching = false;
+
+  /// Set when [loadMore] is skipped during a fetch. The user is at the end of
+  /// the list and no new scroll event will come, so it runs once the fetch
+  /// settles.
+  bool _loadMoreQueued = false;
 
   List<Order> get orders => _orders;
   ViewModelState get loadState => _loadState;
@@ -74,16 +81,24 @@ class OrdersState extends ChangeNotifier {
       }
       notifyListeners();
     } finally {
-      if (generation == _generation) _fetching = false;
+      if (generation == _generation) {
+        _fetching = false;
+        if (_loadMoreQueued) {
+          _loadMoreQueued = false;
+          unawaited(loadMore());
+        }
+      }
     }
   }
 
   Future<void> loadMore() async {
     final cursor = _nextCursor;
     final generation = _generation;
-    if (cursor == null || _loadingMore || _fetching || _loadState.isBusy) {
+    if (_fetching) {
+      _loadMoreQueued = true;
       return;
     }
+    if (cursor == null || _loadingMore || _loadState.isBusy) return;
     _loadingMore = true;
     notifyListeners();
     try {
@@ -104,6 +119,7 @@ class OrdersState extends ChangeNotifier {
   void clear() {
     _generation++;
     _fetching = false;
+    _loadMoreQueued = false;
     _orders = const [];
     _nextCursor = null;
     _loadingMore = false;
