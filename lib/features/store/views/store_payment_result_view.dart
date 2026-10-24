@@ -160,7 +160,7 @@ class StorePaymentResultView extends ConsumerWidget {
 
   Future<void> _onPrimaryAction(WidgetRef ref) async {
     if (isSuccess || isPending) {
-      await _ensureCartCleared(ref);
+      if (isSuccess) await _ensureCartCleared(ref);
       MobileNavigationService.instance.popUntil(StoreCartView.path);
       await MobileNavigationService.instance.navigateTo(MyOrdersView.path);
       return;

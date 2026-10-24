@@ -67,49 +67,30 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
     final kind = _kind;
     if (kind == null) return false;
 
-    final requestId = ++_requestId;
-    changeBaseState(const ViewModelState.busy());
-    try {
-      final result = await _repo.quoteCheckout(
-        kind.apiStoreId,
-        promoCode: _promoCode,
-        addressUid: _addressUid,
-      );
-      if (requestId != _requestId) return false;
-      _quote = result;
-      final quotedUid = result.address?.uid.trim();
-      if (quotedUid != null && quotedUid.isNotEmpty) {
-        _addressUid = quotedUid;
-      }
-      changeBaseState(const ViewModelState.idle());
-      return true;
-    } on ApiFailure catch (e, s) {
-      if (requestId != _requestId) return false;
-      _log.e("[quote] ApiFailure: ${e.message}", error: e, stackTrace: s);
+    final outcome = await _requestQuote(
+      kind,
+      promoCode: _promoCode,
+      fallbackMessage: "Could not load checkout. Please try again.",
+    );
+    if (outcome == null) return false;
+    final (:quote, :failure) = outcome;
+    if (quote == null) {
       _quote = null;
-      changeBaseState(ViewModelState.error(e));
-      if (showError) {
-        DthFlushBar.instance.showError(title: "Checkout", message: e.message);
-      }
-      return false;
-    } catch (e, s) {
-      if (requestId != _requestId) return false;
-      _log.e("[quote] unexpected", error: e, stackTrace: s);
-      _quote = null;
-      final failure = ApiFailure(e.toString());
-      changeBaseState(ViewModelState.error(failure));
+      changeBaseState(ViewModelState.error(failure!));
       if (showError) {
         DthFlushBar.instance.showError(
           title: "Checkout",
-          message: "Could not load checkout. Please try again.",
+          message: failure.message,
         );
       }
       return false;
     }
+    _acceptQuote(quote);
+    return true;
   }
 
   /// Quote with [code] and keep it only if the server applies it. On
-  /// rejection or error the current promo and quote stay as they were.
+  /// rejection or error the current promo, quote and state stay as they were.
   Future<void> applyPromo(String code) async {
     final kind = _kind;
     if (kind == null) return;
@@ -120,52 +101,71 @@ class StoreCheckoutViewModel extends BaseChangeNotifierViewModel {
       return;
     }
 
+    final previousState = baseState;
+    final outcome = await _requestQuote(
+      kind,
+      promoCode: trimmed,
+      fallbackMessage: "Could not apply promo. Please try again.",
+    );
+    if (outcome == null) return;
+    final (:quote, :failure) = outcome;
+    final promo = quote?.promo;
+    if (quote == null || promo == null || !promo.applied) {
+      changeBaseState(previousState);
+      final message = failure?.message ?? promo?.message?.trim() ?? "";
+      DthFlushBar.instance.showError(
+        title: "Promo",
+        message: message.isNotEmpty
+            ? message
+            : "This promo code can't be applied.",
+      );
+      return;
+    }
+    _promoCode = trimmed;
+    _acceptQuote(quote);
+    final message = promo.message?.trim() ?? "";
+    DthFlushBar.instance.showSuccess(
+      title: "Promo",
+      message: message.isNotEmpty ? message : "Promo code applied.",
+    );
+  }
+
+  /// One quote request for the current address. Returns null when a newer
+  /// request superseded it; otherwise exactly one of `quote` or `failure`.
+  /// Leaves the view model busy for the caller to settle.
+  Future<({StoreCheckoutQuote? quote, ApiFailure? failure})?> _requestQuote(
+    StoreKind kind, {
+    required String? promoCode,
+    required String fallbackMessage,
+  }) async {
     final requestId = ++_requestId;
     changeBaseState(const ViewModelState.busy());
     try {
       final result = await _repo.quoteCheckout(
         kind.apiStoreId,
-        promoCode: trimmed,
+        promoCode: promoCode,
         addressUid: _addressUid,
       );
-      if (requestId != _requestId) return;
-      final promo = result.promo;
-      final message = promo?.message?.trim() ?? "";
-      if (promo == null || !promo.applied) {
-        changeBaseState(const ViewModelState.idle());
-        DthFlushBar.instance.showError(
-          title: "Promo",
-          message: message.isNotEmpty
-              ? message
-              : "This promo code can't be applied.",
-        );
-        return;
-      }
-      _promoCode = trimmed;
-      _quote = result;
-      final quotedUid = result.address?.uid.trim();
-      if (quotedUid != null && quotedUid.isNotEmpty) {
-        _addressUid = quotedUid;
-      }
-      changeBaseState(const ViewModelState.idle());
-      DthFlushBar.instance.showSuccess(
-        title: "Promo",
-        message: message.isNotEmpty ? message : "Promo code applied.",
-      );
+      if (requestId != _requestId) return null;
+      return (quote: result, failure: null);
     } on ApiFailure catch (e, s) {
-      if (requestId != _requestId) return;
-      _log.e("[promo] ApiFailure: ${e.message}", error: e, stackTrace: s);
-      changeBaseState(const ViewModelState.idle());
-      DthFlushBar.instance.showError(title: "Promo", message: e.message);
+      if (requestId != _requestId) return null;
+      _log.e("[quote] ApiFailure: ${e.message}", error: e, stackTrace: s);
+      return (quote: null, failure: e);
     } catch (e, s) {
-      if (requestId != _requestId) return;
-      _log.e("[promo] unexpected", error: e, stackTrace: s);
-      changeBaseState(const ViewModelState.idle());
-      DthFlushBar.instance.showError(
-        title: "Promo",
-        message: "Could not apply promo. Please try again.",
-      );
+      if (requestId != _requestId) return null;
+      _log.e("[quote] unexpected", error: e, stackTrace: s);
+      return (quote: null, failure: ApiFailure(fallbackMessage));
     }
+  }
+
+  void _acceptQuote(StoreCheckoutQuote quote) {
+    _quote = quote;
+    final quotedUid = quote.address?.uid.trim();
+    if (quotedUid != null && quotedUid.isNotEmpty) {
+      _addressUid = quotedUid;
+    }
+    changeBaseState(const ViewModelState.idle());
   }
 
   /// Keep [uid] for the next quote / checkout (Merch Store delivery address).
