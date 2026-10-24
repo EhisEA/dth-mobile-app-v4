@@ -39,6 +39,10 @@ class StoreCartState extends ChangeNotifier {
     _editGeneration++;
   }
 
+  /// Bumped by [clear] so requests still running at logout cannot write the
+  /// previous account's cart back.
+  int _session = 0;
+
   bool _isStaleFetch(int generation) =>
       generation != _editGeneration || _pendingEdits > 0;
 
@@ -181,8 +185,10 @@ class StoreCartState extends ChangeNotifier {
 
     _adding = true;
     notifyListeners();
+    final session = _session;
     try {
       final result = await _repo.addCartItem(variantUid: uid, quantity: qty);
+      if (session != _session) return result;
       _count = result.count < 0 ? _count : result.count;
       _authoritative = true;
       unawaited(fetchCart(quiet: true).catchError((_) {}));
@@ -232,6 +238,7 @@ class StoreCartState extends ChangeNotifier {
 
     final snapshot = _cart;
     final snapshotCount = _count;
+    final session = _session;
     _beginEdit();
     _applyLocalRemove(uid);
     _setCountFromItems();
@@ -240,9 +247,11 @@ class StoreCartState extends ChangeNotifier {
     try {
       await _repo.removeCartItem(uid);
     } catch (e) {
-      _cart = snapshot;
-      _count = snapshotCount;
-      notifyListeners();
+      if (session == _session) {
+        _cart = snapshot;
+        _count = snapshotCount;
+        notifyListeners();
+      }
       rethrow;
     } finally {
       _endEdit();
@@ -421,6 +430,9 @@ class StoreCartState extends ChangeNotifier {
   }
 
   void clear() {
+    // Leave _pendingEdits alone: in-flight edits still call _endEdit.
+    _session++;
+    _editGeneration++;
     _cart = null;
     _count = 0;
     _adding = false;

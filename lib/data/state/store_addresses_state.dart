@@ -15,6 +15,10 @@ class StoreAddressesState extends ChangeNotifier {
   bool _loaded = false;
   StoreShippingAddress? _shippingAddress;
 
+  /// Bumped by [clear] so a fetch still running at logout cannot write the
+  /// previous account's addresses back.
+  int _generation = 0;
+
   List<StoreCheckoutAddress> get addresses => _addresses;
   ViewModelState get loadState => _loadState;
   bool get hasLoaded => _loaded;
@@ -26,6 +30,7 @@ class StoreAddressesState extends ChangeNotifier {
   Future<void> fetchAddresses({bool force = false, bool quiet = false}) async {
     if (!force && _loaded) return;
     if (_loadState.isBusy) return;
+    final generation = _generation;
 
     if (!quiet || !_loaded) {
       _loadState = const ViewModelState.busy();
@@ -34,14 +39,17 @@ class StoreAddressesState extends ChangeNotifier {
 
     try {
       final list = await _repo.getAddresses();
+      if (generation != _generation) return;
       _addresses = list;
       _loaded = true;
       _loadState = const ViewModelState.idle();
       notifyListeners();
     } on ApiFailure catch (e) {
+      if (generation != _generation) return;
       _loadState = ViewModelState.error(e);
       notifyListeners();
     } catch (e) {
+      if (generation != _generation) return;
       _loadState = ViewModelState.error(ApiFailure(e.toString()));
       notifyListeners();
     }
@@ -63,6 +71,7 @@ class StoreAddressesState extends ChangeNotifier {
   }
 
   void clear() {
+    _generation++;
     _addresses = const [];
     _shippingAddress = null;
     _loaded = false;
