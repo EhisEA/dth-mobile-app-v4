@@ -54,3 +54,7 @@
 
 // flutter build ios -t lib/main_dev.dart --flavor dev --dart-define-from-file=config/dev.json
 // flutter build apk -t lib/main_dev.dart --flavor dev --dart-define-from-file=config/dev.json
+
+
+//shorebird release android --flavor prod -t lib/main_prod.dart --dart-define-from-file=config/prod.json --flutter-version=3.41.6
+
