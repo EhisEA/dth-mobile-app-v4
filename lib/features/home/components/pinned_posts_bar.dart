@@ -63,11 +63,11 @@ class PinnedPostsBar extends StatelessWidget {
               width: cardWidth,
               height: barHeight,
               child: Container(
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.greyTint35),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                padding: const EdgeInsets.all(_cardPadding),
                 child: PostCard(
                   post: post,
                   compact: true,

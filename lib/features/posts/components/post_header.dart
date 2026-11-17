@@ -6,9 +6,16 @@ import "package:flutter_svg/svg.dart";
 import "package:flutter_utils/flutter_utils.dart";
 
 class PosTimelinetHeader extends StatelessWidget {
-  const PosTimelinetHeader({super.key, required this.post});
+  const PosTimelinetHeader({
+    super.key,
+    required this.post,
+    this.pinned = false,
+  });
 
   final Post post;
+
+  /// Shows a push-pin icon after the title (pinned posts bar).
+  final bool pinned;
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +30,27 @@ class PosTimelinetHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppText.medium(
-                    post.title,
-                    fontSize: 14,
-                    maxLines: 1,
-                    letterSpacing: -0.4,
-                    color: AppColors.black,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: AppText.medium(
+                          post.title,
+                          fontSize: 14,
+                          maxLines: 1,
+                          letterSpacing: -0.4,
+                          color: AppColors.black,
+                        ),
+                      ),
+                      if (pinned) ...[
+                        Gap.w4,
+                        SvgPicture.asset(
+                          SvgAssets.pushPin,
+                          height: 14,
+                          width: 14,
+                        ),
+                      ],
+                    ],
                   ),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,

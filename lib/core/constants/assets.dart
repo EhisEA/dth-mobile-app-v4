@@ -149,6 +149,7 @@ class SvgAssets {
   static const String livestreamLives = "$svgPath/home/livestream_live.svg";
   static const String livestream = "$svgPath/home/livestream.svg";
   static const String leaderboard = "$svgPath/home/leaderboard.svg";
+  static const String pushPin = "$svgPath/home/push-pin.svg";
   static const String fire = "$svgPath/leaderboard/fire.svg";
   static const String medalGold = "$svgPath/leaderboard/gold.svg";
   static const String medalSilver = "$svgPath/leaderboard/silver.svg";

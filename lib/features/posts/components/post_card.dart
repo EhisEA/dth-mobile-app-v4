@@ -21,6 +21,7 @@ class PostCard extends StatelessWidget {
   });
 
   static const double compactMediaHeight = 194;
+  static const double compactPadding = 12;
 
   final Post post;
   final VoidCallback? onTap;
@@ -33,21 +34,31 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compact) {
+      // Pinned card: text rows are inset by [compactPadding]; media runs
+      // edge to edge (the parent card clips its corners).
+      const inset = EdgeInsets.symmetric(horizontal: compactPadding);
       return GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PosTimelinetHeader(post: post),
+            Gap.h12,
+            Padding(
+              padding: inset,
+              child: PosTimelinetHeader(post: post, pinned: true),
+            ),
             if (post.description.isNotEmpty) ...[
               Gap.h8,
-              AppText.regular(
-                post.description.replaceAll("\n", " "),
-                fontSize: 14,
-                height: 1.4,
-                maxLines: 2,
-                color: const Color(0xff202020),
+              Padding(
+                padding: inset,
+                child: AppText.regular(
+                  post.description.replaceAll("\n", " "),
+                  fontSize: 14,
+                  height: 1.4,
+                  maxLines: 2,
+                  color: const Color(0xff202020),
+                ),
               ),
             ],
             Gap.h8,
@@ -55,14 +66,19 @@ class PostCard extends StatelessWidget {
               post: post,
               enableHero: false,
               height: compactMediaHeight,
+              radius: 0,
             ),
             Gap.h8,
-            PostActions(
-              post: post,
-              onLike: onLike,
-              onComment: onComment,
-              onShare: onShare,
+            Padding(
+              padding: inset,
+              child: PostActions(
+                post: post,
+                onLike: onLike,
+                onComment: onComment,
+                onShare: onShare,
+              ),
             ),
+            Gap.h12,
           ],
         ),
       );

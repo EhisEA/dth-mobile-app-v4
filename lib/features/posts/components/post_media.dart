@@ -15,6 +15,7 @@ class PostMedia extends StatelessWidget {
     this.onPlayVideo,
     this.enableHero = false,
     this.height,
+    this.radius,
   });
 
   final Post post;
@@ -33,7 +34,10 @@ class PostMedia extends StatelessWidget {
   /// Overrides the default feed media height (160). Pinned cards use 194.
   final double? height;
 
-  static const double _mediaHeight = 160;
+  /// Overrides the default corner radius (12). Edge-to-edge cards pass 0.
+  final double? radius;
+
+  static const double _mediaHeight = 244;
   static const double _radius = 12;
 
   @override
@@ -47,7 +51,7 @@ class PostMedia extends StatelessWidget {
       return _VideoBlock(
         thumbnailUrl: post.video!.thumbnailUrl,
         height: height,
-        radius: _radius,
+        radius: radius ?? _radius,
         onPlay: onPlayVideo,
         heroTag: heroPrefix == null ? null : postVideoHeroTag(heroPrefix),
       );
@@ -59,7 +63,7 @@ class PostMedia extends StatelessWidget {
     return _ImageGalleryBlock(
       urls: urls,
       height: height,
-      radius: _radius,
+      radius: radius ?? _radius,
       heroPrefix: heroPrefix,
     );
   }
@@ -246,6 +250,7 @@ class _ImageGalleryBlock extends StatelessWidget {
   Widget _cell(String url, BuildContext context) {
     return CachedNetworkImage(
       imageUrl: url,
+      // height: 244,
       fit: BoxFit.cover,
       placeholder: (context, url) => const ShimmerBox(),
       errorWidget: (context, url, error) => ColoredBox(
