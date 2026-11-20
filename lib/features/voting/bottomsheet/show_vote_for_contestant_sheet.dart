@@ -1,6 +1,7 @@
 import "dart:async";
 
 import "package:dth_v4/core/core.dart";
+import "package:dth_v4/features/voting/bottomsheet/show_running_low_voting_credits_sheet.dart";
 import "package:dth_v4/features/voting/bottomsheet/show_top_up_voting_credits_sheet.dart";
 import "package:dth_v4/features/voting/bottomsheet/show_vote_success_sheet.dart";
 import "package:dth_v4/features/voting/components/voting_sponsor_footer.dart";
@@ -248,9 +249,12 @@ class _VoteForContestantSheetBodyState
       return;
     }
     HapticFeedback.mediumImpact();
-    final ok = await ref
-        .read(votingViewModelProvider)
-        .vote(votingWeekContestantUid: castUid, voteCount: voteCount);
+    // Captured up front: this sheet's `ref` is unusable once it pops.
+    final vm = ref.read(votingViewModelProvider);
+    final ok = await vm.vote(
+      votingWeekContestantUid: castUid,
+      voteCount: voteCount,
+    );
     if (!ok || !mounted) return;
 
     final contestantName = widget.contestant.name;
@@ -264,6 +268,9 @@ class _VoteForContestantSheetBodyState
       voteCount: voteCount,
       contestantName: contestantName,
     );
+    // The post-vote refresh may have flagged credits as running low.
+    if (!anchor.mounted) return;
+    await maybeShowRunningLowVotingCreditsSheet(anchor, vm);
   }
 
   String _shortfallMessage(int shortfall, int remaining) {

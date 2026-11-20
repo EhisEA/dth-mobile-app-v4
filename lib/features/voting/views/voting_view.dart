@@ -49,6 +49,17 @@ class _VotingViewState extends ConsumerState<VotingView> {
     _startSilentRefreshTimer();
     // Cold path: week wasn't ready at first paint — try again after load.
     await _maybeShowWelcomeTutorial();
+    await _maybeShowRunningLow();
+  }
+
+  /// Nudges the user to top up when `/voting/week` flags credits as running
+  /// low. Only while this tab is visible and nothing is stacked above it.
+  Future<void> _maybeShowRunningLow() async {
+    if (!mounted || !TickerMode.valuesOf(context).enabled) return;
+    await maybeShowRunningLowVotingCreditsSheet(
+      context,
+      ref.read(votingViewModelProvider),
+    );
   }
 
   void _startSilentRefreshTimer() {
@@ -112,6 +123,7 @@ class _VotingViewState extends ConsumerState<VotingView> {
 
     _didOfferTutorial = true;
     await _openVotingTutorial();
+    await _maybeShowRunningLow();
   }
 
   @override
@@ -155,6 +167,13 @@ class _VotingViewState extends ConsumerState<VotingView> {
     if (TickerMode.valuesOf(context).enabled && !_didOfferTutorial) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(_maybeShowWelcomeTutorial());
+      });
+    }
+    // Credits can flip to running low after a refresh or when the user lands
+    // on this tab — the prompt itself is one-shot per voting week.
+    if (TickerMode.valuesOf(context).enabled && vm.shouldPromptRunningLow) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_maybeShowRunningLow());
       });
     }
 

@@ -37,6 +37,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
   String? _detailUid;
   String? _loadedDetailUid;
   bool _weekLoaded = false;
+  String? _runningLowPromptedWeekUid;
 
   /// True after [preloadWeek] or a successful week fetch in [load]/silentRefresh].
   bool get weekLoaded => _weekLoaded;
@@ -68,6 +69,15 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
 
   List<VotingContestant> contestantsFor(VotingFilter tab) =>
       tab == VotingFilter.upForEviction ? upForEviction : allContestants;
+
+  /// True when the backend flags credits as running low and the popup hasn't
+  /// been shown yet for this voting week in this app session.
+  bool get shouldPromptRunningLow =>
+      _weekLoaded &&
+      creditInfo.isRunningLow &&
+      _runningLowPromptedWeekUid != weekUid;
+
+  void markRunningLowPrompted() => _runningLowPromptedWeekUid = weekUid;
 
   bool get canVote => credits.hasCreditsRemaining && !isVoteBusy;
 

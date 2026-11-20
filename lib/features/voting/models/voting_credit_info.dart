@@ -1,9 +1,12 @@
+import "package:dth_v4/features/voting/models/voting_running_low_prompt.dart";
+
 class VotingCreditInfo {
   const VotingCreditInfo({
     required this.minAmount,
     required this.maxAmount,
     required this.minCredit,
     required this.maxCredit,
+    this.runningLow,
   });
 
   /// Minimum NGN amount for a top-up (`min_amount`).
@@ -18,6 +21,12 @@ class VotingCreditInfo {
   /// Maximum credits a purchase can grant (`max_credit`).
   final int maxCredit;
 
+  /// Popup copy when the user's credits are low (`running_low`); null when the
+  /// backend sends `false` or omits it.
+  final VotingRunningLowPrompt? runningLow;
+
+  bool get isRunningLow => runningLow != null;
+
   bool isAmountInRange(int amount) =>
       amount >= minAmount && amount <= maxAmount;
 
@@ -30,6 +39,7 @@ class VotingCreditInfo {
       maxAmount: _asInt(json["max_amount"], fallback.maxAmount),
       minCredit: _asInt(json["min_credit"], fallback.minCredit),
       maxCredit: _asInt(json["max_credit"], fallback.maxCredit),
+      runningLow: VotingRunningLowPrompt.tryParse(json["running_low"]),
     );
   }
 
