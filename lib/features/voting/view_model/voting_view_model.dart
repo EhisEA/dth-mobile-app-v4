@@ -14,9 +14,13 @@ import "package:flutter_utils/flutter_utils.dart";
 enum VotingFilter { upForEviction, allContestants }
 
 class VotingViewModel extends BaseChangeNotifierViewModel {
-  VotingViewModel(this._repo);
+  VotingViewModel(this._repo, this._refreshProfile);
 
   final VotingRepo _repo;
+
+  /// Re-fetches `/profile` so the credits breakdown sheet (which reads
+  /// `voting_credit` from the cached user) stays in sync after a vote.
+  final Future<void> Function() _refreshProfile;
 
   static const _loadKey = "votingLoad";
   static const _voteKey = "votingVote";
@@ -24,7 +28,7 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
   static const _fallbackVoteValues = [200, 400, 800, 1000];
 
   VotingFilter filter = VotingFilter.upForEviction;
-  VotingCredits credits = const VotingCredits(used: 0, total: 0);
+  VotingCredits credits = const VotingCredits(used: 0, total: 0, remaining: 0);
   List<VotingContestant> upForEviction = const [];
   List<VotingContestant> allContestants = const [];
   List<int> voteValues = _fallbackVoteValues;
@@ -142,7 +146,11 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
     }
 
     if (credits.total < expectedMinTotal) {
-      credits = credits.copyWith(total: expectedMinTotal);
+      final shortfall = expectedMinTotal - credits.total;
+      credits = credits.copyWith(
+        total: expectedMinTotal,
+        remaining: credits.remaining + shortfall,
+      );
       notifyListeners();
     }
   }
@@ -239,11 +247,13 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
         voteCount: voteCount,
       );
       credits = credits.copyWith(
-        used: (credits.total - remaining).clamp(0, credits.total),
+        used: credits.used + voteCount,
+        remaining: remaining,
       );
       setState(_voteKey, const ViewModelState.idle());
       // Refresh lists after the cast sheet can pop; don't block success UI.
       unawaited(silentRefresh());
+      unawaited(_refreshProfile().catchError((_) {}));
       return true;
     } on ApiFailure catch (e) {
       DthFlushBar.instance.showError(title: "Voting", message: e.message);
@@ -254,5 +264,8 @@ class VotingViewModel extends BaseChangeNotifierViewModel {
 }
 
 final votingViewModelProvider = ChangeNotifierProvider<VotingViewModel>((ref) {
-  return VotingViewModel(ref.read(votingRepositoryProvider));
+  return VotingViewModel(
+    ref.read(votingRepositoryProvider),
+    () => ref.read(userStateProvider).getUserDetailsFromServer(),
+  );
 });

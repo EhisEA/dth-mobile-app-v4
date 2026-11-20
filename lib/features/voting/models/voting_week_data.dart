@@ -76,7 +76,7 @@ class VotingWeekData {
     uid: "",
     title: "",
     endsAt: null,
-    credits: VotingCredits(used: 0, total: 0),
+    credits: VotingCredits(used: 0, total: 0, remaining: 0),
     voteValues: [],
     tutorial: null,
     creditInfo: VotingCreditInfo.fallback,

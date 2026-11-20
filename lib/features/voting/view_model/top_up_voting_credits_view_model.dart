@@ -249,10 +249,7 @@ class TopUpVotingCreditsViewModel extends BaseChangeNotifierViewModel {
       final paymentSucceeded = returnedFromCallback == true;
       if (paymentSucceeded) {
         await _repo.verifyPayment(reference: data.reference);
-        await Future.wait([
-          _refreshVotingCredits(quantity),
-          _refreshProfile(),
-        ]);
+        await Future.wait([_refreshVotingCredits(quantity), _refreshProfile()]);
         final creditsLabel = NumberFormat.decimalPattern().format(quantity);
         DthFlushBar.instance.showSuccess(
           title: "Payment Successful",

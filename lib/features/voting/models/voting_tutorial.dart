@@ -69,9 +69,7 @@ class VotingTutorial {
   final List<VotingTutorialStep> steps;
 
   bool get hasContent =>
-      title.trim().isNotEmpty ||
-      body.trim().isNotEmpty ||
-      steps.isNotEmpty;
+      title.trim().isNotEmpty || body.trim().isNotEmpty || steps.isNotEmpty;
 
   VotingTutorialStep? get firstStep => steps.isEmpty ? null : steps.first;
 

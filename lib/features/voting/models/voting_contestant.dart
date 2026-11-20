@@ -35,8 +35,9 @@ class VotingContestant {
       isUpForEviction: json["up_for_eviction"] == true,
       isEvicted: json["evicted"] == true,
       bio: (rawBio == null || rawBio.isEmpty) ? null : rawBio,
-      votingWeekContestantUid:
-          (rawWeekUid == null || rawWeekUid.isEmpty) ? null : rawWeekUid,
+      votingWeekContestantUid: (rawWeekUid == null || rawWeekUid.isEmpty)
+          ? null
+          : rawWeekUid,
     );
   }
 }

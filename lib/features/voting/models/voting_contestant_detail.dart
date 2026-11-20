@@ -79,8 +79,9 @@ class VotingContestantDetail {
       socials: json["socials"]?.toString() ?? "",
       isEvicted: json["evicted"] == true,
       isVotable: json["votable"] != false,
-      votingWeekContestantUid:
-          (rawWeekUid == null || rawWeekUid.isEmpty) ? null : rawWeekUid,
+      votingWeekContestantUid: (rawWeekUid == null || rawWeekUid.isEmpty)
+          ? null
+          : rawWeekUid,
     );
   }
 
